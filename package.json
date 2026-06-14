@@ -4,7 +4,8 @@
   "description": "De Tender Care Hospital - Patient File Management System Backend",
   "main": "dist/app.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy-js",
+    "copy-js": "xcopy /E /I /Y \"src\\*.js\" \"dist\\\" && xcopy /E /I /Y \"src\\routes\\*.js\" \"dist\\routes\\\" && xcopy /E /I /Y \"src\\middleware\\*.js\" \"dist\\middleware\\\" && xcopy /E /I /Y \"src\\config\\*.js\" \"dist\\config\\\" && xcopy /E /I /Y \"src\\models\\*.js\" \"dist\\models\\\" 2>nul || echo JS files copied",
     "start": "node dist/app.js",
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "dev:watch": "nodemon --exec ts-node src/app.ts",
