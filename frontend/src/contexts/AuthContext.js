@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext();
@@ -198,12 +198,12 @@ export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
   // Get access token for interceptors
-  const getAccessToken = () => state.accessToken || storage.getTokens().accessToken;
+  const getAccessToken = useCallback(() => state.accessToken || storage.getTokens().accessToken, [state.accessToken]);
 
   // Setup axios interceptors
   useEffect(() => {
     setupAxiosInterceptors(dispatch, getAccessToken);
-  }, []);
+  }, [getAccessToken]);
 
   // Check for existing session on mount
   useEffect(() => {

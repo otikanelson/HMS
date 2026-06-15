@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import './PatientList.css';
@@ -21,9 +21,9 @@ const PatientList = () => {
     setCurrentPage(1);
     setHasMore(true);
     fetchPatients(1, true);
-  }, [searchParams.get('search')]);
+  }, [fetchPatients]);
 
-  const fetchPatients = async (page = 1, reset = false) => {
+  const fetchPatients = useCallback(async (page = 1, reset = false) => {
     try {
       if (page === 1) {
         setLoading(true);
@@ -71,7 +71,7 @@ const PatientList = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [searchParams]);
 
   const loadMorePatients = () => {
     if (!loadingMore && hasMore && !searchParams.get('search')) {

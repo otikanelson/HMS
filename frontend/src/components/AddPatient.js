@@ -132,6 +132,11 @@ const AddPatient = () => {
           if (num > 100) processedValue = '100';
         }
         break;
+      
+      default:
+        // For other fields, use the value as-is
+        processedValue = value;
+        break;
     }
 
     setFormData(prev => ({

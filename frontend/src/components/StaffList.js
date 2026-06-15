@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import './StaffList.css';
@@ -26,7 +26,7 @@ const StaffList = () => {
     setCurrentPage(1);
     setHasMore(true);
     fetchStaff(1, true);
-  }, [searchParams, filters]);
+  }, [fetchStaff]);
 
   const fetchFilterOptions = async () => {
     try {
@@ -37,7 +37,7 @@ const StaffList = () => {
     }
   };
 
-  const fetchStaff = async (page = 1, reset = false) => {
+  const fetchStaff = useCallback(async (page = 1, reset = false) => {
     try {
       if (page === 1) {
         setLoading(true);
@@ -95,7 +95,7 @@ const StaffList = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [searchParams, filters]);
 
   const loadMoreStaff = () => {
     if (!loadingMore && hasMore && !searchParams.get('search')) {
