@@ -17,12 +17,28 @@ const { authenticateToken } = require('./middleware/auth');
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+// Production optimizations
+if (process.env.NODE_ENV === 'production') {
+  // Trust first proxy for Railway/Render
+  app.set('trust proxy', 1);
+  
+  // Security headers
+  app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    next();
+  });
+}
+
 // Trust proxy for rate limiting to work correctly
 app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3001', 'http://localhost:3000', 'http://localhost:3002'], // Allow both frontend and backend ports
+  origin: process.env.NODE_ENV === 'production' 
+    ? [process.env.FRONTEND_URL, 'https://your-frontend-domain.vercel.app'] 
+    : ['http://localhost:3001', 'http://localhost:3000', 'http://localhost:3002'], // Allow both frontend and backend ports
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
