@@ -15,14 +15,6 @@ const PatientList = () => {
   const [editedPatients, setEditedPatients] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
 
-  useEffect(() => {
-    // Reset state when search params change
-    setPatients([]);
-    setCurrentPage(1);
-    setHasMore(true);
-    fetchPatients(1, true);
-  }, [fetchPatients]);
-
   const fetchPatients = useCallback(async (page = 1, reset = false) => {
     try {
       if (page === 1) {
@@ -72,6 +64,14 @@ const PatientList = () => {
       setLoadingMore(false);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    // Reset state when search params change
+    setPatients([]);
+    setCurrentPage(1);
+    setHasMore(true);
+    fetchPatients(1, true);
+  }, [fetchPatients]);
 
   const loadMorePatients = () => {
     if (!loadingMore && hasMore && !searchParams.get('search')) {

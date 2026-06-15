@@ -15,19 +15,6 @@ const StaffList = () => {
   const [filters, setFilters] = useState({ role: '', status: '', shift: '' });
   const [roles, setRoles] = useState([]);
 
-  useEffect(() => {
-    // Fetch filter options
-    fetchFilterOptions();
-  }, []);
-
-  useEffect(() => {
-    // Reset state when search params change
-    setStaff([]);
-    setCurrentPage(1);
-    setHasMore(true);
-    fetchStaff(1, true);
-  }, [fetchStaff]);
-
   const fetchFilterOptions = async () => {
     try {
       const roleResponse = await axios.get('/api/staff/roles');
@@ -96,6 +83,19 @@ const StaffList = () => {
       setLoadingMore(false);
     }
   }, [searchParams, filters]);
+
+  useEffect(() => {
+    // Fetch filter options
+    fetchFilterOptions();
+  }, []);
+
+  useEffect(() => {
+    // Reset state when search params change
+    setStaff([]);
+    setCurrentPage(1);
+    setHasMore(true);
+    fetchStaff(1, true);
+  }, [fetchStaff]);
 
   const loadMoreStaff = () => {
     if (!loadingMore && hasMore && !searchParams.get('search')) {
