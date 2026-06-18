@@ -36,9 +36,9 @@ app.set('trust proxy', 1);
 
 // Middleware
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL, 'https://your-frontend-domain.vercel.app'] 
-    : ['http://localhost:3001', 'http://localhost:3000', 'http://localhost:3002'], // Allow both frontend and backend ports
+origin: process.env.NODE_ENV === 'production' 
+  ? [process.env.FRONTEND_URL, 'https://your-frontend-domain.vercel.app'].filter(url => url !== undefined) as string[]
+  : ['http://localhost:3001', 'http://localhost:3000', 'http://localhost:3002'],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
