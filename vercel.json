@@ -14,5 +14,8 @@
     }
   ],
   "installCommand": "npm install --legacy-peer-deps",
-  "framework": null
-}
+  "framework": null,
+  "env": {
+    "VERCEL": "1"
+  }
+} 

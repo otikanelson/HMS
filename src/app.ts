@@ -131,60 +131,75 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
   });
 });
 
-// Start server function
+// Start server function - only for local development
 async function startServer(): Promise<void> {
-  try {
-    // Try to connect to database
-    console.log('🔌 Connecting to MongoDB...');
+  // Only start server if running locally (not in Vercel)
+  if (process.env.VERCEL !== '1') {
+    try {
+      // Try to connect to database
+      console.log('🔌 Connecting to MongoDB...');
+      try {
+        await database.connect();
+        console.log('✅ Database connected successfully');
+      } catch (dbError) {
+        console.log('⚠️ Database connection failed, but server will continue...');
+        console.log('🔧 You can update your MongoDB connection and restart later.\n');
+      }
+
+      // Start HTTP server regardless of database connection
+      const server = app.listen(PORT, () => {
+        console.log('🚀 De Tender Care API Server');
+        console.log(`📊 Port: ${PORT}`);
+        console.log(`🌐 API URL: http://localhost:${PORT}/api`);
+        console.log(`🏥 Health Check: http://localhost:${PORT}/api/health`);
+        console.log(`🔍 Search Example: http://localhost:${PORT}/api/patients/search?q=Adebayo`);
+        console.log('✅ Server is running and ready for requests\n');
+      });
+
+      // Graceful shutdown
+      process.on('SIGTERM', async () => {
+        console.log('\n⚠️ SIGTERM received, shutting down gracefully...');
+        server.close(async () => {
+          if (database.isConnected) {
+            await database.disconnect();
+          }
+          console.log('👋 Server shutdown complete');
+          process.exit(0);
+        });
+      });
+
+      process.on('SIGINT', async () => {
+        console.log('\n⚠️ SIGINT received, shutting down gracefully...');
+        server.close(async () => {
+          if (database.isConnected) {
+            await database.disconnect();
+          }
+          console.log('👋 Server shutdown complete');
+          process.exit(0);
+        });
+      });
+
+    } catch (error) {
+      console.error('💥 Failed to start server:', (error as Error).message);
+      process.exit(1);
+    }
+  } else {
+    // In Vercel, just connect to database
     try {
       await database.connect();
-      console.log('✅ Database connected successfully');
+      console.log('✅ Database connected for serverless');
     } catch (dbError) {
-      console.log('⚠️ Database connection failed, but server will continue...');
-      console.log('🔧 You can update your MongoDB connection and restart later.\n');
+      console.log('⚠️ Database connection failed in serverless environment');
     }
-
-    // Start HTTP server regardless of database connection
-    const server = app.listen(PORT, () => {
-      console.log('🚀 De Tender Care API Server');
-      console.log(`📊 Port: ${PORT}`);
-      console.log(`🌐 API URL: http://localhost:${PORT}/api`);
-      console.log(`🏥 Health Check: http://localhost:${PORT}/api/health`);
-      console.log(`🔍 Search Example: http://localhost:${PORT}/api/patients/search?q=Adebayo`);
-      console.log('✅ Server is running and ready for requests\n');
-    });
-
-    // Graceful shutdown
-    process.on('SIGTERM', async () => {
-      console.log('\n⚠️ SIGTERM received, shutting down gracefully...');
-      server.close(async () => {
-        if (database.isConnected) {
-          await database.disconnect();
-        }
-        console.log('👋 Server shutdown complete');
-        process.exit(0);
-      });
-    });
-
-    process.on('SIGINT', async () => {
-      console.log('\n⚠️ SIGINT received, shutting down gracefully...');
-      server.close(async () => {
-        if (database.isConnected) {
-          await database.disconnect();
-        }
-        console.log('👋 Server shutdown complete');
-        process.exit(0);
-      });
-    });
-
-  } catch (error) {
-    console.error('💥 Failed to start server:', (error as Error).message);
-    process.exit(1);
   }
 }
 
-// Start the server
+// Initialize the server/database connection
 if (require.main === module) {
+  // Only start server if this file is run directly (not in Vercel)
+  startServer();
+} else if (process.env.VERCEL === '1') {
+  // Initialize database connection for Vercel
   startServer();
 }
 
