@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build:frontend",
-  "outputDirectory": "frontend/build",
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
   "installCommand": "npm install --legacy-peer-deps",
   "framework": null,
   "rewrites": [
@@ -9,4 +9,4 @@
       "destination": "/index.html"
     }
   ]
-} 
+}

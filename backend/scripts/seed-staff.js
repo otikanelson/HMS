@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Staff = require('../src/models/Staff');
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 
 // Names for seeding
 const names = {
