@@ -1,5 +1,8 @@
-// Vercel serverless function handler
+// Vercel serverless function handler for Express app
 const app = require('../dist/app.js');
 
-// Export the Express app as a serverless function
-module.exports = app.default || app;
+// Get the Express app instance
+const expressApp = app.default || app;
+
+// Export the handler function
+module.exports = expressApp;
