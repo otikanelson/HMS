@@ -5,8 +5,9 @@
   "main": "dist/app.js",
   "scripts": {
     "build": "tsc && npm run copy-js",
-    "copy-js": "node -e \"const fs=require('fs'),path=require('path');const copyFiles=(src,dest)=>{if(!fs.existsSync(dest))fs.mkdirSync(dest,{recursive:true});fs.readdirSync(src,{withFileTypes:true}).forEach(entry=>{const srcPath=path.join(src,entry.name);const destPath=path.join(dest,entry.name);if(entry.isDirectory())copyFiles(srcPath,destPath);else if(entry.name.endsWith('.js'))fs.copyFileSync(srcPath,destPath);});};['config','middleware','models','routes'].forEach(dir=>{const srcDir=path.join('src',dir);const destDir=path.join('dist',dir);if(fs.existsSync(srcDir))copyFiles(srcDir,destDir);});console.log('JS files copied');\"",
+    "copy-js": "node -e \"const fs=require('fs'),path=require('path');const copyFiles=(src,dest)=>{if(!fs.existsSync(dest))fs.mkdirSync(dest,{recursive:true});fs.readdirSync(src,{withFileTypes:true}).forEach(entry=>{const srcPath=path.join(src,entry.name);const destPath=path.join(dest,entry.name);if(entry.isDirectory())copyFiles(srcPath,destPath);else if(entry.name.endsWith('.js'))fs.copyFileSync(srcPath,destPath);});};['config','middleware','models','routes'].forEach(dir=>{const srcDir=path.join('src',dir);const destDir=path.join('dist',dir);if(fs.existsSync(srcDir))copyFiles(srcDir,destPath);});console.log('JS files copied');\"",
     "start": "node dist/app.js",
+    "vercel-build": "npm run build",
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "dev:watch": "nodemon --exec ts-node src/app.ts",
     "test": "jest",
