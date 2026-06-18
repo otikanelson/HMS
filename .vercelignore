@@ -1,8 +1,0 @@
-frontend/
-.kiro/
-*.md
-test-*.js
-scripts/
-dist/
-node_modules/
-.git/
