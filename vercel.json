@@ -13,7 +13,6 @@
       "dest": "/src/app.ts"
     }
   ],
-  "installCommand": "npm install",
-  "buildCommand": "echo 'No build step needed for serverless'",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": null
 }
