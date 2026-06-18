@@ -15,6 +15,5 @@
   ],
   "installCommand": "npm install",
   "buildCommand": "echo 'No build step needed for serverless'",
-  "outputDirectory": false,
   "framework": null
 }
