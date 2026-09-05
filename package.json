@@ -1,7 +1,7 @@
 {
   "name": "de-tender-care-hospital",
   "version": "1.0.0",
-  "description": "De Tender Care Hospital - Patient File Management System",
+  "description": "Tender Care Hospital - Patient File Management System",
   "private": true,
   "workspaces": [
     "frontend",
@@ -9,9 +9,10 @@
   ],
   "scripts": {
     "install:all": "npm install && npm install --prefix frontend && npm install --prefix backend",
-    "build": "npm run build:frontend && npm run build:backend",
+    "build": "npm run build:frontend",
     "build:frontend": "cd frontend && npm run build",
-    "build:backend": "cd backend && npm run build", 
+    "build:backend": "cd backend && npm run build",
+    "build:full": "npm run build:frontend && npm run build:backend", 
     "dev:frontend": "cd frontend && npm start",
     "dev:backend": "cd backend && npm run dev",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
@@ -37,6 +38,6 @@
     "express",
     "monorepo"
   ],
-  "author": "De Tender Care Hospital",
+  "author": "Tender Care Hospital",
   "license": "ISC"
 }

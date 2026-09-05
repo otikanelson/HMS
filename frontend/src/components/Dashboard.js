@@ -15,36 +15,10 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [greeting, setGreeting] = useState('');
-  const [currentDate, setCurrentDate] = useState('');
 
   useEffect(() => {
     fetchDashboardStats();
-    updateGreeting();
-    updateCurrentDate();
   }, []);
-
-  const updateGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) {
-      setGreeting('Good Morning');
-    } else if (hour < 17) {
-      setGreeting('Good Afternoon');
-    } else {
-      setGreeting('Good Evening');
-    }
-  };
-
-  const updateCurrentDate = () => {
-    const now = new Date();
-    const options = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    };
-    setCurrentDate(now.toLocaleDateString('en-US', options));
-  };
 
   const formatRole = (role) => {
     return role.replace('_', ' ').split(' ').map(word => 
@@ -101,31 +75,9 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Greeting Card */}
-      <div className="greeting-card">
-        <div className="greeting-content">
-          <div className="greeting-text">
-            <h1 className="greeting-title">{greeting}!</h1>
-            <p className="greeting-date">{currentDate}</p>
-            <p className="greeting-subtitle">Welcome to De Tender Care's Patient File Management System</p>
-          </div>
-          <div className="greeting-illustration">
-            {/* Placeholder for illustration - you can add your own */}
-            <div className="illustration-placeholder">
-              <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-                <circle cx="60" cy="60" r="50" fill="var(--primary-100)" opacity="0.3"/>
-                <circle cx="60" cy="60" r="35" fill="var(--primary-200)" opacity="0.5"/>
-                <circle cx="60" cy="60" r="20" fill="var(--primary-300)" opacity="0.7"/>
-                <path d="M60 45v30M45 60h30" stroke="var(--primary-600)" strokeWidth="3" strokeLinecap="round"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="dashboard-header">
         <div>
-          <h2 className="dashboard-title">De Tender Care Dashboard</h2>
+          <h2 className="dashboard-title">Tender Care Dashboard</h2>
           <p className="dashboard-subtitle">Current status and key metrics</p>
         </div>
         <div className="header-actions">
@@ -269,11 +221,11 @@ const Dashboard = () => {
       <div className="info-panel">
         <div className="card">
           <div className="card-header">
-            <h2 className="card-title">De Tender Care File System</h2>
+            <h2 className="card-title">Tender Care File System</h2>
           </div>
           <div className="info-grid">
             <div className="info-item">
-              <strong>Purpose:</strong> Digital patient file indexing and location tracking for De Tender Care Hospital
+              <strong>Purpose:</strong> Digital patient file indexing and location tracking for Tender Care Hospital
             </div>
             <div className="info-item">
               <strong>Data Policy:</strong> No medical records stored - location and contact data only

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const User = require('../src/models/User');
-require('dotenv').config({ path: '../.env' });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const users = [
   {
@@ -16,6 +17,7 @@ async function seedUsers() {
   try {
     // Connect to MongoDB
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/hospital_operations';
+    console.log('Using MongoDB URI:', mongoUri.substring(0, 50) + '...');
     await mongoose.connect(mongoUri);
     console.log('Connected to MongoDB');
 
@@ -36,7 +38,7 @@ async function seedUsers() {
       }
     }
 
-    console.log('\n🎉 De Tender Care user account created!');
+    console.log('\n🎉 Tender Care user account created!');
     console.log('\nLogin credentials:');
     users.forEach(user => {
       console.log(`  Username: ${user.username}`);

@@ -89,7 +89,7 @@ app.use('/api/dashboard', authenticateToken, dashboardRoutes);
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: '🏥 De Tender Care API',
+    message: '🏥 Tender Care API',
     description: 'Patient File Management System Backend',
     version: '1.0.0',
     endpoints: {
@@ -148,7 +148,7 @@ async function startServer(): Promise<void> {
 
       // Start HTTP server regardless of database connection
       const server = app.listen(PORT, () => {
-        console.log('🚀 De Tender Care API Server');
+        console.log('🚀 Tender Care API Server');
         console.log(`📊 Port: ${PORT}`);
         console.log(`🌐 API URL: http://localhost:${PORT}/api`);
         console.log(`🏥 Health Check: http://localhost:${PORT}/api/health`);

@@ -131,6 +131,18 @@ const setupAxiosInterceptors = (dispatch, getAccessToken) => {
   // Request interceptor to add auth token
   axios.interceptors.request.use(
     (config) => {
+      // Skip API calls in bypass mode
+      const bypassAuth = localStorage.getItem('bypassAuth');
+      if (bypassAuth === 'true' && config.url?.startsWith('/api/')) {
+        // Return a mock response for bypass mode
+        return Promise.reject({
+          response: { status: 200, data: { message: 'Bypass mode active' } },
+          config,
+          isAxiosError: true,
+          bypassMode: true
+        });
+      }
+
       const accessToken = getAccessToken();
       if (accessToken && config.url?.startsWith('/api/')) {
         config.headers.Authorization = `Bearer ${accessToken}`;
@@ -144,6 +156,11 @@ const setupAxiosInterceptors = (dispatch, getAccessToken) => {
   axios.interceptors.response.use(
     (response) => response,
     async (error) => {
+      // Handle bypass mode errors gracefully
+      if (error.bypassMode) {
+        return Promise.resolve({ data: { message: 'Bypass mode - no backend connection' } });
+      }
+
       const originalRequest = error.config;
 
       if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/api/auth/login') {
@@ -208,6 +225,29 @@ export function AuthProvider({ children }) {
   // Check for existing session on mount
   useEffect(() => {
     const checkExistingSession = async () => {
+      // Check for bypass mode first
+      const bypassAuth = localStorage.getItem('bypassAuth');
+      const tempUser = localStorage.getItem('tempUser');
+      
+      if (bypassAuth === 'true' && tempUser) {
+        try {
+          const user = JSON.parse(tempUser);
+          dispatch({
+            type: AUTH_ACTIONS.LOGIN_SUCCESS,
+            payload: { 
+              user,
+              accessToken: 'bypass-token',
+              refreshToken: 'bypass-refresh'
+            }
+          });
+          return;
+        } catch (error) {
+          console.error('Failed to parse temp user:', error);
+          localStorage.removeItem('bypassAuth');
+          localStorage.removeItem('tempUser');
+        }
+      }
+
       const { accessToken } = storage.getTokens();
       
       if (accessToken) {
@@ -272,24 +312,38 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      await axios.post('/api/auth/logout');
+      // Only try to call logout API if we're not in bypass mode
+      const bypassAuth = localStorage.getItem('bypassAuth');
+      if (bypassAuth !== 'true') {
+        await axios.post('/api/auth/logout');
+      }
     } catch (error) {
       // Even if logout fails on server, clear local state
       console.error('Logout error:', error);
     }
 
     storage.clearTokens();
+    // Clear bypass flags
+    localStorage.removeItem('bypassAuth');
+    localStorage.removeItem('tempUser');
     dispatch({ type: AUTH_ACTIONS.LOGOUT });
   };
 
   const logoutAll = async () => {
     try {
-      await axios.post('/api/auth/logout-all');
+      // Only try to call logout API if we're not in bypass mode
+      const bypassAuth = localStorage.getItem('bypassAuth');
+      if (bypassAuth !== 'true') {
+        await axios.post('/api/auth/logout-all');
+      }
     } catch (error) {
       console.error('Logout all error:', error);
     }
 
     storage.clearTokens();
+    // Clear bypass flags
+    localStorage.removeItem('bypassAuth');
+    localStorage.removeItem('tempUser');
     dispatch({ type: AUTH_ACTIONS.LOGOUT });
   };
 

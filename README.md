@@ -1,4 +1,4 @@
-# De Tender Care Hospital - Patient File Management System
+# Tender Care Hospital - Patient File Management System
 
 A comprehensive hospital management system for tracking patient files, staff schedules, and administrative operations.
 
@@ -206,4 +206,4 @@ For questions or issues, please refer to:
 
 ## License
 
-ISC License - De Tender Care Hospital
+ISC License - Tender Care Hospital

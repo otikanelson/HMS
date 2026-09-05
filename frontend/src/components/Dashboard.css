@@ -2,63 +2,6 @@
   padding: var(--space-6);
 }
 
-/* Greeting Card */
-.greeting-card {
-  background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-600) 100%);
-  border-radius: var(--radius-xl);
-  padding: var(--space-8);
-  margin-bottom: var(--space-8);
-  box-shadow: var(--shadow-lg);
-  color: white;
-}
-
-.greeting-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-6);
-}
-
-.greeting-text {
-  flex: 1;
-}
-
-.greeting-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0 0 var(--space-2) 0;
-  color: white;
-}
-
-.greeting-date {
-  font-size: 1.125rem;
-  font-weight: 500;
-  margin: 0 0 var(--space-3) 0;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.greeting-subtitle {
-  font-size: 1rem;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.greeting-illustration {
-  flex-shrink: 0;
-}
-
-.illustration-placeholder {
-  width: 120px;
-  height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.illustration-placeholder svg {
-  opacity: 0.8;
-}
-
 .dashboard-header {
   display: flex;
   justify-content: space-between;
@@ -126,7 +69,7 @@
 }
 
 .dashboard-title {
-  font-size: 1.75rem;
+  font-size: 1.375rem;
   font-weight: 700;
   color: var(--gray-900);
   margin: 0;
@@ -379,33 +322,11 @@
   .content-grid {
     grid-template-columns: 1fr;
   }
-  
-  .greeting-content {
-    flex-direction: column;
-    text-align: center;
-    gap: var(--space-4);
-  }
-  
-  .greeting-title {
-    font-size: 2rem;
-  }
 }
 
 @media (max-width: 768px) {
   .dashboard {
     padding: var(--space-4);
-  }
-  
-  .greeting-card {
-    padding: var(--space-6);
-  }
-  
-  .greeting-title {
-    font-size: 1.75rem;
-  }
-  
-  .greeting-date {
-    font-size: 1rem;
   }
   
   .dashboard-header {

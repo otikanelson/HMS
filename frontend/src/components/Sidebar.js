@@ -7,19 +7,6 @@ const Sidebar = () => {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill="currentColor"/>
-            <path d="M16 8v16M8 16h16" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-          <div className="sidebar-brand">
-            <h2>De Tender Care</h2>
-            <p>File Management</p>
-          </div>
-        </div>
-      </div>
-
       <nav className="sidebar-nav">
         <div className="nav-section">
           <p className="nav-section-title">Main</p>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import logo from '../logo.png';
 import './Header.css';
 
 const Header = () => {
@@ -10,13 +11,10 @@ const Header = () => {
       <div className="header-container">
         <div className="header-brand">
           <div className="brand-logo">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect width="32" height="32" rx="8" fill="currentColor"/>
-              <path d="M16 8v16M8 16h16" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+            <img src={logo} alt="Tender Care Logo" width="40" height="40" />
           </div>
           <div className="brand-text">
-            <h1>De Tender Care Medical Records</h1>
+            <h1>Tender Care Medical Records</h1>
             <p>Patient File Management System</p>
           </div>
         </div>

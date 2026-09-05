@@ -16,19 +16,17 @@ import './App.css';
 function AppLayout() {
   return (
     <div className="app">
+      <TopBar />
       <Sidebar />
-      <div className="app-main">
-        <TopBar />
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/patients" element={<PatientList />} />
-            <Route path="/staff" element={<StaffList />} />
-            <Route path="/add-patient" element={<AddPatient />} />
-          </Routes>
-        </main>
-      </div>
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/patients" element={<PatientList />} />
+          <Route path="/staff" element={<StaffList />} />
+          <Route path="/add-patient" element={<AddPatient />} />
+        </Routes>
+      </main>
     </div>
   );
 }

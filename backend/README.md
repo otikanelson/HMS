@@ -1,6 +1,6 @@
-# De Tender Care Hospital - Backend
+# Tender Care Hospital - Backend
 
-Backend API server for the De Tender Care Hospital Patient File Management System.
+Backend API server for the Tender Care Hospital Patient File Management System.
 
 ## Features
 

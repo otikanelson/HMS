@@ -155,7 +155,7 @@ const StaffList = () => {
       <div className="staff-list-header">
         <div>
           <h1 className="page-title">
-            {isSearching ? 'Staff Search Results' : 'De Tender Care Staff'}
+            {isSearching ? 'Staff Search Results' : 'Tender Care Staff'}
           </h1>
           <p className="page-subtitle">
             {isSearching 
@@ -257,21 +257,30 @@ const StaffList = () => {
           <table className="staff-table">
             <thead>
               <tr>
-                <th>Employee ID</th>
+                <th>Staff ID</th>
                 <th>Full Name</th>
                 <th>Role</th>
+                <th>Salary</th>
+                <th>Bank Account</th>
+                <th>Account Number</th>
                 <th>Status</th>
                 <th>Shift</th>
                 <th>Phone Number</th>
-                <th>Hire Date</th>
               </tr>
             </thead>
             <tbody>
               {staff.map((member) => (
                 <tr key={member._id || member.id}>
-                  <td>{member.employeeId}</td>
-                  <td>{member.fullName}</td>
+                  <td>{member.staffId}</td>
+                  <td>
+                    <div className="staff-name">
+                      <span className="name-main">{member.fullName}</span>
+                    </div>
+                  </td>
                   <td>{formatRole(member.role)}</td>
+                  <td>₦{member.salary?.toLocaleString() || '-'}</td>
+                  <td>{member.bankAccount || '-'}</td>
+                  <td>{member.accountNumber || '-'}</td>
                   <td>
                     <span className={`status-badge ${member.onDuty ? 'on-duty' : 'off-duty'}`}>
                       {member.onDuty ? 'On Duty' : 'Off Duty'}
@@ -279,7 +288,6 @@ const StaffList = () => {
                   </td>
                   <td>{member.shift ? member.shift.charAt(0).toUpperCase() + member.shift.slice(1) : '-'}</td>
                   <td>{member.phoneNumber || '-'}</td>
-                  <td>{formatDate(member.hireDate)}</td>
                 </tr>
               ))}
             </tbody>

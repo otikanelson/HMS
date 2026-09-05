@@ -23,6 +23,8 @@ router.post('/login', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
 
+    console.log('Login attempt:', { username, hasPassword: !!password });
+
     if (!username || !password) {
       return res.status(400).json({
         error: 'Username and password are required',
@@ -32,6 +34,7 @@ router.post('/login', authLimiter, async (req, res) => {
 
     // Find user by username
     const user = await User.findOne({ username: username.toLowerCase() });
+    console.log('User found:', !!user, user ? `(${user.username}, active: ${user.isActive})` : '');
 
     if (!user || !user.isActive) {
       return res.status(401).json({
@@ -42,6 +45,7 @@ router.post('/login', authLimiter, async (req, res) => {
 
     // Check password
     const isPasswordValid = await user.comparePassword(password);
+    console.log('Password valid:', isPasswordValid);
     if (!isPasswordValid) {
       return res.status(401).json({
         error: 'Invalid credentials',

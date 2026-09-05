@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import logo from '../logo.png';
 import './Login.css';
+
+const VISUAL_IMAGE =
+  'https://images.unsplash.com/photo-1629410484397-a4dcd74088a0?auto=format&fit=crop&w=1400&q=80';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -24,7 +28,7 @@ const Login = () => {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -70,20 +74,20 @@ const Login = () => {
   return (
     <div className="login-container">
       <div className="login-content">
+        <Link to="/" className="login-back">
+          <span aria-hidden="true">&larr;</span>
+          Back to home
+        </Link>
+
         <div className="login-header">
           <div className="login-logo">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-              <rect width="40" height="40" rx="8" fill="#3b82f6"/>
-              <path d="M20 12v16M12 20h16" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-            </svg>
+            <img src={logo} alt="Tender Care Logo" width="48" height="48" />
           </div>
-          <h1 className="login-title">De Tender Care</h1>
-          <p className="login-subtitle">Patient File Management System</p>
+          <h1 className="login-title">Tender Care</h1>
+          <p className="login-subtitle">Staff sign in</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
-          <h2 className="form-title">Sign In</h2>
-          
           {errors.general && (
             <div className="error-message">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -166,13 +170,17 @@ const Login = () => {
 
         <div className="login-footer">
           <p className="login-info">
-            Use your De Tender Care staff credentials to access the system.
+            Use your Tender Care staff credentials to access the system.
           </p>
         </div>
       </div>
 
-      <div className="login-background">
-        <div className="bg-pattern"></div>
+      <div className="login-visual" style={{ backgroundImage: `url(${VISUAL_IMAGE})` }}>
+        <div className="login-visual-scrim" />
+        <div className="login-visual-caption">
+          <span className="caption-brand">Tender Care Hospital</span>
+          <p>Internal staff systems &mdash; patient files, schedules, and payroll.</p>
+        </div>
       </div>
     </div>
   );

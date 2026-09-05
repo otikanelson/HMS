@@ -19,22 +19,12 @@ router.get('/search', async (req, res) => {
     const staff = await Staff.searchStaff(q.trim());
     const searchTime = Date.now() - startTime;
 
-    // Add virtual fields to each result
-    const staffWithVirtuals = await Promise.all(staff.map(async (member) => {
-      let supervisor = null;
-      if (member.supervisorId) {
-        supervisor = await Staff.findOne({ staffId: member.supervisorId }, 'firstName lastName employeeId');
-      }
-      
-      return {
-        ...member.toObject(),
-        fullName: member.fullName,
-        locationDisplay: member.locationDisplay,
-        roleDisplay: member.roleDisplay,
-        statusDisplay: member.statusDisplay,
-        shiftDisplay: member.shiftDisplay,
-        supervisor
-      };
+    const staffWithVirtuals = staff.map(member => ({
+      ...member.toObject(),
+      fullName: member.fullName,
+      roleDisplay: member.roleDisplay,
+      statusDisplay: member.statusDisplay,
+      shiftDisplay: member.shiftDisplay
     }));
 
     res.json({
@@ -75,21 +65,12 @@ router.get('/', async (req, res) => {
 
     const total = await Staff.countDocuments(filter);
 
-    const staffWithVirtuals = await Promise.all(staff.map(async (member) => {
-      let supervisor = null;
-      if (member.supervisorId) {
-        supervisor = await Staff.findOne({ staffId: member.supervisorId }, 'firstName lastName employeeId');
-      }
-      
-      return {
-        ...member.toObject(),
-        fullName: member.fullName,
-        locationDisplay: member.locationDisplay,
-        roleDisplay: member.roleDisplay,
-        statusDisplay: member.statusDisplay,
-        shiftDisplay: member.shiftDisplay,
-        supervisor
-      };
+    const staffWithVirtuals = staff.map(member => ({
+      ...member.toObject(),
+      fullName: member.fullName,
+      roleDisplay: member.roleDisplay,
+      statusDisplay: member.statusDisplay,
+      shiftDisplay: member.shiftDisplay
     }));
 
     res.json({
@@ -132,18 +113,13 @@ router.get('/:id', async (req, res) => {
     let staff;
     const id = req.params.id;
     
-    // Check if it's a MongoDB ObjectId or staffId/employeeId
+    // Check if it's a MongoDB ObjectId or staffId
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
       // It's a MongoDB ObjectId
       staff = await Staff.findById(id);
     } else {
-      // It's a staffId or employeeId
-      staff = await Staff.findOne({ 
-        $or: [
-          { staffId: id },
-          { employeeId: id }
-        ]
-      });
+      // It's a staffId
+      staff = await Staff.findOne({ staffId: id });
     }
     
     if (!staff) {
@@ -153,19 +129,12 @@ router.get('/:id', async (req, res) => {
       });
     }
 
-    let supervisor = null;
-    if (staff.supervisorId) {
-      supervisor = await Staff.findOne({ staffId: staff.supervisorId }, 'firstName lastName employeeId');
-    }
-
     res.json({
       ...staff.toObject(),
       fullName: staff.fullName,
-      locationDisplay: staff.locationDisplay,
       roleDisplay: staff.roleDisplay,
       statusDisplay: staff.statusDisplay,
-      shiftDisplay: staff.shiftDisplay,
-      supervisor
+      shiftDisplay: staff.shiftDisplay
     });
 
   } catch (error) {
@@ -181,55 +150,40 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { 
-      employeeId, 
       firstName, 
       lastName, 
+      otherNames,
       role, 
       phoneNumber,
       email,
-      address,
       schedule,
-      location,
-      supervisorId,
       shift,
-      hireDate,
       salary,
-      emergencyContact
+      bankAccount,
+      accountNumber
     } = req.body;
 
     // Validation
-    if (!employeeId || !firstName || !lastName || !role) {
+    if (!firstName || !lastName || !role) {
       return res.status(400).json({
         error: 'Validation failed',
-        message: 'Employee ID, first name, last name, and role are required'
-      });
-    }
-
-    // Check if employee ID already exists
-    const existingStaff = await Staff.findOne({ employeeId: employeeId.trim() });
-    if (existingStaff) {
-      return res.status(409).json({
-        error: 'Employee ID already exists',
-        message: `A staff member with Employee ID ${employeeId.trim()} already exists`
+        message: 'First name, last name, and role are required'
       });
     }
 
     // Create new staff member
     const newStaff = new Staff({
-      employeeId: employeeId.trim(),
       firstName: firstName.trim(),
       lastName: lastName.trim(),
+      otherNames: otherNames?.trim(),
       role: role.toUpperCase(),
       phoneNumber: phoneNumber?.trim(),
       email: email?.trim(),
-      address: address?.trim(),
       schedule: schedule || [],
-      location: location || {},
-      supervisorId: supervisorId?.trim(),
       shift: shift?.toUpperCase() || 'DAY',
-      hireDate: hireDate ? new Date(hireDate) : new Date(),
       salary: salary ? parseFloat(salary) : undefined,
-      emergencyContact
+      bankAccount: bankAccount?.trim(),
+      accountNumber: accountNumber?.trim()
     });
 
     await newStaff.save();
@@ -239,7 +193,6 @@ router.post('/', async (req, res) => {
       staff: {
         ...newStaff.toObject(),
         fullName: newStaff.fullName,
-        locationDisplay: newStaff.locationDisplay,
         roleDisplay: newStaff.roleDisplay,
         statusDisplay: newStaff.statusDisplay,
         shiftDisplay: newStaff.shiftDisplay
@@ -251,8 +204,8 @@ router.post('/', async (req, res) => {
     
     if (error.code === 11000) {
       return res.status(409).json({
-        error: 'Employee ID already exists',
-        message: 'This employee ID is already in use'
+        error: 'Staff ID already exists',
+        message: 'This staff ID is already in use'
       });
     }
 
@@ -266,12 +219,7 @@ router.post('/', async (req, res) => {
 // PUT /api/staff/:id - Update staff member
 router.put('/:id', async (req, res) => {
   try {
-    const staff = await Staff.findOne({ 
-      $or: [
-        { staffId: req.params.id },
-        { employeeId: req.params.id }
-      ]
-    });
+    const staff = await Staff.findOne({ staffId: req.params.id });
     
     if (!staff) {
       return res.status(404).json({
@@ -282,9 +230,9 @@ router.put('/:id', async (req, res) => {
 
     // Update fields
     const updateFields = [
-      'firstName', 'lastName', 'role', 'phoneNumber', 
-      'email', 'address', 'schedule', 'supervisorId', 'onDuty', 'shift',
-      'salary', 'emergencyContact'
+      'firstName', 'lastName', 'otherNames', 'role', 'phoneNumber', 
+      'email', 'schedule', 'onDuty', 'shift',
+      'salary', 'bankAccount', 'accountNumber'
     ];
 
     updateFields.forEach(field => {
@@ -304,7 +252,6 @@ router.put('/:id', async (req, res) => {
       staff: {
         ...staff.toObject(),
         fullName: staff.fullName,
-        locationDisplay: staff.locationDisplay,
         roleDisplay: staff.roleDisplay,
         statusDisplay: staff.statusDisplay,
         shiftDisplay: staff.shiftDisplay
@@ -320,79 +267,17 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// PUT /api/staff/:id/location - Update staff member location
-router.put('/:id/location', async (req, res) => {
-  try {
-    const { building, floor, room, reason } = req.body;
-
-    if (!building && !floor && !room) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: 'At least one location field (building, floor, room) is required'
-      });
-    }
-
-    const staff = await Staff.findOne({ 
-      $or: [
-        { staffId: req.params.id },
-        { employeeId: req.params.id }
-      ]
-    });
-    
-    if (!staff) {
-      return res.status(404).json({
-        error: 'Staff member not found',
-        message: `No staff member found with ID: ${req.params.id}`
-      });
-    }
-
-    // Update location with history tracking
-    staff.updateLocation(
-      building,
-      floor ? parseInt(floor) : undefined,
-      room,
-      reason || 'Location updated via API'
-    );
-
-    await staff.save();
-
-    res.json({
-      message: 'Staff member location updated successfully',
-      staff: {
-        ...staff.toObject(),
-        fullName: staff.fullName,
-        locationDisplay: staff.locationDisplay,
-        roleDisplay: staff.roleDisplay,
-        statusDisplay: staff.statusDisplay,
-        shiftDisplay: staff.shiftDisplay
-      }
-    });
-
-  } catch (error) {
-    console.error('Update location error:', error);
-    res.status(500).json({
-      error: 'Failed to update location',
-      message: 'Internal server error'
-    });
-  }
-});
-
 // DELETE /api/staff/:id - Set staff member off duty (soft delete)
 router.delete('/:id', async (req, res) => {
   try {
     let staff;
     const id = req.params.id;
     
-    // Check if it's a MongoDB ObjectId or staffId/employeeId
+    // Check if it's a MongoDB ObjectId or staffId
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
       staff = await Staff.findById(id);
     } else {
-      staff = await Staff.findOne({ 
-        $or: [
-          { staffId: id },
-          { employeeId: id }
-        ]
-      });
+      staff = await Staff.findOne({ staffId: id });
     }
     
     if (!staff) {
@@ -410,7 +295,6 @@ router.delete('/:id', async (req, res) => {
       message: 'Staff member set to off duty successfully',
       modifiedStaff: {
         staffId: staff.staffId,
-        employeeId: staff.employeeId,
         fullName: staff.fullName,
         status: 'Off Duty'
       }

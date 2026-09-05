@@ -1,6 +1,6 @@
 /**
  * SQLite Database Connection Manager
- * Implements simple SQLite database setup for De Tender Care file management system
+ * Implements simple SQLite database setup for Tender Care file management system
  */
 
 import sqlite3 from 'sqlite3';

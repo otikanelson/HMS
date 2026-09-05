@@ -188,6 +188,23 @@
   color: #dc2626;
 }
 
+/* Staff Name Styling */
+.staff-name {
+  display: flex;
+  flex-direction: column;
+}
+
+.name-main {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.name-other {
+  font-size: 0.875em;
+  color: #6b7280;
+  font-weight: 400;
+}
+
 /* Load More Section */
 .load-more-section {
   text-align: center;

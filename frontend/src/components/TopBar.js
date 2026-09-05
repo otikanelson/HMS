@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import logo from '../logo.png';
 import './TopBar.css';
 
 const TopBar = () => {
@@ -72,11 +73,21 @@ const TopBar = () => {
       <div className="topbar-content">
         <div className="topbar-left">
           <button className="mobile-menu-btn">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
             </svg>
           </button>
-          
+
+          <div className="topbar-brand">
+            <img src={logo} alt="Tender Care Logo" width="36" height="36" />
+            <div className="topbar-brand-text">
+              <h1>Tender Care</h1>
+              <p>Patient File Management</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="topbar-center">
           <div className="search-forms">
             <form onSubmit={handlePatientSearch} className="search-form">
               <div className="search-input-group">
@@ -175,6 +186,12 @@ const TopBar = () => {
                   <path d="M8 8a3 3 0 100-6 3 3 0 000 6zm2-3a2 2 0 11-4 0 2 2 0 014 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
                 </svg>
               </div>
+              <span className="topbar-user-text">
+                <span className="topbar-user-name">{user?.fullName || 'User'}</span>
+                <span className="topbar-user-role">
+                  {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Staff'}
+                </span>
+              </span>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="dropdown-arrow">
                 <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
               </svg>

@@ -1,6 +1,6 @@
 /**
  * SQLite Database Schema Initialization
- * Creates tables and indexes for De Tender Care file management system
+ * Creates tables and indexes for Tender Care file management system
  * Validates: Requirements 6.1, 6.2, 6.5
  */
 

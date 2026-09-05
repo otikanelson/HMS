@@ -1,5 +1,5 @@
 /**
- * Core TypeScript interfaces for De Tender Care File Management
+ * Core TypeScript interfaces for Tender Care File Management
  * Based on design specification requirements
  */
 

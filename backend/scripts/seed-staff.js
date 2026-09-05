@@ -2,36 +2,84 @@ const mongoose = require('mongoose');
 const Staff = require('../src/models/Staff');
 require('dotenv').config({ path: '../.env' });
 
-// Names for seeding
-const names = {
-  male: {
-    first: ['Adebayo', 'Chukwuma', 'Ibrahim', 'Emeka', 'Olumide', 'Kemi', 'Tunde', 'Segun', 'Femi', 'Yemi', 'Kunle', 'Wale', 'Dele', 'Gbenga', 'Lanre', 'Dayo', 'Biodun', 'Kayode', 'Rotimi', 'Ayo'],
-    last: ['Adebayo', 'Okafor', 'Ibrahim', 'Eze', 'Adeyemi', 'Okonkwo', 'Bello', 'Okoro', 'Adesanya', 'Nwankwo', 'Aliyu', 'Chukwu', 'Adeleke', 'Onuoha', 'Musa', 'Ogbonna', 'Adamu', 'Nwosu', 'Hassan', 'Okeke']
+// Specific staff members with salaries as requested
+const staffMembers = [
+  {
+    firstName: 'Chinaza',
+    lastName: 'Okafor',
+    otherNames: 'Blessing',
+    role: 'NURSE',
+    salary: 60000
   },
-  female: {
-    first: ['Adunni', 'Chioma', 'Aisha', 'Ngozi', 'Folake', 'Amina', 'Blessing', 'Grace', 'Joy', 'Peace', 'Funmi', 'Kemi', 'Bukola', 'Tolani', 'Yetunde', 'Ronke', 'Bisi', 'Dupe', 'Sola', 'Tola'],
-    last: ['Adebayo', 'Okafor', 'Ibrahim', 'Eze', 'Adeyemi', 'Okonkwo', 'Bello', 'Okoro', 'Adesanya', 'Nwankwo', 'Aliyu', 'Chukwu', 'Adeleke', 'Onuoha', 'Musa', 'Ogbonna', 'Adamu', 'Nwosu', 'Hassan', 'Okeke']
+  {
+    firstName: 'Okwuchi',
+    lastName: 'Nwankwo', 
+    otherNames: 'Grace',
+    role: 'MIDWIFE',
+    salary: 56000
+  },
+  {
+    firstName: 'Vera',
+    lastName: 'Adebayo',
+    otherNames: 'Joy',
+    role: 'DOCTOR',
+    salary: 68500 // 68 1/2 thousand
+  },
+  {
+    firstName: 'Gift',
+    lastName: 'Eze',
+    otherNames: 'Peace',
+    role: 'DOCTOR',
+    salary: 68000
+  },
+  {
+    firstName: 'Ogechi',
+    lastName: 'Okoro',
+    otherNames: 'Faith',
+    role: 'TRAINEE_NURSE',
+    salary: 42000
+  },
+  {
+    firstName: 'Oluchi',
+    lastName: 'Chukwu',
+    otherNames: 'Hope',
+    role: 'NURSE',
+    salary: 44000
+  },
+  {
+    firstName: 'Victoria',
+    lastName: 'Musa',
+    otherNames: 'Love',
+    role: 'TRAINEE_NURSE',
+    salary: 42000
+  },
+  {
+    firstName: 'Esther',
+    lastName: 'Bello',
+    otherNames: 'Mercy',
+    role: 'MIDWIFE',
+    salary: 54000
+  },
+  {
+    firstName: 'Daniel',
+    lastName: 'Ogbonna',
+    otherNames: 'Wisdom',
+    role: 'MAINTENANCE',
+    salary: 35000
   }
-};
+];
 
-const roles = ['DOCTOR', 'NURSE', 'TRAINEE_NURSE', 'MIDWIFE', 'MAINTENANCE'];
-
-const locations = [
-  { building: 'Main Hospital', floor: 1, room: 'Emergency Ward' },
-  { building: 'Main Hospital', floor: 1, room: 'Reception' },
-  { building: 'Main Hospital', floor: 2, room: 'General Ward A' },
-  { building: 'Main Hospital', floor: 2, room: 'General Ward B' },
-  { building: 'Main Hospital', floor: 3, room: 'Maternity Ward' },
-  { building: 'Main Hospital', floor: 3, room: 'Labor Room 1' },
-  { building: 'Main Hospital', floor: 3, room: 'Labor Room 2' },
-  { building: 'Main Hospital', floor: 4, room: 'Surgery Suite' },
-  { building: 'Main Hospital', floor: 4, room: 'Recovery Room' },
-  { building: 'Outpatient Building', floor: 1, room: 'Consultation Room 1' },
-  { building: 'Outpatient Building', floor: 1, room: 'Consultation Room 2' },
-  { building: 'Outpatient Building', floor: 1, room: 'Pharmacy' },
-  { building: 'Main Hospital', floor: 1, room: 'Maintenance Workshop' },
-  { building: 'Main Hospital', floor: 5, room: 'Staff Room' },
-  { building: 'Main Hospital', floor: 1, room: 'Laboratory' }
+const banks = [
+  'First Bank of Nigeria',
+  'Zenith Bank',
+  'GTBank',
+  'Access Bank',
+  'UBA',
+  'Stanbic IBTC',
+  'Fidelity Bank',
+  'Union Bank',
+  'Sterling Bank',
+  'FCMB'
 ];
 
 // Generate phone number
@@ -49,6 +97,11 @@ const generateEmail = (firstName, lastName) => {
   return `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`;
 };
 
+// Generate account number
+const generateAccountNumber = () => {
+  return Math.floor(Math.random() * 9000000000) + 1000000000; // 10-digit account number
+};
+
 // Generate schedule
 const generateSchedule = () => {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -64,62 +117,27 @@ const generateSchedule = () => {
   }));
 };
 
-// Generate salary based on role
-const generateSalary = (role) => {
-  const salaryRanges = {
-    'DOCTOR': { min: 300000, max: 600000 },
-    'NURSE': { min: 150000, max: 280000 },
-    'TRAINEE_NURSE': { min: 80000, max: 150000 },
-    'MIDWIFE': { min: 180000, max: 320000 },
-    'MAINTENANCE': { min: 90000, max: 180000 }
-  };
-  
-  const range = salaryRanges[role];
-  return Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
-};
-
-// Generate staff member
-const generateStaffMember = (index) => {
-  const isGenderMale = Math.random() < 0.5;
-  const gender = isGenderMale ? 'male' : 'female';
-  
-  const firstName = names[gender].first[Math.floor(Math.random() * names[gender].first.length)];
-  const lastName = names[gender].last[Math.floor(Math.random() * names[gender].last.length)];
-  
-  const role = roles[Math.floor(Math.random() * roles.length)];
-  
-  const employeeId = `EMP${(index + 1).toString().padStart(3, '0')}`;
-  const location = locations[Math.floor(Math.random() * locations.length)];
-  
-  // Generate hire date within the last 5 years
-  const hireDate = new Date();
-  hireDate.setFullYear(hireDate.getFullYear() - Math.floor(Math.random() * 5));
-  hireDate.setMonth(Math.floor(Math.random() * 12));
-  hireDate.setDate(Math.floor(Math.random() * 28) + 1);
+// Generate staff member data
+const generateStaffData = (staffMember) => {
+  // Generate staffId manually
+  const firstName = staffMember.firstName.toUpperCase().slice(0, 3);
+  const lastName = staffMember.lastName.toUpperCase().slice(0, 3);
+  const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  const staffId = `STAFF-${firstName}${lastName}-${randomNum}`;
   
   // Assign shift (60% day shift, 40% night shift)
   const shift = Math.random() < 0.6 ? 'DAY' : 'NIGHT';
   
   return {
-    staffId: `STAFF-${employeeId}`,
-    employeeId,
-    firstName,
-    lastName,
-    role,
+    ...staffMember,
+    staffId,
     phoneNumber: generatePhone(),
-    email: generateEmail(firstName, lastName),
-    address: `${Math.floor(Math.random() * 999) + 1} ${['Ikoyi', 'Victoria Island', 'Lekki', 'Surulere', 'Ikeja', 'Yaba', 'Ajah', 'Magodo'][Math.floor(Math.random() * 8)]}, Lagos State`,
+    email: generateEmail(staffMember.firstName, staffMember.lastName),
     schedule: generateSchedule(),
-    location,
     onDuty: Math.random() < 0.85, // 85% on duty
     shift,
-    hireDate,
-    salary: generateSalary(role),
-    emergencyContact: {
-      name: `${names[gender].first[Math.floor(Math.random() * names[gender].first.length)]} ${names[gender].last[Math.floor(Math.random() * names[gender].last.length)]}`,
-      relationship: ['Spouse', 'Parent', 'Sibling', 'Child'][Math.floor(Math.random() * 4)],
-      phoneNumber: generatePhone()
-    }
+    bankAccount: banks[Math.floor(Math.random() * banks.length)],
+    accountNumber: generateAccountNumber().toString()
   };
 };
 
@@ -136,42 +154,19 @@ async function seedStaff() {
     await Staff.deleteMany({});
     console.log('🧹 Cleared existing staff data');
     
-    // Generate staff members
-    const staffMembers = [];
-    for (let i = 0; i < 40; i++) {
-      staffMembers.push(generateStaffMember(i));
-    }
+    // Generate staff data for each member
+    const staffData = staffMembers.map(member => generateStaffData(member));
     
     // Insert staff members
-    const createdStaff = await Staff.insertMany(staffMembers);
+    const createdStaff = await Staff.insertMany(staffData);
     console.log(`✅ Created ${createdStaff.length} staff members`);
-    
-    // Assign supervisors (doctors and senior nurses supervise others)
-    const supervisors = createdStaff.filter(staff => 
-      ['DOCTOR', 'NURSE'].includes(staff.role)
-    );
-    
-    const updatePromises = [];
-    for (const staff of createdStaff) {
-      if (staff.role === 'TRAINEE_NURSE' || (staff.role === 'MAINTENANCE' && Math.random() < 0.5)) {
-        // Trainee nurses always have supervisors, maintenance staff sometimes do
-        const supervisor = supervisors[Math.floor(Math.random() * supervisors.length)];
-        if (supervisor && supervisor.staffId !== staff.staffId) {
-          updatePromises.push(
-            Staff.findByIdAndUpdate(staff._id, { supervisorId: supervisor.staffId })
-          );
-        }
-      }
-    }
-    
-    await Promise.all(updatePromises);
-    console.log('✅ Assigned supervisors to staff members');
     
     // Print summary
     const summary = await Staff.aggregate([
       { $group: { 
         _id: '$role', 
         count: { $sum: 1 },
+        avgSalary: { $avg: '$salary' },
         shifts: { $addToSet: '$shift' }
       }},
       { $sort: { _id: 1 } }
@@ -179,7 +174,7 @@ async function seedStaff() {
     
     console.log('\n📊 Staff Summary by Role:');
     summary.forEach(role => {
-      console.log(`  ${role._id}: ${role.count} staff (${role.shifts.join(', ')} shifts)`);
+      console.log(`  ${role._id}: ${role.count} staff (Avg salary: ₦${role.avgSalary.toLocaleString()}) - ${role.shifts.join(', ')} shifts`);
     });
     
     const totalOnDuty = await Staff.countDocuments({ onDuty: true });
@@ -188,6 +183,13 @@ async function seedStaff() {
     console.log(`\n👥 Total Staff: ${createdStaff.length}`);
     console.log(`✅ On Duty: ${totalOnDuty}`);
     console.log(`❌ Off Duty: ${totalOffDuty}`);
+    
+    // List all staff with their details
+    console.log('\n👨‍⚕️ Staff Details:');
+    const allStaff = await Staff.find({}).sort({ lastName: 1, firstName: 1 });
+    allStaff.forEach(staff => {
+      console.log(`  ${staff.fullName} (${staff.roleDisplay}) - ₦${staff.salary.toLocaleString()} - ${staff.bankAccount} (${staff.accountNumber})`);
+    });
     
     console.log('\n🎉 Staff seeding completed successfully!');
     
