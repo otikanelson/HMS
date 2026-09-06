@@ -59,7 +59,10 @@ function PublicRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <Router future={{ v7_relativeSplatPath: true }}>
+      <Router future={{ 
+        v7_relativeSplatPath: true,
+        v7_startTransition: true 
+      }}>
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />

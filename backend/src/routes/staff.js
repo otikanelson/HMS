@@ -281,10 +281,14 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
       }
       
       // Create User document (let the model's pre-save hook hash the password)
+      const fullName = [newStaff.firstName, newStaff.otherNames, newStaff.lastName]
+        .filter(name => name && name.trim())
+        .join(' ');
+      
       const newUser = new User({
         username: username,
         password: tempPassword, // Store plaintext - the pre-save hook will hash it
-        fullName: newStaff.fullName,
+        fullName: fullName,
         accessLevel: userAccessLevel,
         staffId: newStaff._id,
         mustChangePassword: true,
@@ -302,6 +306,11 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
       
     } catch (userError) {
       console.error('Failed to create user account for staff:', userError);
+      console.error('Error details:', {
+        message: userError.message,
+        stack: userError.stack,
+        name: userError.name
+      });
       // Don't fail the staff creation if user creation fails
       // But log it prominently
       userCredentials = {
@@ -324,6 +333,12 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
 
   } catch (error) {
     console.error('Create staff member error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
     
     if (error.code === 11000) {
       return res.status(409).json({
@@ -334,7 +349,7 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
 
     res.status(500).json({
       error: 'Failed to create staff member',
-      message: 'Internal server error'
+      message: error.message || 'Internal server error'
     });
   }
 });
