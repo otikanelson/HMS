@@ -8,8 +8,9 @@ const users = [
     username: 'nelson',
     password: 'NELSON2005',
     fullName: 'Nelson - System Administrator',
-    role: 'admin',
-    phoneNumber: '+234 800 000 0001'
+    accessLevel: 'ADMINISTRATOR',
+    phoneNumber: '+234 800 000 0001',
+    mustChangePassword: false // Admin doesn't need to change password
   }
 ];
 
@@ -43,7 +44,7 @@ async function seedUsers() {
     users.forEach(user => {
       console.log(`  Username: ${user.username}`);
       console.log(`  Password: ${user.password}`);
-      console.log(`  Role: ${user.role}`);
+      console.log(`  Access Level: ${user.accessLevel}`);
     });
 
   } catch (error) {

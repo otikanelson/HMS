@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const ProtectedRoute = ({ children, requireAdmin = false }) => {
+const ProtectedRoute = ({ children, allowedAccessLevels = null }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
@@ -22,8 +22,8 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requireAdmin && user?.role !== 'admin') {
-    // Redirect to dashboard if user doesn't have admin privileges
+  if (allowedAccessLevels && !allowedAccessLevels.includes(user?.accessLevel)) {
+    // Redirect to dashboard if user doesn't have required access level
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -14,7 +14,7 @@ async function checkUser() {
     users.forEach(user => {
       console.log(`Username: ${user.username}`);
       console.log(`Full Name: ${user.fullName}`);
-      console.log(`Role: ${user.role}`);
+      console.log(`Access Level: ${user.accessLevel}`);
       console.log(`Active: ${user.isActive}`);
       console.log(`Created: ${user.createdAt}`);
       console.log('---');

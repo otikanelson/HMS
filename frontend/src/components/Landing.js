@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import logo from '../logo.png';
 import './Landing.css';
 
 const HERO_IMAGE =
@@ -8,6 +7,39 @@ const HERO_IMAGE =
 
 const FILES_IMAGE =
   'https://images.unsplash.com/photo-1769092992803-ee97d235ba87?auto=format&fit=crop&w=900&q=80';
+
+// Placeholder content — there's no notices backend yet. Swap this for a
+// real fetch (e.g. GET /api/notices) once one exists; the shape below
+// (type/date/title/body) is what the component expects either way.
+const NOTICES = [
+  {
+    key: 'payroll-live',
+    type: 'update',
+    date: 'Sep 2, 2026',
+    title: 'Payroll module now live',
+    body: 'August payroll can be processed directly in the system. See an Administrator for access.',
+  },
+  {
+    key: 'onboarding',
+    type: 'info',
+    date: 'Aug 28, 2026',
+    title: 'New staff onboarding',
+    body: 'New hires now get login credentials automatically as soon as their staff record is created.',
+  },
+  {
+    key: 'maintenance',
+    type: 'urgent',
+    date: 'Aug 20, 2026',
+    title: 'Scheduled maintenance',
+    body: 'The system will be briefly unavailable Sunday, 2:00\u20132:30 AM, for a server update.',
+  },
+];
+
+const NOTICE_LABELS = {
+  update: 'Update',
+  info: 'Info',
+  urgent: 'Urgent',
+};
 
 const HIGHLIGHTS = [
   {
@@ -74,6 +106,7 @@ function useRevealOnScroll(count) {
 const Landing = () => {
   const [scrolled, setScrolled] = useState(false);
   const highlightsReveal = useRevealOnScroll(HIGHLIGHTS.length);
+  const noticesReveal = useRevealOnScroll(NOTICES.length);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -87,7 +120,20 @@ const Landing = () => {
       <nav className={`landing-nav ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="nav-content">
           <div className="nav-logo">
-            <img src={logo} alt="Tender Care Logo" width="32" height="32" />
+            <svg width="26" height="26" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+              <path
+                d="M5 7a2 2 0 0 1 2-2h6l2 2h6a2 2 0 0 1 2 2v1H5V7Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+              />
+              <rect
+                x="5" y="9.5" width="18" height="11.5" rx="1.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.4"
+              />
+            </svg>
             <span className="nav-title">Tender Care</span>
           </div>
           <div className="nav-actions">
@@ -120,6 +166,34 @@ const Landing = () => {
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
               <path d="M5 8l5 5 5-5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
+          </div>
+        </section>
+
+        <section className="notices-section" aria-label="Staff notices">
+          <div className="notices-heading">
+            <h2>Staff Notices</h2>
+            <span className="notices-heading-line" aria-hidden="true" />
+          </div>
+
+          <div className="notice-board">
+            {NOTICES.map((notice, i) => (
+              <article
+                key={notice.key}
+                ref={(el) => (noticesReveal.refs.current[i] = el)}
+                data-reveal-index={i}
+                className={`notice-card notice-card-${i} notice-type-${notice.type} ${
+                  noticesReveal.visible[i] ? 'is-visible' : ''
+                }`}
+              >
+                <span className="notice-pin" aria-hidden="true" />
+                <div className="notice-card-top">
+                  <span className="notice-badge">{NOTICE_LABELS[notice.type]}</span>
+                  <span className="notice-date">{notice.date}</span>
+                </div>
+                <h3>{notice.title}</h3>
+                <p>{notice.body}</p>
+              </article>
+            ))}
           </div>
         </section>
 

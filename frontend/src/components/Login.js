@@ -63,7 +63,12 @@ const Login = () => {
     const result = await login(formData);
 
     if (result.success) {
-      navigate(from, { replace: true });
+      // Check if password change is required
+      if (result.user?.mustChangePassword) {
+        navigate('/change-password', { replace: true });
+      } else {
+        navigate(from, { replace: true });
+      }
     } else {
       setErrors({
         general: result.error

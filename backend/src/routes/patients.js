@@ -1,9 +1,10 @@
 const express = require('express');
 const PatientFile = require('../models/PatientFile');
+const { authenticateToken, requireAccessLevel } = require('../middleware/auth');
 const router = express.Router();
 
-// GET /api/patients/search - Search patient files
-router.get('/search', async (req, res) => {
+// GET /api/patients/search - Search patient files (all authenticated users)
+router.get('/search', authenticateToken, async (req, res) => {
   try {
     const { q } = req.query;
     
@@ -41,8 +42,8 @@ router.get('/search', async (req, res) => {
   }
 });
 
-// GET /api/patients - Get all patients (with pagination)
-router.get('/', async (req, res) => {
+// GET /api/patients - Get all patients (all authenticated users, with pagination)
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -79,8 +80,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/patients/:id - Get specific patient
-router.get('/:id', async (req, res) => {
+// GET /api/patients/:id - Get specific patient (all authenticated users)
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const patient = await PatientFile.findOne({ patientId: req.params.id });
     
@@ -105,8 +106,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// POST /api/patients - Add new patient file
-router.post('/', async (req, res) => {
+// POST /api/patients - Add new patient file (ADMINISTRATOR or RECORDS_OPERATOR)
+router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS_OPERATOR'), async (req, res) => {
   try {
     const { patientId, fullName, phoneNumber, cabinetNumber, shelfNumber, folderNumber } = req.body;
 
@@ -234,8 +235,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT /api/patients/:id/location - Update patient file location
-router.put('/:id/location', async (req, res) => {
+// PUT /api/patients/:id/location - Update patient file location (ADMINISTRATOR or RECORDS_OPERATOR)
+router.put('/:id/location', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS_OPERATOR'), async (req, res) => {
   try {
     const { cabinetNumber, shelfNumber, folderNumber, reason } = req.body;
 
@@ -281,8 +282,8 @@ router.put('/:id/location', async (req, res) => {
   }
 });
 
-// DELETE /api/patients/:id - Delete patient file (admin only)
-router.delete('/:id', async (req, res) => {
+// DELETE /api/patients/:id - Delete patient file (ADMINISTRATOR only)
+router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
   try {
     const patient = await PatientFile.findOneAndDelete({ patientId: req.params.id });
     

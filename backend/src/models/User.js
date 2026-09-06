@@ -21,10 +21,19 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxlength: 100
   },
-  role: {
+  accessLevel: {
     type: String,
-    enum: ['admin', 'user'],
-    default: 'user'
+    enum: ['ADMINISTRATOR', 'RECORDS_OPERATOR', 'CLINICAL_STAFF'],
+    required: true
+  },
+  staffId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Staff',
+    default: null
+  },
+  mustChangePassword: {
+    type: Boolean,
+    default: true
   },
   phoneNumber: {
     type: String,

@@ -176,6 +176,7 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .status-badge.on-duty {
@@ -186,6 +187,21 @@
 .status-badge.off-duty {
   background: #fee2e2;
   color: #dc2626;
+}
+
+.status-badge.login-active {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.login-disabled {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.no-login {
+  background: #f3f4f6;
+  color: #6b7280;
 }
 
 /* Staff Name Styling */

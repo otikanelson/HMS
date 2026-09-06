@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import './StaffList.css';
 
 const StaffList = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -14,6 +17,8 @@ const StaffList = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const [filters, setFilters] = useState({ role: '', status: '', shift: '' });
   const [roles, setRoles] = useState([]);
+
+  const isAdministrator = user?.accessLevel === 'ADMINISTRATOR';
 
   const fetchFilterOptions = async () => {
     try {
@@ -167,6 +172,18 @@ const StaffList = () => {
         </div>
         
         <div className="list-actions">
+          <button
+            onClick={() => navigate('/add-staff')}
+            className="btn btn-primary"
+            disabled={!isAdministrator}
+            title={!isAdministrator ? 'Administrator only' : 'Add new staff member'}
+            style={!isAdministrator ? { opacity: 0.6, cursor: 'not-allowed' } : {}}
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+            </svg>
+            Add Staff
+          </button>
           <button 
             onClick={handleRefresh}
             className="btn btn-secondary"
@@ -260,6 +277,7 @@ const StaffList = () => {
                 <th>Staff ID</th>
                 <th>Full Name</th>
                 <th>Role</th>
+                <th>Login Status</th>
                 <th>Salary</th>
                 <th>Bank Account</th>
                 <th>Account Number</th>
@@ -278,6 +296,22 @@ const StaffList = () => {
                     </div>
                   </td>
                   <td>{formatRole(member.role)}</td>
+                  <td>
+                    {member.loginAccount?.exists ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <span className={`status-badge ${member.loginAccount.isActive ? 'login-active' : 'login-disabled'}`}>
+                          {member.loginAccount.isActive ? '✓ Active' : '✗ Disabled'}
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#6c757d' }}>
+                          {member.loginAccount.accessLevel === 'ADMINISTRATOR' ? 'Admin' :
+                           member.loginAccount.accessLevel === 'RECORDS_OPERATOR' ? 'Records' :
+                           'Clinical'}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="status-badge no-login">No Login</span>
+                    )}
+                  </td>
                   <td>₦{member.salary?.toLocaleString() || '-'}</td>
                   <td>{member.bankAccount || '-'}</td>
                   <td>{member.accountNumber || '-'}</td>

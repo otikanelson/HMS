@@ -8,6 +8,8 @@ import Dashboard from './components/Dashboard';
 import PatientList from './components/PatientList';
 import StaffList from './components/StaffList';
 import AddPatient from './components/AddPatient';
+import AddStaff from './components/AddStaff';
+import ChangePassword from './components/ChangePassword';
 import Landing from './components/Landing';
 import Login from './components/Login';
 import './App.css';
@@ -25,6 +27,11 @@ function AppLayout() {
           <Route path="/patients" element={<PatientList />} />
           <Route path="/staff" element={<StaffList />} />
           <Route path="/add-patient" element={<AddPatient />} />
+          <Route path="/add-staff" element={
+            <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR']}>
+              <AddStaff />
+            </ProtectedRoute>
+          } />
         </Routes>
       </main>
     </div>
@@ -57,6 +64,13 @@ function App() {
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/landing" element={<Landing />} />
+          
+          {/* Change password route - requires authentication but not wrapped in layout */}
+          <Route path="/change-password" element={
+            <ProtectedRoute>
+              <ChangePassword />
+            </ProtectedRoute>
+          } />
           
           {/* Protected routes */}
           <Route path="/*" element={

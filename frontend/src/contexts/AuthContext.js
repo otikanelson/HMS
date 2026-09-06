@@ -163,6 +163,13 @@ const setupAxiosInterceptors = (dispatch, getAccessToken) => {
 
       const originalRequest = error.config;
 
+      // Check for PASSWORD_CHANGE_REQUIRED error (403)
+      if (error.response?.status === 403 && error.response?.data?.code === 'PASSWORD_CHANGE_REQUIRED') {
+        // Redirect to change password page from anywhere in the app
+        window.location.href = '/change-password';
+        return Promise.reject(error);
+      }
+
       if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/api/auth/login') {
         originalRequest._retry = true;
 
@@ -292,7 +299,7 @@ export function AuthProvider({ children }) {
         payload: { user, accessToken, refreshToken }
       });
 
-      return { success: true };
+      return { success: true, user };
     } catch (error) {
       const errorMessage = error.response?.data?.error || 'Login failed';
       

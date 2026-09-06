@@ -189,7 +189,7 @@ const TopBar = () => {
               <span className="topbar-user-text">
                 <span className="topbar-user-name">{user?.fullName || 'User'}</span>
                 <span className="topbar-user-role">
-                  {user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Staff'}
+                  {user?.accessLevel ? user.accessLevel.replace(/_/g, ' ').split(' ').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ') : 'Staff'}
                 </span>
               </span>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" className="dropdown-arrow">

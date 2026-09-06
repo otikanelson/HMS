@@ -64,7 +64,7 @@ router.post('/login', authLimiter, async (req, res) => {
     );
 
     // Generate new tokens
-    const { accessToken, refreshToken } = generateTokens(user._id);
+    const { accessToken, refreshToken } = generateTokens(user._id, user.accessLevel, user.staffId, user.mustChangePassword);
 
     // Create new session
     const session = new Session({
@@ -120,7 +120,7 @@ router.post('/refresh', async (req, res) => {
     }
 
     // Generate new tokens
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens(session.userId._id);
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(session.userId._id, session.userId.accessLevel, session.userId.staffId, session.userId.mustChangePassword);
 
     // Update session
     session.token = accessToken;

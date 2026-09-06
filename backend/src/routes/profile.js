@@ -141,8 +141,9 @@ router.put('/password', authenticateToken, async (req, res) => {
       });
     }
 
-    // Update password
+    // Update password and clear mustChangePassword flag
     user.password = newPassword;
+    user.mustChangePassword = false;
     await user.save();
 
     // Invalidate all other sessions (force re-login on other devices)
@@ -154,8 +155,25 @@ router.put('/password', authenticateToken, async (req, res) => {
       { isActive: false }
     );
 
+    // Generate fresh tokens with updated mustChangePassword status
+    const { generateTokens } = require('../middleware/auth');
+    const { accessToken, refreshToken } = generateTokens(
+      user._id, 
+      user.accessLevel, 
+      user.staffId, 
+      false // mustChangePassword is now false
+    );
+
+    // Update current session with new tokens
+    req.session.token = accessToken;
+    req.session.refreshToken = refreshToken;
+    await req.session.save();
+
     res.json({
-      message: 'Password changed successfully'
+      message: 'Password changed successfully',
+      accessToken,
+      refreshToken,
+      user: user.getPublicProfile()
     });
 
   } catch (error) {

@@ -7,9 +7,9 @@ const JWT_EXPIRE = '15m'; // Short-lived access tokens
 const REFRESH_TOKEN_EXPIRE = '7d'; // Longer-lived refresh tokens
 
 // Generate tokens
-const generateTokens = (userId) => {
-  const accessToken = jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
-  const refreshToken = jwt.sign({ userId, type: 'refresh' }, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRE });
+const generateTokens = (userId, accessLevel, staffId, mustChangePassword) => {
+  const accessToken = jwt.sign({ userId, accessLevel, staffId, mustChangePassword }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
+  const refreshToken = jwt.sign({ userId, accessLevel, staffId, mustChangePassword, type: 'refresh' }, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRE });
   
   return { accessToken, refreshToken };
 };
@@ -73,8 +73,37 @@ const authenticateToken = async (req, res, next) => {
       await session.extendSession(4); // Extend by 4 hours
     }
 
-    req.user = user.getPublicProfile();
+    // Attach user data with accessLevel, staffId, and mustChangePassword to req.user
+    req.user = {
+      ...user.getPublicProfile(),
+      accessLevel: decoded.accessLevel || user.accessLevel, // Use JWT claim, fallback to DB
+      staffId: decoded.staffId || user.staffId,
+      mustChangePassword: decoded.mustChangePassword !== undefined ? decoded.mustChangePassword : user.mustChangePassword
+    };
     req.session = session;
+    
+    // Enforce password change requirement
+    // Block all requests except password change, profile view, and logout
+    if (req.user.mustChangePassword) {
+      const exemptPaths = [
+        { method: 'PUT', path: '/api/profile/password' },
+        { method: 'GET', path: '/api/profile' },
+        { method: 'POST', path: '/api/auth/logout' },
+        { method: 'POST', path: '/api/auth/logout-all' }
+      ];
+      
+      const isExempt = exemptPaths.some(exempt => 
+        req.method === exempt.method && req.path === exempt.path
+      );
+      
+      if (!isExempt) {
+        return res.status(403).json({
+          error: 'You must change your password before continuing.',
+          code: 'PASSWORD_CHANGE_REQUIRED'
+        });
+      }
+    }
+    
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
@@ -99,9 +128,9 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-// Admin role check
+// Admin role check (updated for accessLevel)
 const requireAdmin = (req, res, next) => {
-  if (req.user.role !== 'admin') {
+  if (req.user.accessLevel !== 'ADMINISTRATOR') {
     return res.status(403).json({ 
       error: 'Admin access required',
       code: 'INSUFFICIENT_PERMISSIONS'
@@ -120,10 +149,24 @@ const optionalAuth = async (req, res, next) => {
   next();
 };
 
+// Role-based authorization middleware
+const requireAccessLevel = (...allowedLevels) => {
+  return (req, res, next) => {
+    if (!req.user || !allowedLevels.includes(req.user.accessLevel)) {
+      return res.status(403).json({
+        error: "You don't have permission to do this.",
+        code: 'INSUFFICIENT_PERMISSIONS'
+      });
+    }
+    next();
+  };
+};
+
 module.exports = {
   authenticateToken,
   requireAdmin,
   optionalAuth,
   generateTokens,
+  requireAccessLevel,
   JWT_SECRET
 };
