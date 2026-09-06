@@ -46,6 +46,7 @@ const AddStaff = () => {
         if (value.trim().length < 2) {
           return { valid: false, message: 'Must be at least 2 characters' };
         }
+        // eslint-disable-next-line no-useless-escape
         if (!/^[a-zA-Z\s'\-]+$/.test(value)) {
           return { valid: false, message: 'Only letters, spaces, apostrophes, and hyphens allowed' };
         }

@@ -126,14 +126,6 @@ const StaffList = () => {
     setFilters({ role: '', status: '', shift: '' });
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
   const formatRole = (role) => {
     return role.replace('_', ' ').split(' ').map(word => 
       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
