@@ -298,11 +298,11 @@ const StaffList = () => {
                   <td>{formatRole(member.role)}</td>
                   <td>
                     {member.loginAccount?.exists ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                         <span className={`status-badge ${member.loginAccount.isActive ? 'login-active' : 'login-disabled'}`}>
                           {member.loginAccount.isActive ? '✓ Active' : '✗ Disabled'}
                         </span>
-                        <span style={{ fontSize: '12px', color: '#6c757d' }}>
+                        <span style={{ fontSize: '11px', color: '#6c757d', lineHeight: '1' }}>
                           {member.loginAccount.accessLevel === 'ADMINISTRATOR' ? 'Admin' :
                            member.loginAccount.accessLevel === 'RECORDS_OPERATOR' ? 'Records' :
                            'Clinical'}

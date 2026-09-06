@@ -126,7 +126,7 @@ staffSchema.statics.searchStaff = function(query) {
 };
 
 // Pre-save middleware to generate staffId if not provided
-staffSchema.pre('save', function(next) {
+staffSchema.pre('save', function() {
   if (!this.staffId) {
     // Generate staffId from firstName and lastName if not provided
     const firstName = this.firstName.toUpperCase().slice(0, 3);
@@ -134,7 +134,6 @@ staffSchema.pre('save', function(next) {
     const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     this.staffId = `STAFF-${firstName}${lastName}-${randomNum}`;
   }
-  next();
 });
 
 const Staff = mongoose.model('Staff', staffSchema);
