@@ -1,143 +1,156 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import logo from '../logo.png';
+import axios from 'axios';
 import './Login.css';
 
-const VISUAL_IMAGE =
-  'https://images.unsplash.com/photo-1629410484397-a4dcd74088a0?auto=format&fit=crop&w=1400&q=80';
+const BACKGROUND_IMAGE =
+  'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1920&q=80';
+
+function useClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    username: '',
-    password: ''
-  });
+  const [formData, setFormData] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [notices, setNotices] = useState([]);
+  const [noticesLoading, setNoticesLoading] = useState(false);
 
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const now = useClock();
 
-  // Get redirect path from location state or default to dashboard
   const from = location.state?.from?.pathname || '/dashboard';
+  const timeString = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const dateString = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const NOTICE_LABELS = { update: 'Update', info: 'Info', urgent: 'Urgent' };
+
+  useEffect(() => {
+    fetchNotices();
+  }, []);
+
+  const fetchNotices = async () => {
+    try {
+      setNoticesLoading(true);
+      const response = await axios.get('/api/notices');
+      setNotices(response.data.notices || []);
+    } catch (err) {
+      // Non-critical - just log error, don't show to user
+      console.error('Failed to fetch notices:', err);
+      setNotices([]);
+    } finally {
+      setNoticesLoading(false);
+    }
+  };
+
+  const formatNoticeDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-
-    // Clear error when user starts typing
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+      setErrors((prev) => ({ ...prev, [name]: '' }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    }
-
+    if (!formData.username.trim()) newErrors.username = 'Username is required';
+    if (!formData.password) newErrors.password = 'Password is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     const result = await login(formData);
 
     if (result.success) {
-      // Check if password change is required
       if (result.user?.mustChangePassword) {
         navigate('/change-password', { replace: true });
       } else {
         navigate(from, { replace: true });
       }
     } else {
-      setErrors({
-        general: result.error
-      });
+      setErrors({ general: result.error });
     }
   };
 
   return (
-    <div className="login-container">
-      <div className="login-content">
-        <Link to="/" className="login-back">
-          <span aria-hidden="true">&larr;</span>
-          Back to home
-        </Link>
+    <div className="lock-screen">
+      <div className="lock-media" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }} />
+      <div className="lock-scrim" />
 
-        <div className="login-header">
-          <div className="login-logo">
-            <img src={logo} alt="Tender Care Logo" width="48" height="48" />
-          </div>
-          <h1 className="login-title">Tender Care</h1>
-          <p className="login-subtitle">Staff sign in</p>
+      <div className="lock-content">
+        <div className="lock-clock">
+          <div className="lock-time">{timeString}</div>
+          <div className="lock-date">{dateString}</div>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {errors.general && (
-            <div className="error-message">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path fillRule="evenodd" d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm9-3a1 1 0 11-2 0 1 1 0 012 0zM8 7.5A.5.5 0 017.5 7H7a.5.5 0 00-.5.5v3a.5.5 0 00.5.5h.5a.5.5 0 00.5-.5v-3z"/>
-              </svg>
-              {errors.general}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="lock-card">
+          <div className="lock-brand">
+            <svg width="20" height="20" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+              <path
+                d="M5 7a2 2 0 0 1 2-2h6l2 2h6a2 2 0 0 1 2 2v1H5V7Z"
+                fill="none" stroke="white" strokeWidth="1.4"
+              />
+              <rect x="5" y="9.5" width="18" height="11.5" rx="1.5" fill="none" stroke="white" strokeWidth="1.4" />
+            </svg>
+            <span>Tender Care</span>
+          </div>
 
-          <div className="form-group">
-            <label htmlFor="username" className="form-label">Username</label>
+          {errors.general && <div className="lock-error">{errors.general}</div>}
+
+          <div className="lock-field">
             <input
               type="text"
-              id="username"
               name="username"
               value={formData.username}
               onChange={handleInputChange}
-              className={`form-input ${errors.username ? 'error' : ''}`}
-              placeholder="Enter your username"
+              className={`lock-input ${errors.username ? 'error' : ''}`}
+              placeholder="Username"
               autoComplete="username"
               autoFocus
             />
-            {errors.username && (
-              <div className="field-error">{errors.username}</div>
-            )}
+            {errors.username && <div className="lock-field-error">{errors.username}</div>}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password" className="form-label">Password</label>
-            <div className="password-input-group">
+          <div className="lock-field">
+            <div className="lock-password-group">
               <input
                 type={showPassword ? 'text' : 'password'}
-                id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className={`form-input ${errors.password ? 'error' : ''}`}
-                placeholder="Enter your password"
+                className={`lock-input ${errors.password ? 'error' : ''}`}
+                placeholder="Password"
                 autoComplete="current-password"
               />
               <button
                 type="button"
+                className="lock-toggle"
                 onClick={() => setShowPassword(!showPassword)}
-                className="password-toggle"
                 tabIndex="-1"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -152,19 +165,13 @@ const Login = () => {
                 )}
               </button>
             </div>
-            {errors.password && (
-              <div className="field-error">{errors.password}</div>
-            )}
+            {errors.password && <div className="lock-field-error">{errors.password}</div>}
           </div>
 
-          <button
-            type="submit"
-            className="login-button"
-            disabled={isLoading}
-          >
+          <button type="submit" className="lock-submit" disabled={isLoading}>
             {isLoading ? (
               <>
-                <div className="spinner"></div>
+                <span className="lock-spinner" aria-hidden="true" />
                 Signing In...
               </>
             ) : (
@@ -173,19 +180,26 @@ const Login = () => {
           </button>
         </form>
 
-        <div className="login-footer">
-          <p className="login-info">
-            Use your Tender Care staff credentials to access the system.
-          </p>
-        </div>
-      </div>
+        <p className="lock-footnote">Tender Care Hospital &mdash; Staff System</p>
 
-      <div className="login-visual" style={{ backgroundImage: `url(${VISUAL_IMAGE})` }}>
-        <div className="login-visual-scrim" />
-        <div className="login-visual-caption">
-          <span className="caption-brand">Tender Care Hospital</span>
-          <p>Internal staff systems &mdash; patient files, schedules, and payroll.</p>
-        </div>
+        {/* Notices Section */}
+        {!noticesLoading && notices.length > 0 && (
+          <div className="login-notices">
+            <h3 className="login-notices-title">Staff Notices</h3>
+            <div className="login-notices-list">
+              {notices.slice(0, 3).map((notice, i) => (
+                <div key={notice._id} className={`login-notice login-notice-${notice.type}`}>
+                  <div className="login-notice-header">
+                    <span className="login-notice-badge">{NOTICE_LABELS[notice.type]}</span>
+                    <span className="login-notice-date">{formatNoticeDate(notice.createdAt)}</span>
+                  </div>
+                  <h4 className="login-notice-title">{notice.title}</h4>
+                  <p className="login-notice-body">{notice.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

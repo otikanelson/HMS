@@ -2,11 +2,11 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen = true }) => {
   const location = useLocation();
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${!isOpen ? 'sidebar-hidden' : ''}`}>
       <nav className="sidebar-nav">
         <div className="nav-section">
           <p className="nav-section-title">Main</p>

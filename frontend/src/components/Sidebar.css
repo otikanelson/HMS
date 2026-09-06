@@ -191,3 +191,22 @@
     padding: var(--space-4);
   }
 }
+
+/* Sidebar toggle states */
+.sidebar-hidden {
+  transform: translateX(-100%);
+  transition: transform 250ms ease-in-out;
+}
+
+.sidebar:not(.sidebar-hidden) {
+  transform: translateX(0);
+  transition: transform 250ms ease-in-out;
+}
+
+/* Adjust main content when sidebar is hidden */
+@media (min-width: 769px) {
+  .app:has(.sidebar-hidden) .main-content {
+    margin-left: 0;
+    transition: margin-left 250ms ease-in-out;
+  }
+}

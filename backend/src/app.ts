@@ -10,6 +10,7 @@ const staffRoutes = require('./routes/staff');
 const dashboardRoutes = require('./routes/dashboard');
 const authRoutes = require('./routes/auth');
 const profileRoutes = require('./routes/profile');
+const noticeRoutes = require('./routes/notices');
 const database = require('./config/database');
 const { authenticateToken } = require('./middleware/auth');
 
@@ -85,6 +86,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/patients', authenticateToken, patientRoutes);
 app.use('/api/staff', authenticateToken, staffRoutes);
 app.use('/api/dashboard', authenticateToken, dashboardRoutes);
+app.use('/api/notices', noticeRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

@@ -10,16 +10,21 @@ import StaffList from './components/StaffList';
 import AddPatient from './components/AddPatient';
 import AddStaff from './components/AddStaff';
 import ChangePassword from './components/ChangePassword';
-import Landing from './components/Landing';
 import Login from './components/Login';
 import './App.css';
 
 // Main app layout component (authenticated routes)
 function AppLayout() {
+  const [sidebarOpen, setSidebarOpen] = React.useState(true);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
     <div className="app">
-      <TopBar />
-      <Sidebar />
+      <TopBar onToggleSidebar={toggleSidebar} />
+      <Sidebar isOpen={sidebarOpen} />
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -49,9 +54,9 @@ function PublicRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }
@@ -66,7 +71,6 @@ function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
-          <Route path="/landing" element={<Landing />} />
           
           {/* Change password route - requires authentication but not wrapped in layout */}
           <Route path="/change-password" element={

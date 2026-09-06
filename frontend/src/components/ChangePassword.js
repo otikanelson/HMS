@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import logo from '../logo.png';
-import './Login.css'; // Reuse Login styling
+import './Login.css'; // Use the lock-screen shell
+
+const BACKGROUND_IMAGE =
+  'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1920&q=80';
+
+function useClock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
 
 const ChangePassword = () => {
   const [formData, setFormData] = useState({
@@ -21,6 +32,15 @@ const ChangePassword = () => {
 
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const now = useClock();
+
+  const timeString = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const dateString = now.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -116,50 +136,58 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-content">
-        <button onClick={handleLogout} className="login-back" style={{ cursor: 'pointer', background: 'none', border: 'none', padding: 0 }}>
-          <span aria-hidden="true">&larr;</span>
-          Sign out instead
-        </button>
+    <div className="lock-screen">
+      <div className="lock-media" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }} />
+      <div className="lock-scrim" />
 
-        <div className="login-header">
-          <div className="login-logo">
-            <img src={logo} alt="Tender Care Logo" width="48" height="48" />
-          </div>
-          <h1 className="login-title">Change Your Password</h1>
-          <p className="login-subtitle">You're using a temporary password. Set your own before continuing.</p>
+      <div className="lock-content">
+        <div className="lock-clock">
+          <div className="lock-time">{timeString}</div>
+          <div className="lock-date">{dateString}</div>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {errors.general && (
-            <div className="error-message">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path fillRule="evenodd" d="M8 1.5a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM0 8a8 8 0 1116 0A8 8 0 010 8zm9-3a1 1 0 11-2 0 1 1 0 012 0zM8 7.5A.5.5 0 017.5 7H7a.5.5 0 00-.5.5v3a.5.5 0 00.5.5h.5a.5.5 0 00.5-.5v-3z"/>
-              </svg>
-              {errors.general}
-            </div>
-          )}
+        <form onSubmit={handleSubmit} className="lock-card">
+          <div className="lock-brand">
+            <svg width="20" height="20" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+              <path
+                d="M5 7a2 2 0 0 1 2-2h6l2 2h6a2 2 0 0 1 2 2v1H5V7Z"
+                fill="none" stroke="white" strokeWidth="1.4"
+              />
+              <rect x="5" y="9.5" width="18" height="11.5" rx="1.5" fill="none" stroke="white" strokeWidth="1.4" />
+            </svg>
+            <span>Change Your Password</span>
+          </div>
 
-          <div className="form-group">
-            <label htmlFor="currentPassword" className="form-label">Current Password</label>
-            <div className="password-input-group">
+          <p style={{ 
+            color: 'rgba(255, 255, 255, 0.85)', 
+            fontSize: '0.8125rem', 
+            textAlign: 'center',
+            margin: '0 0 var(--space-2) 0',
+            textShadow: '0 1px 4px rgba(0, 0, 0, 0.3)'
+          }}>
+            You're using a temporary password. Set your own before continuing.
+          </p>
+
+          {errors.general && <div className="lock-error">{errors.general}</div>}
+
+          <div className="lock-field">
+            <div className="lock-password-group">
               <input
                 type={showPasswords.current ? 'text' : 'password'}
-                id="currentPassword"
                 name="currentPassword"
                 value={formData.currentPassword}
                 onChange={handleInputChange}
-                className={`form-input ${errors.currentPassword ? 'error' : ''}`}
-                placeholder="Enter your current password"
+                className={`lock-input ${errors.currentPassword ? 'error' : ''}`}
+                placeholder="Current password"
                 autoComplete="current-password"
                 autoFocus
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('current')}
-                className="password-toggle"
+                className="lock-toggle"
                 tabIndex="-1"
+                aria-label={showPasswords.current ? 'Hide password' : 'Show password'}
               >
                 {showPasswords.current ? (
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -175,28 +203,27 @@ const ChangePassword = () => {
               </button>
             </div>
             {errors.currentPassword && (
-              <div className="field-error">{errors.currentPassword}</div>
+              <div className="lock-field-error">{errors.currentPassword}</div>
             )}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="newPassword" className="form-label">New Password</label>
-            <div className="password-input-group">
+          <div className="lock-field">
+            <div className="lock-password-group">
               <input
                 type={showPasswords.new ? 'text' : 'password'}
-                id="newPassword"
                 name="newPassword"
                 value={formData.newPassword}
                 onChange={handleInputChange}
-                className={`form-input ${errors.newPassword ? 'error' : ''}`}
-                placeholder="Enter your new password"
+                className={`lock-input ${errors.newPassword ? 'error' : ''}`}
+                placeholder="New password (min. 6 characters)"
                 autoComplete="new-password"
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('new')}
-                className="password-toggle"
+                className="lock-toggle"
                 tabIndex="-1"
+                aria-label={showPasswords.new ? 'Hide password' : 'Show password'}
               >
                 {showPasswords.new ? (
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -212,31 +239,27 @@ const ChangePassword = () => {
               </button>
             </div>
             {errors.newPassword && (
-              <div className="field-error">{errors.newPassword}</div>
+              <div className="lock-field-error">{errors.newPassword}</div>
             )}
-            <div className="field-help" style={{ marginTop: '4px', fontSize: '13px', color: '#6b7280' }}>
-              Must be at least 6 characters long
-            </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="confirmPassword" className="form-label">Confirm New Password</label>
-            <div className="password-input-group">
+          <div className="lock-field">
+            <div className="lock-password-group">
               <input
                 type={showPasswords.confirm ? 'text' : 'password'}
-                id="confirmPassword"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
-                className={`form-input ${errors.confirmPassword ? 'error' : ''}`}
-                placeholder="Re-enter your new password"
+                className={`lock-input ${errors.confirmPassword ? 'error' : ''}`}
+                placeholder="Confirm new password"
                 autoComplete="new-password"
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('confirm')}
-                className="password-toggle"
+                className="lock-toggle"
                 tabIndex="-1"
+                aria-label={showPasswords.confirm ? 'Hide password' : 'Show password'}
               >
                 {showPasswords.confirm ? (
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -252,18 +275,18 @@ const ChangePassword = () => {
               </button>
             </div>
             {errors.confirmPassword && (
-              <div className="field-error">{errors.confirmPassword}</div>
+              <div className="lock-field-error">{errors.confirmPassword}</div>
             )}
           </div>
 
           <button
             type="submit"
-            className="login-button"
+            className="lock-submit"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <div className="spinner"></div>
+                <span className="lock-spinner" aria-hidden="true" />
                 Changing Password...
               </>
             ) : (
@@ -272,21 +295,23 @@ const ChangePassword = () => {
           </button>
         </form>
 
-        <div className="login-footer">
-          <p className="login-info" style={{ fontSize: '13px' }}>
-            Logged in as <strong>{user?.fullName || 'User'}</strong>
-          </p>
-        </div>
-      </div>
-
-      <div className="login-visual" style={{ 
-        backgroundImage: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
-        <div className="login-visual-scrim" />
-        <div className="login-visual-caption">
-          <span className="caption-brand">Secure Your Account</span>
-          <p>Choose a strong password you'll remember. You can change it again later from your profile settings.</p>
-        </div>
+        <p className="lock-footnote">
+          Logged in as <strong>{user?.fullName || 'User'}</strong> &middot;{' '}
+          <button 
+            onClick={handleLogout} 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: 'inherit', 
+              textDecoration: 'underline', 
+              cursor: 'pointer',
+              padding: 0,
+              font: 'inherit'
+            }}
+          >
+            Sign out instead
+          </button>
+        </p>
       </div>
     </div>
   );
