@@ -492,3 +492,105 @@
 @media (max-width: 640px) {
   .notice-card { width: 100%; }
 }
+
+/* My Shift Section (Clinical Staff Only) */
+.my-shift-section {
+  margin-bottom: var(--space-8);
+}
+
+.my-shift-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.shift-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-4);
+}
+
+.shift-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.shift-info-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.shift-info-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.shift-status-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.shift-status-badge.status-on-duty {
+  background: var(--success-50);
+  color: var(--success-700);
+}
+
+.shift-status-badge.status-off-duty {
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+
+.shift-schedule {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--gray-200);
+}
+
+.shift-schedule-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.shift-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.schedule-day {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2);
+  background: var(--gray-50);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-200);
+}
+
+.schedule-day-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--gray-900);
+}
+
+.schedule-time {
+  font-size: 0.8125rem;
+  color: var(--gray-600);
+  font-family: var(--font-family-mono);
+}
+
+@media (max-width: 768px) {
+  .shift-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
