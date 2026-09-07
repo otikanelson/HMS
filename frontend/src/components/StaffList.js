@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import WeeklySchedule from './weeklyschedule';
+import WeeklySchedule from './Weeklyschedule';
 import './StaffList.css';
 
 const StaffList = () => {
