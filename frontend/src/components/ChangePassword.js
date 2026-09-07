@@ -83,44 +83,75 @@ const ChangePassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Prevent default form behavior
+    if (e.nativeEvent) {
+      e.nativeEvent.preventDefault();
+      e.nativeEvent.stopImmediatePropagation();
+    }
+
+    console.log('=== Form submitted ===');
+    console.log('Form data:', { 
+      hasCurrentPassword: !!formData.currentPassword,
+      hasNewPassword: !!formData.newPassword,
+      hasConfirmPassword: !!formData.confirmPassword
+    });
 
     if (!validateForm()) {
-      return;
+      console.log('Validation failed');
+      return false;
     }
 
     setIsSubmitting(true);
-    setErrors({});
+    setErrors({}); // Clear previous errors
 
     try {
+      console.log('Sending password change request...');
+      
       const response = await axios.put('/api/profile/password', {
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword
       });
 
+      console.log('Password change successful:', response.data);
+
       // Store fresh tokens returned from the backend
       if (response.data.accessToken && response.data.refreshToken) {
         localStorage.setItem('accessToken', response.data.accessToken);
         localStorage.setItem('refreshToken', response.data.refreshToken);
+        console.log('Tokens updated in localStorage');
       }
 
-      // Update user state to reflect mustChangePassword: false
-      // The AuthContext will pick this up on next API call or page refresh
-      
-      // Navigate to dashboard
-      navigate('/dashboard', { replace: true });
+      // Wait a moment to show success before navigating
+      console.log('Navigating to dashboard...');
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 500);
 
     } catch (error) {
-      console.error('Change password error:', error);
+      console.error('=== Password change error ===');
+      console.error('Error object:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
       
       // Show the backend's actual error message
       const errorMessage = error.response?.data?.error || 'Failed to change password. Please try again.';
       
+      console.log('Setting error message:', errorMessage);
+      
       setErrors({
         general: errorMessage
       });
+      
+      // Scroll to top to ensure error is visible
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setIsSubmitting(false);
+      console.log('=== Form submission complete ===');
     }
+    
+    return false;
   };
 
   const handleLogout = async () => {
@@ -146,7 +177,7 @@ const ChangePassword = () => {
           <div className="lock-date">{dateString}</div>
         </div>
 
-        <form onSubmit={handleSubmit} className="lock-card">
+        <form onSubmit={(e) => { handleSubmit(e); return false; }} className="lock-card" autoComplete="off">
           <div className="lock-brand">
             <svg width="20" height="20" viewBox="0 0 28 28" fill="none" aria-hidden="true">
               <path

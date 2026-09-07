@@ -2,6 +2,8 @@ const express = require('express');
 const Staff = require('../models/Staff');
 const User = require('../models/User');
 const { authenticateToken, requireAccessLevel } = require('../middleware/auth');
+const { serializeStaffForRequester } = require('../utils/serializeStaff');
+const { logActivity } = require('../utils/activityLogger');
 const router = express.Router();
 
 // GET /api/staff/search - Search staff members (all authenticated users)
@@ -36,24 +38,25 @@ router.get('/search', authenticateToken, async (req, res) => {
       });
     });
 
+    // Serialize staff data based on requester's access level
     const staffWithVirtuals = staff.map(member => {
       const userData = userMap.get(member._id.toString());
+      const serialized = serializeStaffForRequester(member, req.user);
+      
       return {
-        ...member.toObject(),
-        fullName: member.fullName,
-        roleDisplay: member.roleDisplay,
-        statusDisplay: member.statusDisplay,
-        shiftDisplay: member.shiftDisplay,
-        // Login account information
-        loginAccount: userData ? {
-          username: userData.username,
-          accessLevel: userData.accessLevel,
-          isActive: userData.isActive,
-          mustChangePassword: userData.mustChangePassword,
-          exists: true
-        } : {
-          exists: false
-        }
+        ...serialized,
+        // Login account information (Admin/Records Operator only)
+        ...(req.user.accessLevel === 'ADMINISTRATOR' || req.user.accessLevel === 'RECORDS_OPERATOR' ? {
+          loginAccount: userData ? {
+            username: userData.username,
+            accessLevel: userData.accessLevel,
+            isActive: userData.isActive,
+            mustChangePassword: userData.mustChangePassword,
+            exists: true
+          } : {
+            exists: false
+          }
+        } : {})
       };
     });
 
@@ -110,24 +113,25 @@ router.get('/', authenticateToken, async (req, res) => {
       });
     });
 
+    // Serialize staff data based on requester's access level
     const staffWithVirtuals = staff.map(member => {
       const userData = userMap.get(member._id.toString());
+      const serialized = serializeStaffForRequester(member, req.user);
+      
       return {
-        ...member.toObject(),
-        fullName: member.fullName,
-        roleDisplay: member.roleDisplay,
-        statusDisplay: member.statusDisplay,
-        shiftDisplay: member.shiftDisplay,
-        // Login account information
-        loginAccount: userData ? {
-          username: userData.username,
-          accessLevel: userData.accessLevel,
-          isActive: userData.isActive,
-          mustChangePassword: userData.mustChangePassword,
-          exists: true
-        } : {
-          exists: false
-        }
+        ...serialized,
+        // Login account information (Admin/Records Operator only)
+        ...(req.user.accessLevel === 'ADMINISTRATOR' || req.user.accessLevel === 'RECORDS_OPERATOR' ? {
+          loginAccount: userData ? {
+            username: userData.username,
+            accessLevel: userData.accessLevel,
+            isActive: userData.isActive,
+            mustChangePassword: userData.mustChangePassword,
+            exists: true
+          } : {
+            exists: false
+          }
+        } : {})
       };
     });
 
@@ -165,6 +169,124 @@ router.get('/roles', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /api/staff/schedule - Get weekly schedule for all active staff (all authenticated users)
+// NOTE: This MUST come before /:id route to avoid "schedule" being treated as an id parameter
+router.get('/schedule', authenticateToken, async (req, res) => {
+  try {
+    const staff = await Staff.find({ onDuty: true })
+      .select('staffId firstName lastName otherNames role weeklySchedule')
+      .sort({ role: 1, lastName: 1, firstName: 1 })
+      .lean();
+
+    // Map to lean format with computed fullName
+    const scheduleData = staff.map(member => ({
+      staffId: member.staffId,
+      fullName: [member.firstName, member.otherNames, member.lastName]
+        .filter(n => n && n.trim())
+        .join(' '),
+      role: member.role,
+      weeklySchedule: member.weeklySchedule || {
+        monday: 'off',
+        tuesday: 'off',
+        wednesday: 'off',
+        thursday: 'off',
+        friday: 'off',
+        saturday: 'off',
+        sunday: 'off'
+      }
+    }));
+
+    res.json(scheduleData);
+  } catch (error) {
+    console.error('Error fetching staff schedule:', error);
+    res.status(500).json({
+      error: 'Failed to fetch staff schedule',
+      message: error.message
+    });
+  }
+});
+
+// PUT /api/staff/:id/schedule - Update weekly schedule for a staff member (ADMINISTRATOR only)
+// NOTE: This must come before general /:id route but after /schedule route
+router.put('/:id/schedule', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
+  try {
+    const { weeklySchedule } = req.body;
+
+    if (!weeklySchedule || typeof weeklySchedule !== 'object') {
+      return res.status(400).json({
+        error: 'Invalid weekly schedule',
+        message: 'weeklySchedule object is required'
+      });
+    }
+
+    // Validate all days
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const validShifts = ['day', 'night', 'off'];
+
+    for (const day of days) {
+      if (!weeklySchedule.hasOwnProperty(day)) {
+        return res.status(400).json({
+          error: 'Invalid weekly schedule',
+          message: `Missing schedule for ${day}`
+        });
+      }
+
+      if (!validShifts.includes(weeklySchedule[day])) {
+        return res.status(400).json({
+          error: 'Invalid shift value',
+          message: `Invalid shift value "${weeklySchedule[day]}" for ${day}. Must be one of: ${validShifts.join(', ')}`
+        });
+      }
+    }
+
+    // Find staff member
+    let staff;
+    const id = req.params.id;
+    
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      staff = await Staff.findById(id);
+    } else {
+      staff = await Staff.findOne({ staffId: id });
+    }
+
+    if (!staff) {
+      return res.status(404).json({
+        error: 'Staff member not found',
+        message: `No staff member found with ID: ${id}`
+      });
+    }
+
+    // Update weekly schedule
+    staff.weeklySchedule = weeklySchedule;
+    await staff.save();
+
+    // Log activity
+    await logActivity({
+      actorId: req.user.userId,
+      actorAccessLevel: req.user.accessLevel,
+      action: 'STAFF_SCHEDULE_UPDATED',
+      targetType: 'Staff',
+      targetId: staff._id,
+      targetLabel: staff.fullName
+    });
+
+    res.json({
+      message: 'Weekly schedule updated successfully',
+      staff: {
+        staffId: staff.staffId,
+        fullName: staff.fullName,
+        weeklySchedule: staff.weeklySchedule
+      }
+    });
+  } catch (error) {
+    console.error('Error updating staff schedule:', error);
+    res.status(500).json({
+      error: 'Failed to update schedule',
+      message: error.message
+    });
+  }
+});
+
 // GET /api/staff/:id - Get specific staff member (all authenticated users)
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
@@ -190,22 +312,23 @@ router.get('/:id', authenticateToken, async (req, res) => {
     // Lookup User account for this staff member
     const user = await User.findOne({ staffId: staff._id }).select('username accessLevel isActive mustChangePassword');
 
+    // Serialize staff data based on requester's access level
+    const serialized = serializeStaffForRequester(staff, req.user);
+
     res.json({
-      ...staff.toObject(),
-      fullName: staff.fullName,
-      roleDisplay: staff.roleDisplay,
-      statusDisplay: staff.statusDisplay,
-      shiftDisplay: staff.shiftDisplay,
-      // Login account information
-      loginAccount: user ? {
-        username: user.username,
-        accessLevel: user.accessLevel,
-        isActive: user.isActive,
-        mustChangePassword: user.mustChangePassword,
-        exists: true
-      } : {
-        exists: false
-      }
+      ...serialized,
+      // Login account information (Admin/Records Operator only)
+      ...(req.user.accessLevel === 'ADMINISTRATOR' || req.user.accessLevel === 'RECORDS_OPERATOR' ? {
+        loginAccount: user ? {
+          username: user.username,
+          accessLevel: user.accessLevel,
+          isActive: user.isActive,
+          mustChangePassword: user.mustChangePassword,
+          exists: true
+        } : {
+          exists: false
+        }
+      } : {})
     });
 
   } catch (error) {
@@ -259,6 +382,16 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
     });
 
     await newStaff.save();
+
+    // Log activity
+    await logActivity({
+      req,
+      action: 'STAFF_CREATED',
+      targetType: 'Staff',
+      targetId: newStaff._id,
+      targetLabel: newStaff.fullName,
+      details: { role: newStaff.role, shift: newStaff.shift }
+    });
 
     // Auto-provision user account for the new staff member
     let userCredentials = null;
@@ -408,6 +541,16 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
           
           console.log(`Deactivated user account and sessions for staff: ${staff.staffId}`);
         }
+
+        // Log deactivation activity
+        await logActivity({
+          req,
+          action: 'STAFF_DEACTIVATED',
+          targetType: 'Staff',
+          targetId: staff._id,
+          targetLabel: staff.fullName,
+          details: { staffId: staff.staffId }
+        });
       } catch (deactivationError) {
         console.error('Failed to deactivate user account:', deactivationError);
         // Don't fail the staff update if user deactivation fails

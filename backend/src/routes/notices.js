@@ -1,6 +1,7 @@
 const express = require('express');
 const Notice = require('../models/Notice');
 const { authenticateToken, requireAccessLevel } = require('../middleware/auth');
+const { logActivity } = require('../utils/activityLogger');
 const router = express.Router();
 
 // GET /api/notices - Get active notices (public - no auth required)
@@ -75,6 +76,16 @@ router.post('/', requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
     // Populate postedBy before returning
     await notice.populate('postedBy', 'fullName');
 
+    // Log activity
+    await logActivity({
+      req,
+      action: 'NOTICE_CREATED',
+      targetType: 'Notice',
+      targetId: notice._id,
+      targetLabel: notice.title,
+      details: { type: notice.type }
+    });
+
     res.status(201).json({
       notice: notice.toObject(),
       message: 'Notice created successfully'
@@ -126,6 +137,16 @@ router.delete('/:id', requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
     // Soft-delete: set isActive to false
     notice.isActive = false;
     await notice.save();
+
+    // Log activity
+    await logActivity({
+      req,
+      action: 'NOTICE_DELETED',
+      targetType: 'Notice',
+      targetId: notice._id,
+      targetLabel: notice.title,
+      details: { type: notice.type }
+    });
 
     res.json({
       message: 'Notice removed successfully'

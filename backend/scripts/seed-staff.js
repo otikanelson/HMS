@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Staff = require('../src/models/Staff');
-require('dotenv').config({ path: '../.env' });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 // Specific staff members with salaries as requested
 const staffMembers = [
@@ -147,8 +148,11 @@ async function seedStaff() {
     console.log('🌱 Starting staff seeding process...');
     
     // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hospital_operations');
-    console.log('✅ Connected to MongoDB');
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI not found in .env file');
+    }
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log(`✅ Connected to MongoDB database: ${mongoose.connection.name}`);
     
     // Clear existing staff
     await Staff.deleteMany({});

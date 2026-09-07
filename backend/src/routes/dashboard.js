@@ -24,6 +24,10 @@ router.get('/stats', async (req, res) => {
       }
     ]);
 
+    // Get staff count (active users with staff accounts)
+    const Staff = require('../models/Staff');
+    const staffCount = await Staff.countDocuments();
+
     // Get recent patients (last 5 added)
     const recentPatients = await PatientFile.find()
       .sort({ createdAt: -1 })
@@ -56,6 +60,7 @@ router.get('/stats', async (req, res) => {
     res.json({
       totalPatients,
       patientsWithPhone,
+      staffCount,
       cabinetCount: cabinetStats.length,
       recentPatients: recentPatientsWithLocation,
       cabinetDistribution: cabinetStats,

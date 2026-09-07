@@ -1,6 +1,7 @@
 const express = require('express');
 const PatientFile = require('../models/PatientFile');
 const { authenticateToken, requireAccessLevel } = require('../middleware/auth');
+const { logActivity } = require('../utils/activityLogger');
 const router = express.Router();
 
 // GET /api/patients/search - Search patient files (all authenticated users)
@@ -255,6 +256,9 @@ router.put('/:id/location', authenticateToken, requireAccessLevel('ADMINISTRATOR
       });
     }
 
+    // Store old location for activity log
+    const oldLocation = patient.locationDisplay;
+
     // Update location with history tracking
     patient.updateLocation(
       parseInt(cabinetNumber),
@@ -264,6 +268,16 @@ router.put('/:id/location', authenticateToken, requireAccessLevel('ADMINISTRATOR
     );
 
     await patient.save();
+
+    // Log activity
+    await logActivity({
+      req,
+      action: 'PATIENT_FILE_LOCATION_UPDATED',
+      targetType: 'PatientFile',
+      targetId: patient._id,
+      targetLabel: patient.fullName,
+      details: { from: oldLocation, to: patient.locationDisplay }
+    });
 
     res.json({
       message: 'Patient file location updated successfully',
@@ -300,6 +314,16 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
         patientId: patient.patientId,
         fullName: patient.fullName
       }
+    });
+
+    // Log activity (after response sent - non-blocking)
+    logActivity({
+      req,
+      action: 'PATIENT_FILE_DELETED',
+      targetType: 'PatientFile',
+      targetId: patient._id,
+      targetLabel: patient.fullName,
+      details: { patientId: patient.patientId, location: patient.locationDisplay }
     });
 
   } catch (error) {

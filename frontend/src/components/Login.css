@@ -28,6 +28,7 @@
   justify-content: center;
   padding: var(--space-8) var(--space-4);
   animation: lock-fade-in 500ms ease both;
+  gap: var(--space-8);
 }
 
 @keyframes lock-fade-in {
@@ -39,7 +40,7 @@
 .lock-clock {
   text-align: center;
   color: white;
-  margin-bottom: var(--space-8);
+  margin-bottom: 0;
 }
 
 .lock-time {
@@ -58,9 +59,21 @@
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
 }
 
+/* Wrapper for login form and notices side by side */
+.lock-wrapper {
+  display: flex;
+  gap: var(--space-6);
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 1100px;
+  flex-wrap: wrap;
+}
+
 /* Frosted glass sign-in card */
 .lock-card {
-  width: min(340px, 92vw);
+  flex: 0 0 auto;
+  width: min(380px, 92vw);
   padding: var(--space-6);
   border-radius: var(--radius-xl);
   background: rgba(255, 255, 255, 0.14);
@@ -200,54 +213,68 @@
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .lock-content { animation: none; }
-  .lock-spinner { animation: lock-spin 800ms linear infinite; }
-}
-
-@media (max-width: 420px) {
-  .lock-time { font-size: 3rem; }
-  .lock-date { font-size: 0.9375rem; }
-  .lock-card { padding: var(--space-4); }
-}
-
 /* Login Page Notices */
 .login-notices {
-  width: min(600px, 92vw);
-  margin-top: var(--space-8);
-  animation: lock-fade-in 500ms ease both 300ms;
+  flex: 1 1 auto;
+  width: min(450px, 92vw);
+  min-width: 320px;
+  animation: lock-fade-in 500ms ease both 200ms;
 }
 
 .login-notices-title {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-  text-align: center;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: left;
   margin: 0 0 var(--space-4) 0;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 .login-notices-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+/* Custom scrollbar for notices list */
+.login-notices-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.login-notices-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+}
+
+.login-notices-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-sm);
+}
+
+.login-notices-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .login-notice {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: var(--radius-lg);
-  padding: var(--space-3);
-  backdrop-filter: blur(12px) saturate(120%);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  padding: var(--space-4);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
   transition: all 200ms ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .login-notice:hover {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .login-notice-header {
@@ -287,28 +314,87 @@
 }
 
 .login-notice-title {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: white;
-  margin: 0 0 var(--space-1) 0;
+  margin: 0 0 var(--space-2) 0;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  line-height: 1.3;
 }
 
 .login-notice-body {
-  font-size: 0.75rem;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
   margin: 0;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+/* Media Queries */
+@media (prefers-reduced-motion: reduce) {
+  .lock-content { animation: none; }
+  .lock-spinner { animation: lock-spin 800ms linear infinite; }
+}
+
+/* Large Screens - Side by Side Layout */
+@media (min-width: 900px) {
+  .lock-wrapper {
+    flex-wrap: nowrap;
+  }
+  
+  .lock-card {
+    width: 380px;
+  }
+  
+  .login-notices {
+    width: 450px;
+  }
+}
+
+/* Medium Screens - Stacked Layout */
+@media (max-width: 899px) {
+  .lock-wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .login-notices {
+    margin-top: var(--space-6);
+    width: min(450px, 92vw);
+  }
+  
+  .login-notices-title {
+    text-align: center;
+  }
+  
+  .login-notices-list {
+    max-height: 400px;
+  }
+}
+
+/* Small Screens - Mobile */
 @media (max-width: 420px) {
+  .lock-time { 
+    font-size: 3rem; 
+  }
+  
+  .lock-date { 
+    font-size: 0.9375rem; 
+  }
+  
+  .lock-card { 
+    padding: var(--space-4); 
+  }
+  
   .login-notices {
     width: 100%;
-    margin-top: var(--space-6);
   }
   
   .login-notice {
-    padding: var(--space-2);
+    padding: var(--space-3);
+  }
+  
+  .login-notices-list {
+    max-height: 350px;
   }
 }

@@ -35,19 +35,14 @@ const staffSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
-  schedule: [{
-    day: {
-      type: String,
-      enum: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    },
-    startTime: String,
-    endTime: String
-  }],
-  shift: {
-    type: String,
-    required: true,
-    enum: ['DAY', 'NIGHT'],
-    default: 'DAY'
+  weeklySchedule: {
+    monday: { type: String, enum: ['day', 'night', 'off'], default: 'off' },
+    tuesday: { type: String, enum: ['day', 'night', 'off'], default: 'off' },
+    wednesday: { type: String, enum: ['day', 'night', 'off'], default: 'off' },
+    thursday: { type: String, enum: ['day', 'night', 'off'], default: 'off' },
+    friday: { type: String, enum: ['day', 'night', 'off'], default: 'off' },
+    saturday: { type: String, enum: ['day', 'night', 'off'], default: 'off' },
+    sunday: { type: String, enum: ['day', 'night', 'off'], default: 'off' }
   },
   onDuty: {
     type: Boolean,
@@ -94,9 +89,14 @@ staffSchema.virtual('statusDisplay').get(function() {
   return this.onDuty ? 'On Duty' : 'Off Duty';
 });
 
-// Virtual for shift display
+// Virtual for shift display (based on today's schedule)
 staffSchema.virtual('shiftDisplay').get(function() {
-  return this.shift ? this.shift.charAt(0).toUpperCase() + this.shift.slice(1).toLowerCase() : 'Day';
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const today = days[new Date().getDay()];
+  const todayShift = this.weeklySchedule?.[today] || 'off';
+  
+  if (todayShift === 'off') return 'Off';
+  return todayShift.charAt(0).toUpperCase() + todayShift.slice(1);
 });
 
 // Index for search functionality

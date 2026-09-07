@@ -1,12 +1,14 @@
 .dashboard {
-  padding: var(--space-6);
+  /* Remove duplicate padding - main-content already has padding */
+  padding: 0;
+  max-width: 1400px;
 }
 
 .dashboard-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-6);
 }
 
 .header-actions {
@@ -81,126 +83,79 @@
   margin: var(--space-1) 0 0 0;
 }
 
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-6);
-  margin-bottom: var(--space-8);
-}
-
-/* Clickable Stat Cards */
-.stat-card-clickable {
-  cursor: pointer;
-  position: relative;
-  text-decoration: none;
-  color: inherit;
-  transition: all 200ms ease-in-out;
-}
-
-.stat-card-clickable:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  border-color: var(--primary-300);
-}
-
-.stat-card-clickable:active {
-  transform: translateY(0);
-}
-
-.stat-card-clickable .stat-description {
-  color: var(--gray-600);
-}
-
-.stat-card-clickable:hover .stat-description {
-  color: var(--primary-600);
-}
-
-.stat-click-indicator {
-  position: absolute;
-  bottom: var(--space-3);
-  right: var(--space-3);
-  color: var(--gray-400);
-  opacity: 0;
-  transition: all 150ms ease-in-out;
-}
-
-.stat-card-clickable:hover .stat-click-indicator {
-  opacity: 1;
-  color: var(--primary-600);
-}
-
-.stat-card {
+/* Stat Strip - Text-based horizontal stats */
+.stat-strip {
+  display: flex;
   background: white;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
-  padding: var(--space-6);
+  margin-bottom: var(--space-8);
+  overflow: hidden;
   box-shadow: var(--shadow-sm);
-  transition: all 150ms ease-in-out;
 }
 
-.stat-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--gray-300);
-}
-
-.stat-header {
+.stat-cell {
+  flex: 1;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-4);
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-6);
+  border-right: 1px solid var(--gray-200);
 }
 
-.stat-header h3 {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--gray-600);
-  margin: 0;
+.stat-cell:last-child { border-right: none; }
+
+/* Clickable stat cells */
+.stat-cell-link {
+  text-decoration: none;
+  color: inherit;
+  transition: all 200ms ease-in-out;
+  position: relative;
 }
 
-.stat-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: var(--radius-lg);
-}
-
-.stat-icon-primary {
+.stat-cell-link:hover {
   background-color: var(--primary-50);
+  color: inherit;
+  text-decoration: none;
+}
+
+.stat-cell-link:hover .stat-value {
+  color: var(--primary-700);
+}
+
+.stat-cell-link:hover .stat-caption {
   color: var(--primary-600);
 }
 
-.stat-icon-success {
-  background-color: var(--success-50);
-  color: var(--success-600);
-}
-
-.stat-icon-warning {
-  background-color: var(--warning-50);
-  color: var(--warning-600);
-}
-
-.stat-icon-info {
-  background-color: var(--gray-100);
-  color: var(--gray-600);
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .stat-value {
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: var(--gray-900);
-  margin-bottom: var(--space-1);
+  line-height: 1.2;
 }
 
-.stat-description {
-  font-size: 0.875rem;
-  color: var(--gray-500);
+.stat-caption {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+}
+
+@media (max-width: 640px) {
+  .stat-strip { flex-direction: column; }
+  .stat-cell { border-right: none; border-bottom: 1px solid var(--gray-200); }
+  .stat-cell:last-child { border-bottom: none; }
 }
 
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: var(--space-6);
   margin-bottom: var(--space-8);
 }
@@ -231,26 +186,65 @@
 .staff-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: 0;
 }
 
+/* Flattened row styles for staff and file items */
+.staff-preview-row,
+.file-preview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--gray-100);
+  text-decoration: none;
+  color: inherit;
+  transition: all 150ms ease-in-out;
+}
+
+.staff-preview-row:last-child,
+.file-preview-row:last-child { 
+  border-bottom: none; 
+}
+
+.staff-preview-row:hover,
+.file-preview-row:hover {
+  background-color: var(--gray-50);
+  padding-left: var(--space-2);
+  padding-right: var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
+  margin-right: calc(-1 * var(--space-2));
+  border-radius: var(--radius-sm);
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Old boxed item styles - removed */
 .file-item,
 .staff-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-3);
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
-  background-color: var(--gray-50);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--gray-100);
+  text-decoration: none;
+  color: inherit;
   transition: all 150ms ease-in-out;
+}
+
+.file-item:last-child,
+.staff-item:last-child {
+  border-bottom: none;
 }
 
 .file-item:hover,
 .staff-item:hover {
-  border-color: var(--primary-300);
-  background-color: var(--primary-50);
-  transform: translateX(2px);
+  background-color: var(--gray-50);
+  padding-left: var(--space-2);
+  padding-right: var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
+  margin-right: calc(-1 * var(--space-2));
+  border-radius: var(--radius-sm);
 }
 
 .file-name,
@@ -592,5 +586,32 @@
 @media (max-width: 768px) {
   .shift-info-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Clinical Staff Weekly Schedule Grid */
+.weekly-schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.weekly-schedule-day {
+  transition: all 150ms ease;
+}
+
+.weekly-schedule-day.is-today {
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06);
+}
+
+@media (max-width: 768px) {
+  .weekly-schedule-grid {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: var(--space-2);
+  }
+  
+  .weekly-schedule-day {
+    padding: var(--space-2) !important;
   }
 }

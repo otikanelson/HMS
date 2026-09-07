@@ -1,0 +1,177 @@
+.schedule-panel {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.schedule-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.schedule-heading h2 {
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.schedule-readonly-tag {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  padding: 0.15rem var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.schedule-status-text {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.schedule-error {
+  background: var(--error-50);
+  color: var(--error-600);
+  border: 1px solid #fecaca;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  margin-bottom: var(--space-4);
+}
+
+.schedule-scroll {
+  overflow-x: auto;
+}
+
+.schedule-grid {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+.schedule-grid th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-align: center;
+  padding: var(--space-2) var(--space-2);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.schedule-grid td {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--gray-100);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.schedule-name-col {
+  text-align: left !important;
+  min-width: 160px;
+  position: sticky;
+  left: 0;
+  background: white;
+  z-index: 1;
+}
+
+.schedule-staff-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.schedule-staff-role {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.schedule-today-col {
+  background: var(--gray-50);
+}
+
+.schedule-grid th.schedule-today-col {
+  color: var(--primary-700);
+  font-weight: 700;
+}
+
+.schedule-cell-day { background: var(--primary-50); }
+.schedule-cell-night { background: var(--gray-800); }
+.schedule-cell-off { background: transparent; }
+
+/* today-column tint should still show through on 'off' cells only —
+   day/night keep their own color regardless of column */
+.schedule-cell-off.schedule-today-col { background: var(--gray-50); }
+
+.schedule-cell-edit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+}
+
+.schedule-select {
+  font-size: 0.8125rem;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--gray-900);
+  cursor: pointer;
+}
+
+.schedule-select:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.schedule-select:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 2px var(--primary-100);
+}
+
+.schedule-saved-tick {
+  color: var(--primary-600);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.schedule-badge {
+  display: inline-block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 0.25rem var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--gray-400);
+}
+
+.schedule-cell-day .schedule-badge {
+  background: var(--primary-100);
+  color: var(--primary-700);
+}
+
+.schedule-cell-night .schedule-badge {
+  background: var(--gray-800);
+  color: white;
+}
+
+.schedule-cell-off .schedule-badge {
+  background: transparent;
+  color: var(--gray-400);
+}
+
+@media (max-width: 640px) {
+  .schedule-panel {
+    padding: var(--space-4);
+  }
+}

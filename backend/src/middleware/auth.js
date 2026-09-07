@@ -83,17 +83,21 @@ const authenticateToken = async (req, res, next) => {
     req.session = session;
     
     // Enforce password change requirement
-    // Block all requests except password change, profile view, and logout
+    // Block all requests except password change, profile view, validation, and logout
     if (req.user.mustChangePassword) {
       const exemptPaths = [
         { method: 'PUT', path: '/api/profile/password' },
         { method: 'GET', path: '/api/profile' },
+        { method: 'GET', path: '/api/auth/validate' },
         { method: 'POST', path: '/api/auth/logout' },
         { method: 'POST', path: '/api/auth/logout-all' }
       ];
       
+      // Use originalUrl or baseUrl + path to get the full path
+      const fullPath = req.originalUrl.split('?')[0]; // Remove query params
+      
       const isExempt = exemptPaths.some(exempt => 
-        req.method === exempt.method && req.path === exempt.path
+        req.method === exempt.method && fullPath === exempt.path
       );
       
       if (!isExempt) {

@@ -32,8 +32,10 @@ router.post('/login', authLimiter, async (req, res) => {
       });
     }
 
-    // Find user by username
-    const user = await User.findOne({ username: username.toLowerCase() });
+    // Find user by username (case-insensitive)
+    const user = await User.findOne({ 
+      username: { $regex: new RegExp(`^${username}$`, 'i') }
+    });
     console.log('User found:', !!user, user ? `(${user.username}, active: ${user.isActive})` : '');
 
     if (!user || !user.isActive) {

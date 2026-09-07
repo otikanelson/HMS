@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const PatientFile = require('../src/models/PatientFile');
-require('dotenv').config({ path: '../.env' });
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 // Sample patient names for testing
 const names = [
@@ -40,9 +41,14 @@ async function seedPatients() {
   try {
     console.log('🌱 Starting patient seeding process...');
     
-    // Connect to MongoDB
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hospital_operations');
-    console.log('✅ Connected to MongoDB');
+    // Connect to MongoDB using .env ONLY
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI not found in .env file');
+    }
+    
+    console.log(`Connecting to database...`);
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log(`✅ Connected to MongoDB database: ${mongoose.connection.name}`);
     
     // Clear existing patients
     await PatientFile.deleteMany({});
@@ -56,7 +62,7 @@ async function seedPatients() {
     
     // Insert patient files
     const createdPatients = await PatientFile.insertMany(patients);
-    console.log(`✅ Created ${createdPatients.length} patient files`);
+    console.log(`✅ Created ${createdPatients.length} patient files in ${mongoose.connection.name}`);
     
     console.log(`\n👥 Total Patients: ${createdPatients.length}`);
     console.log('\n🎉 Patient seeding completed successfully!');

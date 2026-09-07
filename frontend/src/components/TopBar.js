@@ -79,7 +79,6 @@ const TopBar = ({ onToggleSidebar }) => {
           </button>
 
           <div className="topbar-brand">
-            <img src={logo} alt="Tender Care Logo" width="36" height="36" />
             <div className="topbar-brand-text">
               <h1>Tender Care</h1>
               <p>Patient File Management</p>

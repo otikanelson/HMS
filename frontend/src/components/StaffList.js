@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import WeeklySchedule from './weeklyschedule';
 import './StaffList.css';
 
 const StaffList = () => {
@@ -147,12 +148,27 @@ const StaffList = () => {
   const isSearching = Boolean(searchQuery);
   const activeFilters = Object.values(filters).filter(Boolean).length;
 
+  // For non-Administrators: render ONLY the weekly schedule (read-only)
+  if (!isAdministrator) {
+    return (
+      <div className="staff-list">
+        <WeeklySchedule />
+      </div>
+    );
+  }
+
+  // For Administrators: render weekly schedule FIRST, then staff directory below it
   return (
     <div className="staff-list">
+      {/* Weekly Schedule - Administrator can edit */}
+      <div style={{ marginBottom: 'var(--space-8)' }}>
+        <WeeklySchedule />
+      </div>
+
       <div className="staff-list-header">
         <div>
           <h1 className="page-title">
-            {isSearching ? 'Staff Search Results' : 'Tender Care Staff'}
+            {isSearching ? 'Staff Search Results' : 'Staff List'}
           </h1>
           <p className="page-subtitle">
             {isSearching 

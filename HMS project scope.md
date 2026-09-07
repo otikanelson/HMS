@@ -139,6 +139,8 @@ Login, session management, and the three roles above enforced on every route (no
 - ✅ Payroll v1 is simple: flat salary + manual bonus/deduction note, no structured tax/pension/loan fields.
 - ✅ Payroll only *tracks* status (pending/approved/paid) — no bank disbursement integration.
 - ✅ Patient files get discharge/archival status, not just physical location.
+- ✅ Weekly shift schedule (day/night/off, Mon–Sun) is visible to every role for coordination purposes, editable by Administrator only. Records Operator loses the general searchable staff directory on the Staff page as a result — schedule-only, same as Clinical Staff, on that specific page.
+- ✅ AdminNotes (private scratchpad, separate from public Notices) are private to whoever created them, not shared across Administrator accounts.
 
 ## 7. Open Questions (still need your call)
 
@@ -173,8 +175,8 @@ Each requirement should be independently testable — "does the system do this, 
 | FR-2.2 | Creating a staff record automatically provisions that person's login (staff record = login, per §3.1). |
 | FR-2.3 | Deactivating a staff record automatically disables that person's login. |
 | FR-2.4 | Any authenticated user can search/filter staff by role, shift, or duty status. |
-| FR-2.5 | Clinical Staff can view only their own schedule — not other staff's. |
-| FR-2.6 | Records Operator or Administrator can view all staff's duty status. |
+| FR-2.5 | Every authenticated role can view the full weekly shift schedule (all staff, Monday–Sunday, day/night/off) — read-only for Records Operator and Clinical Staff. *(Supersedes the earlier "own schedule only" rule — see decision log below.)* |
+| FR-2.6 | Only Administrator can edit the weekly shift schedule — assigning day/night/off per staff member, per day. |
 
 ### 8.3 Payroll
 
