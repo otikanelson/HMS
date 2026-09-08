@@ -48,6 +48,37 @@ const Dashboard = () => {
   const isAdmin = user?.accessLevel === 'ADMINISTRATOR';
   const isClinicalStaff = user?.accessLevel === 'CLINICAL_STAFF';
 
+  const formatRole = (role) => {
+    return role.replace('_', ' ').split(' ').map(word =>
+      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    ).join(' ');
+  };
+
+  const fetchMyShift = useCallback(async () => {
+    if (!user?.staffId) {
+      console.warn('No staffId found for user:', user);
+      setMyShiftError('Staff information not available');
+      setMyShiftLoading(false);
+      return;
+    }
+
+    try {
+      setMyShiftLoading(true);
+      console.log('Fetching shift data for staffId:', user.staffId);
+      const response = await axios.get(`/api/staff/${user.staffId}`);
+      console.log('Shift data received:', response.data);
+      setMyShift(response.data);
+      setMyShiftError('');
+    } catch (err) {
+      console.error('Failed to fetch shift information:', err);
+      console.error('Error response:', err.response?.data);
+      setMyShiftError('Failed to load your shift information');
+    } finally {
+      setMyShiftLoading(false);
+      console.log('fetchMyShift completed');
+    }
+  }, [user]);
+
   useEffect(() => {
     const loadDashboard = async () => {
       if (isClinicalStaff) {
@@ -66,12 +97,6 @@ const Dashboard = () => {
 
     loadDashboard();
   }, [isClinicalStaff, isAdmin, fetchMyShift]);
-
-  const formatRole = (role) => {
-    return role.replace('_', ' ').split(' ').map(word =>
-      word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-    ).join(' ');
-  };
 
   const fetchDashboardStats = async () => {
     try {
@@ -101,31 +126,6 @@ const Dashboard = () => {
       setLoading(false);
     }
   };
-
-  const fetchMyShift = useCallback(async () => {
-    if (!user?.staffId) {
-      console.warn('No staffId found for user:', user);
-      setMyShiftError('Staff information not available');
-      setMyShiftLoading(false);
-      return;
-    }
-
-    try {
-      setMyShiftLoading(true);
-      console.log('Fetching shift data for staffId:', user.staffId);
-      const response = await axios.get(`/api/staff/${user.staffId}`);
-      console.log('Shift data received:', response.data);
-      setMyShift(response.data);
-      setMyShiftError('');
-    } catch (err) {
-      console.error('Failed to fetch shift information:', err);
-      console.error('Error response:', err.response?.data);
-      setMyShiftError('Failed to load your shift information');
-    } finally {
-      setMyShiftLoading(false);
-      console.log('fetchMyShift completed');
-    }
-  }, [user]);
 
   const fetchNotices = async () => {
     try {
