@@ -71,7 +71,7 @@ const PatientList = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [searchParams]);
+  }, [searchParams, includeArchived]);
 
   useEffect(() => {
     // Reset state when search params or includeArchived changes
@@ -155,18 +155,6 @@ const PatientList = () => {
     setCurrentPage(1);
     setHasMore(true);
     fetchPatients(1, true);
-  };
-
-  const toggleRowExpanded = (patientId) => {
-    setExpandedRows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(patientId)) {
-        newSet.delete(patientId);
-      } else {
-        newSet.add(patientId);
-      }
-      return newSet;
-    });
   };
 
   const handlePatientStatusChanged = (patientId, updatedPatient) => {

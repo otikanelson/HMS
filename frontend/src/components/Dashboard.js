@@ -65,7 +65,7 @@ const Dashboard = () => {
     };
 
     loadDashboard();
-  }, [isClinicalStaff, isAdmin]);
+  }, [isClinicalStaff, isAdmin, fetchMyShift]);
 
   const formatRole = (role) => {
     return role.replace('_', ' ').split(' ').map(word =>

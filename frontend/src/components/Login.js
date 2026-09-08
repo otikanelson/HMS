@@ -34,7 +34,6 @@ const Login = () => {
   
   // Notices state
   const [notices, setNotices] = useState([]);
-  const [noticesLoading, setNoticesLoading] = useState(false);
 
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -71,14 +70,11 @@ const Login = () => {
 
   const fetchNotices = async () => {
     try {
-      setNoticesLoading(true);
       const response = await axios.get('/api/notices');
       setNotices(response.data.notices || []);
     } catch (err) {
       console.error('Failed to fetch notices:', err);
       setNotices([]);
-    } finally {
-      setNoticesLoading(false);
     }
   };
 

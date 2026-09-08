@@ -40,8 +40,6 @@ const WeeklySchedule = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [savingCell, setSavingCell] = useState(null);
-  const [savedCell, setSavedCell] = useState(null);
   const [pendingChanges, setPendingChanges] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -186,7 +184,6 @@ const WeeklySchedule = () => {
                   </td>
                   {DAYS.map((d) => {
                     const value = row.WeeklySchedule?.[d.key] || 'off';
-                    const cellId = `${row.staffId}-${d.key}`;
                     const isTodayCol = d.key === today;
 
                     return (
