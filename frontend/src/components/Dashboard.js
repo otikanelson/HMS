@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -102,7 +102,7 @@ const Dashboard = () => {
     }
   };
 
-  const fetchMyShift = async () => {
+  const fetchMyShift = useCallback(async () => {
     if (!user?.staffId) {
       console.warn('No staffId found for user:', user);
       setMyShiftError('Staff information not available');
@@ -125,7 +125,7 @@ const Dashboard = () => {
       setMyShiftLoading(false);
       console.log('fetchMyShift completed');
     }
-  };
+  }, [user]);
 
   const fetchNotices = async () => {
     try {
