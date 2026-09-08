@@ -16,12 +16,12 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Clinical Staff: My Shift data
   const [myShift, setMyShift] = useState(null);
   const [myShiftLoading, setMyShiftLoading] = useState(false);
   const [myShiftError, setMyShiftError] = useState('');
-  
+
   // Notices state
   const [notices, setNotices] = useState([]);
   const [noticesLoading, setNoticesLoading] = useState(false);
@@ -57,18 +57,18 @@ const Dashboard = () => {
         await fetchDashboardStats();
       }
       await fetchNotices();
-      
+
       // Fetch admin notes for Administrators only
       if (isAdmin) {
         await fetchAdminNotes();
       }
     };
-    
+
     loadDashboard();
   }, [isClinicalStaff, isAdmin]);
 
   const formatRole = (role) => {
-    return role.replace('_', ' ').split(' ').map(word => 
+    return role.replace('_', ' ').split(' ').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
     ).join(' ');
   };
@@ -76,10 +76,10 @@ const Dashboard = () => {
   const fetchDashboardStats = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch dashboard stats
       const response = await axios.get('/api/dashboard/stats');
-      
+
       // Fetch on duty staff
       let onDutyStaff = [];
       try {
@@ -154,12 +154,12 @@ const Dashboard = () => {
 
   const handleNoticeSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!noticeForm.title.trim()) {
       setNoticeFormError('Title is required');
       return;
     }
-    
+
     if (!noticeForm.body.trim()) {
       setNoticeFormError('Body is required');
       return;
@@ -221,7 +221,7 @@ const Dashboard = () => {
 
   const handleAdminNoteSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!adminNoteBody.trim()) {
       setAdminNoteError('Note cannot be empty');
       return;
@@ -335,7 +335,7 @@ const Dashboard = () => {
           {isClinicalStaff && (
             <Link to="/patients" className="btn btn-primary">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path fillRule="evenodd" d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85a1.007 1.007 0 00-.115-.1zM12 6.5a5.5 5.5 0 11-11 0 5.5 5.5 0 0111 0z"/>
+                <path fillRule="evenodd" d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 001.415-1.414l-3.85-3.85a1.007 1.007 0 00-.115-.1zM12 6.5a5.5 5.5 0 11-11 0 5.5 5.5 0 0111 0z" />
               </svg>
               Find a Patient File
             </Link>
@@ -346,7 +346,7 @@ const Dashboard = () => {
             <>
               <Link to="/add-patient" className="btn btn-primary">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/>
+                  <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z" />
                 </svg>
                 Add Patient
               </Link>
@@ -354,25 +354,25 @@ const Dashboard = () => {
               {isAdmin && (
                 <Link to="/add-staff" className="btn btn-primary">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                    <path d="M8 8a3 3 0 100-6 3 3 0 000 6zm2-3a2 2 0 11-4 0 2 2 0 014 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                    <path d="M8 8a3 3 0 100-6 3 3 0 000 6zm2-3a2 2 0 11-4 0 2 2 0 014 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z" />
                   </svg>
                   Add Staff
                 </Link>
               )}
               <Link to="/patients" className="btn btn-secondary">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z"/>
+                  <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" />
                 </svg>
                 View All Files
               </Link>
-              <button 
+              <button
                 onClick={fetchDashboardStats}
                 className="btn btn-outline"
                 disabled={loading}
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M11.534 7h3.932a.25.25 0 01.192.41l-1.966 2.36a.25.25 0 01-.384 0l-1.966-2.36a.25.25 0 01.192-.41zm-11 2h3.932a.25.25 0 00.192-.41L2.692 6.23a.25.25 0 00-.384 0L.342 8.59A.25.25 0 00.534 9z"/>
-                  <path fillRule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 11-.771-.636A6.002 6.002 0 0113.917 7H12.9A5.002 5.002 0 008 3zM3.1 9a5.002 5.002 0 008.757 2.182.5.5 0 11.771.636A6.002 6.002 0 012.083 9H3.1z"/>
+                  <path d="M11.534 7h3.932a.25.25 0 01.192.41l-1.966 2.36a.25.25 0 01-.384 0l-1.966-2.36a.25.25 0 01.192-.41zm-11 2h3.932a.25.25 0 00.192-.41L2.692 6.23a.25.25 0 00-.384 0L.342 8.59A.25.25 0 00.534 9z" />
+                  <path fillRule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 11-.771-.636A6.002 6.002 0 0113.917 7H12.9A5.002 5.002 0 008 3zM3.1 9a5.002 5.002 0 008.757 2.182.5.5 0 11.771.636A6.002 6.002 0 012.083 9H3.1z" />
                 </svg>
                 Refresh
               </button>
@@ -391,10 +391,21 @@ const Dashboard = () => {
               className="btn btn-primary"
               style={{ marginLeft: 'auto', fontSize: '0.875rem', padding: 'var(--space-2) var(--space-3)' }}
             >
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/>
-              </svg>
-              {showNoticeForm ? 'Cancel' : 'Post Notice'}
+              {showNoticeForm ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                    <path fillRule="evenodd" d="M2.5 7.5a.5.5 0 01.5-.5h10a.5.5 0 010 1H3a.5.5 0 01-.5-.5z" />
+                  </svg>
+                  {' Cancel'}
+                </>
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                    <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z" />
+                  </svg>
+                  {'Post Notice'}
+                </>
+              )}
             </button>
           ) : (
             <button
@@ -404,7 +415,7 @@ const Dashboard = () => {
               style={{ marginLeft: 'auto', fontSize: '0.875rem', padding: 'var(--space-2) var(--space-3)' }}
             >
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/>
+                <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z" />
               </svg>
               Post Notice
             </button>
@@ -432,7 +443,7 @@ const Dashboard = () => {
                 {noticeFormError}
               </div>
             )}
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               <div>
                 <label htmlFor="notice-title" style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: 'var(--space-1)' }}>
@@ -542,9 +553,9 @@ const Dashboard = () => {
             <p style={{ fontSize: '0.875rem' }}>Loading notices...</p>
           </div>
         ) : notices.length === 0 ? (
-          <p style={{ 
-            textAlign: 'center', 
-            color: 'var(--gray-500)', 
+          <p style={{
+            textAlign: 'center',
+            color: 'var(--gray-500)',
             fontSize: '0.875rem',
             padding: 'var(--space-4)',
             fontStyle: 'italic'
@@ -585,7 +596,7 @@ const Dashboard = () => {
                     }}
                   >
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                      <path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z"/>
+                      <path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z" />
                     </svg>
                   </button>
                 )}
@@ -611,9 +622,9 @@ const Dashboard = () => {
             padding: 'var(--space-4)',
             boxShadow: 'var(--shadow-sm)'
           }}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'space-between',
               marginBottom: 'var(--space-4)'
             }}>
@@ -637,14 +648,14 @@ const Dashboard = () => {
                 {showAdminNoteForm ? (
                   <>
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                      <path fillRule="evenodd" d="M2.5 7.5a.5.5 0 01.5-.5h10a.5.5 0 010 1H3a.5.5 0 01-.5-.5z"/>
+                      <path fillRule="evenodd" d="M2.5 7.5a.5.5 0 01.5-.5h10a.5.5 0 010 1H3a.5.5 0 01-.5-.5z" />
                     </svg>
                     {' Cancel'}
                   </>
                 ) : (
                   <>
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                      <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/>
+                      <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z" />
                     </svg>
                     {' Add Note'}
                   </>
@@ -672,7 +683,7 @@ const Dashboard = () => {
                     {adminNoteError}
                   </div>
                 )}
-                
+
                 <textarea
                   value={adminNoteBody}
                   onChange={(e) => {
@@ -694,8 +705,8 @@ const Dashboard = () => {
                   }}
                   autoFocus
                 />
-                <div style={{ 
-                  display: 'flex', 
+                <div style={{
+                  display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center'
                 }}>
@@ -720,9 +731,9 @@ const Dashboard = () => {
                 <p style={{ fontSize: '0.875rem' }}>Loading notes...</p>
               </div>
             ) : adminNotes.length === 0 ? (
-              <p style={{ 
-                textAlign: 'center', 
-                color: 'var(--gray-500)', 
+              <p style={{
+                textAlign: 'center',
+                color: 'var(--gray-500)',
                 fontSize: '0.875rem',
                 padding: 'var(--space-4)',
                 fontStyle: 'italic'
@@ -788,8 +799,8 @@ const Dashboard = () => {
                     ) : (
                       <>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <p style={{ 
-                            fontSize: '0.875rem', 
+                          <p style={{
+                            fontSize: '0.875rem',
                             lineHeight: '1.5',
                             color: 'var(--gray-800)',
                             flex: 1,
@@ -828,7 +839,7 @@ const Dashboard = () => {
                               }}
                             >
                               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                                <path d="M12.146.146a.5.5 0 01.708 0l3 3a.5.5 0 010 .708l-10 10a.5.5 0 01-.168.11l-5 2a.5.5 0 01-.65-.65l2-5a.5.5 0 01.11-.168l10-10zM11.207 2.5L13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 01.5.5v.5h.5a.5.5 0 01.5.5v.5h.293l6.5-6.5zm-9.761 5.175l-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 015 12.5V12h-.5a.5.5 0 01-.5-.5V11h-.5a.5.5 0 01-.468-.325z"/>
+                                <path d="M12.146.146a.5.5 0 01.708 0l3 3a.5.5 0 010 .708l-10 10a.5.5 0 01-.168.11l-5 2a.5.5 0 01-.65-.65l2-5a.5.5 0 01.11-.168l10-10zM11.207 2.5L13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 01.5.5v.5h.5a.5.5 0 01.5.5v.5h.293l6.5-6.5zm-9.761 5.175l-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 015 12.5V12h-.5a.5.5 0 01-.5-.5V11h-.5a.5.5 0 01-.468-.325z" />
                               </svg>
                             </button>
                             <button
@@ -856,14 +867,14 @@ const Dashboard = () => {
                               }}
                             >
                               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                                <path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z"/>
-                                <path fillRule="evenodd" d="M14.5 3a1 1 0 01-1 1H13v9a2 2 0 01-2 2H5a2 2 0 01-2-2V4h-.5a1 1 0 01-1-1V2a1 1 0 011-1H6a1 1 0 011-1h2a1 1 0 011 1h3.5a1 1 0 011 1v1zM4.118 4L4 4.059V13a1 1 0 001 1h6a1 1 0 001-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                <path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z" />
+                                <path fillRule="evenodd" d="M14.5 3a1 1 0 01-1 1H13v9a2 2 0 01-2 2H5a2 2 0 01-2-2V4h-.5a1 1 0 01-1-1V2a1 1 0 011-1H6a1 1 0 011-1h2a1 1 0 011 1h3.5a1 1 0 011 1v1zM4.118 4L4 4.059V13a1 1 0 001 1h6a1 1 0 001-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" />
                               </svg>
                             </button>
                           </div>
                         </div>
-                        <div style={{ 
-                          fontSize: '0.75rem', 
+                        <div style={{
+                          fontSize: '0.75rem',
                           color: 'var(--gray-500)',
                           display: 'flex',
                           justifyContent: 'space-between'
@@ -929,10 +940,10 @@ const Dashboard = () => {
                         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
                         return days[new Date().getDay()] === day.key;
                       })();
-                      
+
                       return (
-                        <div 
-                          key={day.key} 
+                        <div
+                          key={day.key}
                           className={`Weekly-schedule-day ${isToday ? 'is-today' : ''}`}
                           style={{
                             padding: 'var(--space-3)',
@@ -946,8 +957,8 @@ const Dashboard = () => {
                             textAlign: 'center'
                           }}
                         >
-                          <span style={{ 
-                            fontSize: '0.75rem', 
+                          <span style={{
+                            fontSize: '0.75rem',
                             fontWeight: 600,
                             color: isToday ? 'var(--primary-700)' : 'var(--gray-600)',
                             textTransform: 'uppercase',
@@ -1011,103 +1022,103 @@ const Dashboard = () => {
             </div>
           </div>
 
-      <div className="content-grid">
-        <div className="recent-files-card">
-          <div className="card-header">
-            <h2 className="card-title">Recent Files</h2>
-            <p className="card-subtitle">Recently added patient files</p>
-          </div>
+          <div className="content-grid">
+            <div className="recent-files-card">
+              <div className="card-header">
+                <h2 className="card-title">Recent Files</h2>
+                <p className="card-subtitle">Recently added patient files</p>
+              </div>
 
-          {stats.recentPatients && stats.recentPatients.length > 0 ? (
-            <div className="file-list">
-              {stats.recentPatients.map((patient) => (
-                <Link 
-                  key={patient._id} 
-                  to={`/patients?search=${encodeURIComponent(patient.patientId)}`}
-                  className="file-preview-row"
-                >
-                  <div className="file-info">
-                    <h4 className="file-name">{patient.fullName}</h4>
-                    <p className="file-id">ID: {patient.patientId}</p>
-                  </div>
-                  <div className="file-location">
-                    <span className="badge badge-location">
-                      {patient.locationDisplay}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div style={{ 
-              padding: 'var(--space-6) 0', 
-              textAlign: 'center',
-              color: 'var(--gray-500)'
-            }}>
-              <p style={{ fontSize: '0.875rem', marginBottom: 'var(--space-3)' }}>
-                No patient files yet
-              </p>
-              <Link to="/add-patient" className="btn btn-primary" style={{ fontSize: '0.875rem' }}>
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                  <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/>
-                </svg>
-                New Patient
-              </Link>
-            </div>
-          )}
-        </div>
-
-        {stats.onDutyStaff && stats.onDutyStaff.length > 0 && (
-          <div className="on-duty-card">
-            <div className="card-header">
-              <h2 className="card-title">On Duty Staff</h2>
-              <p className="card-subtitle">Staff scheduled for today</p>
+              {stats.recentPatients && stats.recentPatients.length > 0 ? (
+                <div className="file-list">
+                  {stats.recentPatients.map((patient) => (
+                    <Link
+                      key={patient._id}
+                      to={`/patients?search=${encodeURIComponent(patient.patientId)}`}
+                      className="file-preview-row"
+                    >
+                      <div className="file-info">
+                        <h4 className="file-name">{patient.fullName}</h4>
+                        <p className="file-id">ID: {patient.patientId}</p>
+                      </div>
+                      <div className="file-location">
+                        <span className="badge badge-location">
+                          {patient.locationDisplay}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div style={{
+                  padding: 'var(--space-6) 0',
+                  textAlign: 'center',
+                  color: 'var(--gray-500)'
+                }}>
+                  <p style={{ fontSize: '0.875rem', marginBottom: 'var(--space-3)' }}>
+                    No patient files yet
+                  </p>
+                  <Link to="/add-patient" className="btn btn-primary" style={{ fontSize: '0.875rem' }}>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                      <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z" />
+                    </svg>
+                    New Patient
+                  </Link>
+                </div>
+              )}
             </div>
 
-            <div className="staff-list">
-              {stats.onDutyStaff.map((staff) => (
-                <Link 
-                  key={staff._id} 
-                  to={`/staff?search=${encodeURIComponent(staff.employeeId)}`}
-                  className="staff-preview-row"
-                >
-                  <div className="staff-info">
-                    <h4 className="staff-name">{staff.fullName}</h4>
-                    <p className="staff-role">{formatRole(staff.role)}</p>
-                  </div>
-                  <div className="staff-status">
-                    <span className="badge badge-on-duty">
-                      {staff.shiftDisplay || 'On Duty'}
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+            {stats.onDutyStaff && stats.onDutyStaff.length > 0 && (
+              <div className="on-duty-card">
+                <div className="card-header">
+                  <h2 className="card-title">On Duty Staff</h2>
+                  <p className="card-subtitle">Staff scheduled for today</p>
+                </div>
 
-      <div className="info-panel">
-        <div className="card">
-          <div className="card-header">
-            <h2 className="card-title">Tender Care File System</h2>
+                <div className="staff-list">
+                  {stats.onDutyStaff.map((staff) => (
+                    <Link
+                      key={staff._id}
+                      to={`/staff?search=${encodeURIComponent(staff.employeeId)}`}
+                      className="staff-preview-row"
+                    >
+                      <div className="staff-info">
+                        <h4 className="staff-name">{staff.fullName}</h4>
+                        <p className="staff-role">{formatRole(staff.role)}</p>
+                      </div>
+                      <div className="staff-status">
+                        <span className="badge badge-on-duty">
+                          {staff.shiftDisplay || 'On Duty'}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-          <div className="info-grid">
-            <div className="info-item">
-              <strong>Purpose:</strong> Digital patient file indexing and location tracking for Tender Care Hospital
-            </div>
-            <div className="info-item">
-              <strong>Data Policy:</strong> No medical records stored - location and contact data only
-            </div>
-            <div className="info-item">
-              <strong>Search Methods:</strong> Patient ID, full name, or phone number
-            </div>
-            <div className="info-item">
-              <strong>File Format:</strong> Cabinet → Shelf → Folder numbering system
+
+          <div className="info-panel">
+            <div className="card">
+              <div className="card-header">
+                <h2 className="card-title">Tender Care File System</h2>
+              </div>
+              <div className="info-grid">
+                <div className="info-item">
+                  <strong>Purpose:</strong> Digital patient file indexing and location tracking for Tender Care Hospital
+                </div>
+                <div className="info-item">
+                  <strong>Data Policy:</strong> No medical records stored - location and contact data only
+                </div>
+                <div className="info-item">
+                  <strong>Search Methods:</strong> Patient ID, full name, or phone number
+                </div>
+                <div className="info-item">
+                  <strong>File Format:</strong> Cabinet → Shelf → Folder numbering system
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
         </>
       )}
     </div>
