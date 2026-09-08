@@ -291,29 +291,53 @@
   margin-bottom: var(--space-8);
 }
 
+.info-panel .card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.info-panel .card-header {
+  background: white;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.info-panel .card-title {
+  color: #1e40af;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-3);
 }
 
 .info-item {
-  padding: var(--space-3);
-  background-color: var(--gray-50);
+  padding: var(--space-4);
+  background: white;
   border-radius: var(--radius-md);
-  border-left: 3px solid var(--primary-500);
+  border-left: 3px solid #3b82f6;
   font-size: 0.875rem;
   color: var(--gray-700);
+  line-height: 1.6;
 }
 
 .info-item strong {
-  color: var(--gray-900);
+  display: block;
+  color: #1e40af;
   font-weight: 600;
+  margin-bottom: var(--space-1);
 }
 
 /* Mobile Responsive */
 @media (max-width: 1024px) {
   .content-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .info-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -326,6 +350,10 @@
   .dashboard-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+  
+  .info-grid {
+    gap: var(--space-2);
     gap: var(--space-4);
   }
   
@@ -590,28 +618,28 @@
 }
 
 /* Clinical Staff Weekly Schedule Grid */
-.weekly-schedule-grid {
+.Weekly-schedule-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   gap: var(--space-3);
   margin-top: var(--space-4);
 }
 
-.weekly-schedule-day {
+.Weekly-schedule-day {
   transition: all 150ms ease;
 }
 
-.weekly-schedule-day.is-today {
+.Weekly-schedule-day.is-today {
   box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06);
 }
 
 @media (max-width: 768px) {
-  .weekly-schedule-grid {
+  .Weekly-schedule-grid {
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
     gap: var(--space-2);
   }
   
-  .weekly-schedule-day {
+  .Weekly-schedule-day {
     padding: var(--space-2) !important;
   }
 }

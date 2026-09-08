@@ -7,9 +7,13 @@ import TopBar from './components/TopBar';
 import Dashboard from './components/Dashboard';
 import PatientList from './components/PatientList';
 import StaffList from './components/StaffList';
+import Schedule from './components/Schedule';
 import AddPatient from './components/AddPatient';
 import AddStaff from './components/AddStaff';
 import ChangePassword from './components/ChangePassword';
+import Reports from './components/Reports';
+import PayrollRunsList from './components/Payrollrunslist';
+import PayrollRunDetail from './components/Payrollrundetail';
 import Login from './components/Login';
 import './App.css';
 
@@ -30,11 +34,31 @@ function AppLayout() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/patients" element={<PatientList />} />
-          <Route path="/staff" element={<StaffList />} />
+          <Route path="/staff" element={
+            <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR', 'RECORDS_OPERATOR']}>
+              <StaffList />
+            </ProtectedRoute>
+          } />
+          <Route path="/schedule" element={<Schedule />} />
           <Route path="/add-patient" element={<AddPatient />} />
           <Route path="/add-staff" element={
             <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR']}>
               <AddStaff />
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR']}>
+              <Reports />
+            </ProtectedRoute>
+          } />
+          <Route path="/payroll" element={
+            <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR']}>
+              <PayrollRunsList />
+            </ProtectedRoute>
+          } />
+          <Route path="/payroll/:id" element={
+            <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR']}>
+              <PayrollRunDetail />
             </ProtectedRoute>
           } />
         </Routes>

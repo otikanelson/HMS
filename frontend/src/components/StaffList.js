@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
-import WeeklySchedule from './Weeklyschedule';
+import WeeklySchedule from './WeeklySchedule';
 import './StaffList.css';
 
 const StaffList = () => {
@@ -148,23 +148,9 @@ const StaffList = () => {
   const isSearching = Boolean(searchQuery);
   const activeFilters = Object.values(filters).filter(Boolean).length;
 
-  // For non-Administrators: render ONLY the weekly schedule (read-only)
-  if (!isAdministrator) {
-    return (
-      <div className="staff-list">
-        <WeeklySchedule />
-      </div>
-    );
-  }
-
-  // For Administrators: render weekly schedule FIRST, then staff directory below it
+  // For Administrators and all users: render staff directory
   return (
     <div className="staff-list">
-      {/* Weekly Schedule - Administrator can edit */}
-      <div style={{ marginBottom: 'var(--space-8)' }}>
-        <WeeklySchedule />
-      </div>
-
       <div className="staff-list-header">
         <div>
           <h1 className="page-title">
@@ -180,6 +166,18 @@ const StaffList = () => {
         </div>
         
         <div className="list-actions">
+          {isSearching && (
+            <button 
+              onClick={() => navigate('/staff')}
+              className="btn btn-secondary"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+              </svg>
+              Clear Search
+            </button>
+          )}
+          
           <button
             onClick={() => navigate('/add-staff')}
             className="btn btn-primary"
@@ -285,17 +283,22 @@ const StaffList = () => {
                 <th>Staff ID</th>
                 <th>Full Name</th>
                 <th>Role</th>
-                <th>Login Status</th>
                 <th>Salary</th>
                 <th>Bank Account</th>
                 <th>Account Number</th>
                 <th>Status</th>
-                <th>Shift</th>
                 <th>Phone Number</th>
               </tr>
             </thead>
             <tbody>
-              {staff.map((member) => (
+              {staff.map((member) => {
+                // Calculate if on duty based on current time and today's shift
+                const now = new Date();
+                const currentHour = now.getHours();
+                const currentShift = (currentHour >= 7 && currentHour < 16) ? 'Day' : 'Night';
+                const isOnDuty = member.shiftDisplay === currentShift;
+                
+                return (
                 <tr key={member._id || member.id}>
                   <td>{member.staffId}</td>
                   <td>
@@ -304,34 +307,17 @@ const StaffList = () => {
                     </div>
                   </td>
                   <td>{formatRole(member.role)}</td>
-                  <td>
-                    {member.loginAccount?.exists ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                        <span className={`status-badge ${member.loginAccount.isActive ? 'login-active' : 'login-disabled'}`}>
-                          {member.loginAccount.isActive ? '✓ Active' : '✗ Disabled'}
-                        </span>
-                        <span style={{ fontSize: '11px', color: '#6c757d', lineHeight: '1' }}>
-                          {member.loginAccount.accessLevel === 'ADMINISTRATOR' ? 'Admin' :
-                           member.loginAccount.accessLevel === 'RECORDS_OPERATOR' ? 'Records' :
-                           'Clinical'}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="status-badge no-login">No Login</span>
-                    )}
-                  </td>
                   <td>₦{member.salary?.toLocaleString() || '-'}</td>
                   <td>{member.bankAccount || '-'}</td>
                   <td>{member.accountNumber || '-'}</td>
                   <td>
-                    <span className={`status-badge ${member.onDuty ? 'on-duty' : 'off-duty'}`}>
-                      {member.onDuty ? 'On Duty' : 'Off Duty'}
+                    <span className={`status-badge ${isOnDuty ? 'on-duty' : 'off-duty'}`}>
+                      {isOnDuty ? 'On Duty' : 'Off Duty'}
                     </span>
                   </td>
-                  <td>{member.shift ? member.shift.charAt(0).toUpperCase() + member.shift.slice(1) : '-'}</td>
                   <td>{member.phoneNumber || '-'}</td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>

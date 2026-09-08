@@ -175,8 +175,8 @@ Each requirement should be independently testable — "does the system do this, 
 | FR-2.2 | Creating a staff record automatically provisions that person's login (staff record = login, per §3.1). |
 | FR-2.3 | Deactivating a staff record automatically disables that person's login. |
 | FR-2.4 | Any authenticated user can search/filter staff by role, shift, or duty status. |
-| FR-2.5 | Every authenticated role can view the full weekly shift schedule (all staff, Monday–Sunday, day/night/off) — read-only for Records Operator and Clinical Staff. *(Supersedes the earlier "own schedule only" rule — see decision log below.)* |
-| FR-2.6 | Only Administrator can edit the weekly shift schedule — assigning day/night/off per staff member, per day. |
+| FR-2.5 | Every authenticated role can view the full Weekly shift schedule (all staff, Monday–Sunday, day/night/off) — read-only for Records Operator and Clinical Staff. *(Supersedes the earlier "own schedule only" rule — see decision log below.)* |
+| FR-2.6 | Only Administrator can edit the Weekly shift schedule — assigning day/night/off per staff member, per day. |
 
 ### 8.3 Payroll
 

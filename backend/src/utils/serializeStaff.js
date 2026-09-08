@@ -24,7 +24,7 @@ function serializeStaffForRequester(staffDoc, requester) {
     onDuty: staffDoc.onDuty,
     statusDisplay: staffDoc.statusDisplay,
     shiftDisplay: staffDoc.shiftDisplay,
-    weeklySchedule: staffDoc.weeklySchedule, // Weekly schedule visible to everyone
+    WeeklySchedule: staffDoc.WeeklySchedule, // Weekly schedule visible to everyone
     createdAt: staffDoc.createdAt,
     updatedAt: staffDoc.updatedAt
   };

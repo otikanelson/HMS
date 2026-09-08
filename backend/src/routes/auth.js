@@ -18,6 +18,34 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// GET /api/auth/staff-list - Get staff list for login selection (public, no auth)
+router.get('/staff-list', async (req, res) => {
+  try {
+    // Get all active staff with user accounts
+    const users = await User.find({ isActive: true })
+      .select('staffId username accessLevel')
+      .populate('staffId', 'firstName lastName role');
+    
+    const staff = users
+      .filter(user => user.staffId) // Only include users with linked staff records
+      .map(user => ({
+        _id: user.staffId._id,
+        fullName: `${user.staffId.firstName} ${user.staffId.lastName}`,
+        roleDisplay: user.staffId.role.charAt(0) + user.staffId.role.slice(1).toLowerCase().replace(/_/g, ' '),
+        username: user.username
+      }))
+      .sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+    res.json({ staff });
+  } catch (error) {
+    console.error('Staff list error:', error);
+    res.status(500).json({
+      error: 'Failed to load staff list',
+      message: 'Internal server error'
+    });
+  }
+});
+
 // Login endpoint
 router.post('/login', authLimiter, async (req, res) => {
   try {

@@ -76,6 +76,7 @@ const authenticateToken = async (req, res, next) => {
     // Attach user data with accessLevel, staffId, and mustChangePassword to req.user
     req.user = {
       ...user.getPublicProfile(),
+      userId: user._id, // Explicitly add userId for convenience
       accessLevel: decoded.accessLevel || user.accessLevel, // Use JWT claim, fallback to DB
       staffId: decoded.staffId || user.staffId,
       mustChangePassword: decoded.mustChangePassword !== undefined ? decoded.mustChangePassword : user.mustChangePassword

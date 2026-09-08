@@ -7,7 +7,7 @@ const router = express.Router();
 // GET /api/patients/search - Search patient files (all authenticated users)
 router.get('/search', authenticateToken, async (req, res) => {
   try {
-    const { q } = req.query;
+    const { q, includeArchived } = req.query;
     
     if (!q || q.trim().length < 1) {
       return res.json({
@@ -18,7 +18,13 @@ router.get('/search', authenticateToken, async (req, res) => {
     }
 
     const startTime = Date.now();
-    const patients = await PatientFile.searchFiles(q.trim());
+    let patients = await PatientFile.searchFiles(q.trim());
+    
+    // Filter out archived patients unless explicitly requested
+    if (includeArchived !== 'true') {
+      patients = patients.filter(p => p.status !== 'archived');
+    }
+    
     const searchTime = Date.now() - startTime;
 
     // Add locationDisplay virtual to each result
@@ -49,13 +55,17 @@ router.get('/', authenticateToken, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
+    const { includeArchived } = req.query;
 
-    const patients = await PatientFile.find()
+    // Build query - exclude archived by default
+    const query = includeArchived === 'true' ? {} : { status: { $ne: 'archived' } };
+
+    const patients = await PatientFile.find(query)
       .sort({ updatedAt: -1 })
       .skip(skip)
       .limit(limit);
 
-    const total = await PatientFile.countDocuments();
+    const total = await PatientFile.countDocuments(query);
 
     const patientsWithLocation = patients.map(patient => ({
       ...patient.toObject(),
@@ -291,6 +301,117 @@ router.put('/:id/location', authenticateToken, requireAccessLevel('ADMINISTRATOR
     console.error('Update location error:', error);
     res.status(500).json({
       error: 'Failed to update location',
+      message: 'Internal server error'
+    });
+  }
+});
+
+// PUT /api/patients/:id/status - Update patient status with role-specific transition rules
+router.put('/:id/status', authenticateToken, async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    // Validate status value
+    const validStatuses = ['admitted', 'discharged', 'archived'];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        error: 'Invalid status',
+        message: `Status must be one of: ${validStatuses.join(', ')}`
+      });
+    }
+
+    // Find patient
+    const patient = await PatientFile.findOne({ patientId: req.params.id });
+    if (!patient) {
+      return res.status(404).json({
+        error: 'Patient not found',
+        message: `No patient found with ID: ${req.params.id}`
+      });
+    }
+
+    const currentStatus = patient.status || 'discharged'; // Treat missing status as discharged
+    const requestedStatus = status;
+    const userRole = req.user.accessLevel;
+
+    // If no change, return success immediately
+    if (currentStatus === requestedStatus) {
+      return res.json({
+        message: 'Patient status unchanged',
+        patient: {
+          ...patient.toObject(),
+          locationDisplay: patient.locationDisplay
+        }
+      });
+    }
+
+    // Define valid transitions and who can perform them
+    const transitions = {
+      'discharged->admitted': ['ADMINISTRATOR', 'RECORDS_OPERATOR', 'CLINICAL_STAFF'],
+      'admitted->discharged': ['ADMINISTRATOR', 'RECORDS_OPERATOR', 'CLINICAL_STAFF'],
+      'discharged->archived': ['ADMINISTRATOR', 'RECORDS_OPERATOR'],
+      'archived->discharged': ['ADMINISTRATOR', 'RECORDS_OPERATOR']
+    };
+
+    const transitionKey = `${currentStatus}->${requestedStatus}`;
+    const allowedRoles = transitions[transitionKey];
+
+    // Check if transition is valid
+    if (!allowedRoles) {
+      return res.status(400).json({
+        error: 'Invalid status transition',
+        message: `Cannot change status from '${currentStatus}' to '${requestedStatus}'. You must change '${currentStatus}' to an intermediate status first.`
+      });
+    }
+
+    // Check if user's role is allowed for this transition
+    if (!allowedRoles.includes(userRole)) {
+      const actionMessages = {
+        'discharged->archived': 'archive patient files',
+        'archived->discharged': 'reactivate archived patient files',
+        'discharged->admitted': 'admit patients',
+        'admitted->discharged': 'discharge patients'
+      };
+      
+      return res.status(403).json({
+        error: 'Permission denied',
+        message: `You don't have permission to ${actionMessages[transitionKey] || 'perform this action'}.`
+      });
+    }
+
+    // Perform the transition
+    patient.status = requestedStatus;
+    await patient.save();
+
+    // Determine activity log action
+    const activityActions = {
+      'discharged->admitted': 'PATIENT_ADMITTED',
+      'admitted->discharged': 'PATIENT_DISCHARGED',
+      'discharged->archived': 'PATIENT_ARCHIVED',
+      'archived->discharged': 'PATIENT_REACTIVATED'
+    };
+
+    // Log activity
+    await logActivity({
+      req,
+      action: activityActions[transitionKey],
+      targetType: 'PatientFile',
+      targetId: patient._id,
+      targetLabel: patient.fullName,
+      details: { from: currentStatus, to: requestedStatus }
+    });
+
+    res.json({
+      message: `Patient status updated to '${requestedStatus}' successfully`,
+      patient: {
+        ...patient.toObject(),
+        locationDisplay: patient.locationDisplay
+      }
+    });
+
+  } catch (error) {
+    console.error('Update status error:', error);
+    res.status(500).json({
+      error: 'Failed to update status',
       message: 'Internal server error'
     });
   }

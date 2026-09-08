@@ -13,6 +13,7 @@ const profileRoutes = require('./routes/profile');
 const noticeRoutes = require('./routes/notices');
 const activityLogRoutes = require('./routes/activityLog');
 const adminNotesRoutes = require('./routes/adminNotes');
+const payrollRoutes = require('./routes/payroll');
 const database = require('./config/database');
 const { authenticateToken } = require('./middleware/auth');
 
@@ -91,6 +92,7 @@ app.use('/api/dashboard', authenticateToken, dashboardRoutes);
 app.use('/api/notices', noticeRoutes);
 app.use('/api/activity-log', authenticateToken, activityLogRoutes);
 app.use('/api/admin-notes', authenticateToken, adminNotesRoutes);
+app.use('/api/payroll', payrollRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

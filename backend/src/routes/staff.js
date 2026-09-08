@@ -87,16 +87,38 @@ router.get('/', authenticateToken, async (req, res) => {
     // Build filter object
     const filter = {};
     if (role) filter.role = role.toUpperCase();
-    if (status === 'on-duty') filter.onDuty = true;
-    if (status === 'off-duty') filter.onDuty = false;
+    
+    // For on-duty/off-duty filtering, we'll filter after fetching based on today's schedule
+    const needsScheduleFilter = status === 'on-duty' || status === 'off-duty';
+    
     if (shift) filter.shift = shift.toUpperCase();
 
-    const staff = await Staff.find(filter)
-      .sort({ lastName: 1, firstName: 1 })
-      .skip(skip)
-      .limit(limit);
+    let staff = await Staff.find(filter)
+      .sort({ lastName: 1, firstName: 1 });
 
-    const total = await Staff.countDocuments(filter);
+    let total = staff.length;
+
+    // Filter by today's schedule if status filter is applied
+    if (needsScheduleFilter) {
+      const now = new Date();
+      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const today = days[now.getDay()];
+      const currentHour = now.getHours();
+      
+      // Determine current shift: day (7 AM - 4 PM) or night (4 PM - 7 AM)
+      const currentShift = (currentHour >= 7 && currentHour < 16) ? 'day' : 'night';
+      
+      staff = staff.filter(member => {
+        const todayShift = member.WeeklySchedule?.[today] || 'off';
+        const isOnDuty = todayShift === currentShift;
+        return status === 'on-duty' ? isOnDuty : !isOnDuty;
+      });
+      
+      total = staff.length;
+    }
+    
+    // Apply pagination
+    staff = staff.slice(skip, skip + limit);
 
     // Lookup User accounts for each staff member
     const staffIds = staff.map(s => s._id);
@@ -169,12 +191,12 @@ router.get('/roles', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/staff/schedule - Get weekly schedule for all active staff (all authenticated users)
+// GET /api/staff/schedule - Get Weekly schedule for all active staff (all authenticated users)
 // NOTE: This MUST come before /:id route to avoid "schedule" being treated as an id parameter
 router.get('/schedule', authenticateToken, async (req, res) => {
   try {
     const staff = await Staff.find({ onDuty: true })
-      .select('staffId firstName lastName otherNames role weeklySchedule')
+      .select('staffId firstName lastName otherNames role WeeklySchedule')
       .sort({ role: 1, lastName: 1, firstName: 1 })
       .lean();
 
@@ -185,7 +207,7 @@ router.get('/schedule', authenticateToken, async (req, res) => {
         .filter(n => n && n.trim())
         .join(' '),
       role: member.role,
-      weeklySchedule: member.weeklySchedule || {
+      WeeklySchedule: member.WeeklySchedule || {
         monday: 'off',
         tuesday: 'off',
         wednesday: 'off',
@@ -206,16 +228,16 @@ router.get('/schedule', authenticateToken, async (req, res) => {
   }
 });
 
-// PUT /api/staff/:id/schedule - Update weekly schedule for a staff member (ADMINISTRATOR only)
+// PUT /api/staff/:id/schedule - Update Weekly schedule for a staff member (ADMINISTRATOR only)
 // NOTE: This must come before general /:id route but after /schedule route
 router.put('/:id/schedule', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
   try {
-    const { weeklySchedule } = req.body;
+    const { WeeklySchedule } = req.body;
 
-    if (!weeklySchedule || typeof weeklySchedule !== 'object') {
+    if (!WeeklySchedule || typeof WeeklySchedule !== 'object') {
       return res.status(400).json({
-        error: 'Invalid weekly schedule',
-        message: 'weeklySchedule object is required'
+        error: 'Invalid Weekly schedule',
+        message: 'WeeklySchedule object is required'
       });
     }
 
@@ -224,17 +246,17 @@ router.put('/:id/schedule', authenticateToken, requireAccessLevel('ADMINISTRATOR
     const validShifts = ['day', 'night', 'off'];
 
     for (const day of days) {
-      if (!weeklySchedule.hasOwnProperty(day)) {
+      if (!WeeklySchedule.hasOwnProperty(day)) {
         return res.status(400).json({
-          error: 'Invalid weekly schedule',
+          error: 'Invalid Weekly schedule',
           message: `Missing schedule for ${day}`
         });
       }
 
-      if (!validShifts.includes(weeklySchedule[day])) {
+      if (!validShifts.includes(WeeklySchedule[day])) {
         return res.status(400).json({
           error: 'Invalid shift value',
-          message: `Invalid shift value "${weeklySchedule[day]}" for ${day}. Must be one of: ${validShifts.join(', ')}`
+          message: `Invalid shift value "${WeeklySchedule[day]}" for ${day}. Must be one of: ${validShifts.join(', ')}`
         });
       }
     }
@@ -256,8 +278,8 @@ router.put('/:id/schedule', authenticateToken, requireAccessLevel('ADMINISTRATOR
       });
     }
 
-    // Update weekly schedule
-    staff.weeklySchedule = weeklySchedule;
+    // Update Weekly schedule
+    staff.WeeklySchedule = WeeklySchedule;
     await staff.save();
 
     // Log activity
@@ -275,7 +297,7 @@ router.put('/:id/schedule', authenticateToken, requireAccessLevel('ADMINISTRATOR
       staff: {
         staffId: staff.staffId,
         fullName: staff.fullName,
-        weeklySchedule: staff.weeklySchedule
+        WeeklySchedule: staff.WeeklySchedule
       }
     });
   } catch (error) {
@@ -390,7 +412,7 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
       targetType: 'Staff',
       targetId: newStaff._id,
       targetLabel: newStaff.fullName,
-      details: { role: newStaff.role, shift: newStaff.shift }
+      details: { role: newStaff.role, weeklySchedule: newStaff.weeklySchedule }
     });
 
     // Auto-provision user account for the new staff member

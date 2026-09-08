@@ -35,7 +35,7 @@ const staffSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
-  weeklySchedule: {
+  WeeklySchedule: {
     monday: { type: String, enum: ['day', 'night', 'off'], default: 'off' },
     tuesday: { type: String, enum: ['day', 'night', 'off'], default: 'off' },
     wednesday: { type: String, enum: ['day', 'night', 'off'], default: 'off' },
@@ -84,16 +84,28 @@ staffSchema.virtual('roleDisplay').get(function() {
   return roleMap[this.role] || this.role;
 });
 
-// Virtual for status display
+// Virtual for status display (based on current time and today's schedule)
 staffSchema.virtual('statusDisplay').get(function() {
-  return this.onDuty ? 'On Duty' : 'Off Duty';
+  const now = new Date();
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const today = days[now.getDay()];
+  const currentHour = now.getHours();
+  const todayShift = this.WeeklySchedule?.[today] || 'off';
+  
+  // Determine current shift: day (7 AM - 4 PM) or night (4 PM - 7 AM)
+  const currentShift = (currentHour >= 7 && currentHour < 16) ? 'day' : 'night';
+  
+  if (todayShift === currentShift) {
+    return 'On Duty';
+  }
+  return 'Off Duty';
 });
 
 // Virtual for shift display (based on today's schedule)
 staffSchema.virtual('shiftDisplay').get(function() {
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const today = days[new Date().getDay()];
-  const todayShift = this.weeklySchedule?.[today] || 'off';
+  const todayShift = this.WeeklySchedule?.[today] || 'off';
   
   if (todayShift === 'off') return 'Off';
   return todayShift.charAt(0).toUpperCase() + todayShift.slice(1);

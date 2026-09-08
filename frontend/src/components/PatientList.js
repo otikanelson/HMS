@@ -1,9 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
+import { PatientStatusBadge } from './PatientStatusControl';
+import PatientStatusControl from './PatientStatusControl';
+import PatientStatusFilter from './PatientStatusFilter';
 import './PatientList.css';
 
 const PatientList = () => {
+  const { user } = useAuth();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -14,6 +19,8 @@ const PatientList = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const [editedPatients, setEditedPatients] = useState({});
   const [isEditMode, setIsEditMode] = useState(false);
+  const [includeArchived, setIncludeArchived] = useState(false);
+  const [expandedRows, setExpandedRows] = useState(new Set());
 
   const fetchPatients = useCallback(async (page = 1, reset = false) => {
     try {
@@ -25,11 +32,12 @@ const PatientList = () => {
       setError('');
       
       const searchQuery = searchParams.get('search');
-      let url = `/api/patients?page=${page}&limit=20`;
+      const archivedParam = includeArchived ? '&includeArchived=true' : '';
+      let url = `/api/patients?page=${page}&limit=20${archivedParam}`;
       
       if (searchQuery) {
         // For search queries, load all results at once (no pagination)
-        url = `/api/patients/search?q=${encodeURIComponent(searchQuery)}`;
+        url = `/api/patients/search?q=${encodeURIComponent(searchQuery)}${archivedParam}`;
       }
       
       const response = await axios.get(url);
@@ -66,12 +74,12 @@ const PatientList = () => {
   }, [searchParams]);
 
   useEffect(() => {
-    // Reset state when search params change
+    // Reset state when search params or includeArchived changes
     setPatients([]);
     setCurrentPage(1);
     setHasMore(true);
     fetchPatients(1, true);
-  }, [fetchPatients]);
+  }, [fetchPatients, includeArchived]);
 
   const loadMorePatients = () => {
     if (!loadingMore && hasMore && !searchParams.get('search')) {
@@ -149,6 +157,45 @@ const PatientList = () => {
     fetchPatients(1, true);
   };
 
+  const toggleRowExpanded = (patientId) => {
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(patientId)) {
+        newSet.delete(patientId);
+      } else {
+        newSet.add(patientId);
+      }
+      return newSet;
+    });
+  };
+
+  const handlePatientStatusChanged = (patientId, updatedPatient) => {
+    setPatients(prev => 
+      prev.map(p => p.patientId === patientId ? { ...p, ...updatedPatient } : p)
+    );
+  };
+
+  const handlePatientDeleted = (patientId) => {
+    setPatients(prev => prev.filter(p => p.patientId !== patientId));
+    setExpandedRows(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(patientId);
+      return newSet;
+    });
+  };
+
+  const handleQuickStatusChange = async (patientId, newStatus) => {
+    try {
+      const response = await axios.put(`/api/patients/${patientId}/status`, { status: newStatus });
+      // Update patient in list with new status
+      handlePatientStatusChanged(patientId, response.data.patient);
+    } catch (err) {
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to update patient status');
+      // Scroll to error message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="patient-list">
@@ -179,6 +226,18 @@ const PatientList = () => {
         </div>
         
         <div className="list-actions">
+          {isSearching && (
+            <button 
+              onClick={() => window.location.href = '/patients'}
+              className="btn btn-secondary"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+              </svg>
+              Clear Search
+            </button>
+          )}
+          
           <button 
             onClick={toggleEditMode}
             className={`btn ${isEditMode ? 'btn-primary' : 'btn-secondary'}`}
@@ -202,6 +261,14 @@ const PatientList = () => {
             Refresh
           </button>
         </div>
+      </div>
+
+      {/* Patient Status Filter */}
+      <div style={{ marginBottom: 'var(--space-4)' }}>
+        <PatientStatusFilter 
+          includeArchived={includeArchived}
+          onChange={setIncludeArchived}
+        />
       </div>
 
       {error && (
@@ -235,6 +302,8 @@ const PatientList = () => {
                 <th>Patient ID</th>
                 <th>Full Name</th>
                 <th>Phone Number</th>
+                <th>Status</th>
+                <th>Actions</th>
                 <th>Cabinet</th>
                 <th>Shelf</th>
                 <th>Folder</th>
@@ -242,12 +311,58 @@ const PatientList = () => {
               </tr>
             </thead>
             <tbody>
-              {patients.map((patient) => (
-                <tr key={patient._id || patient.id}>
-                  <td>{patient.patientId}</td>
-                  <td>{patient.fullName}</td>
-                  <td>{patient.phoneNumber}</td>
-                  <td>
+              {patients.map((patient) => {
+                const isExpanded = expandedRows.has(patient.patientId);
+                const canAdmitDischarge = ['ADMINISTRATOR', 'RECORDS_OPERATOR', 'CLINICAL_STAFF'].includes(user?.accessLevel);
+                const canArchive = ['ADMINISTRATOR', 'RECORDS_OPERATOR'].includes(user?.accessLevel);
+                
+                return (
+                  <React.Fragment key={patient._id || patient.id}>
+                    <tr className={isExpanded ? 'row-expanded' : ''}>
+                      <td>{patient.patientId}</td>
+                      <td>{patient.fullName}</td>
+                      <td>{patient.phoneNumber}</td>
+                      <td>
+                        <PatientStatusBadge status={patient.status || 'discharged'} />
+                      </td>
+                      <td>
+                        <select
+                          className="status-picker"
+                          value={patient.status || 'discharged'}
+                          onChange={(e) => handleQuickStatusChange(patient.patientId, e.target.value)}
+                          disabled={
+                            (patient.status === 'discharged' && !canAdmitDischarge && !canArchive) ||
+                            (patient.status === 'admitted' && !canAdmitDischarge) ||
+                            (patient.status === 'archived' && !canArchive)
+                          }
+                        >
+                          {/* Discharged can go to admitted or archived */}
+                          {patient.status === 'discharged' && (
+                            <>
+                              <option value="discharged">-- Select Action --</option>
+                              {canAdmitDischarge && <option value="admitted">Admit Patient</option>}
+                              {canArchive && <option value="archived">Archive File</option>}
+                            </>
+                          )}
+                          
+                          {/* Admitted can discharge */}
+                          {patient.status === 'admitted' && (
+                            <>
+                              <option value="admitted">-- Select Action --</option>
+                              {canAdmitDischarge && <option value="discharged">↗ Discharge Patient</option>}
+                            </>
+                          )}
+                          
+                          {/* Archived can reactivate to discharged */}
+                          {patient.status === 'archived' && (
+                            <>
+                              <option value="archived">-- Select Action --</option>
+                              {canArchive && <option value="discharged">↻ Reactivate File</option>}
+                            </>
+                          )}
+                        </select>
+                      </td>
+                      <td>
                     {isEditMode ? (
                       <input
                         type="number"
@@ -291,7 +406,22 @@ const PatientList = () => {
                   </td>
                   <td>{formatDate(patient.createdAt)}</td>
                 </tr>
-              ))}
+                {isExpanded && (
+                  <tr className="expanded-row">
+                    <td colSpan="9">
+                      <div className="expanded-content">
+                        <PatientStatusControl
+                          patient={patient}
+                          onChanged={(updated) => handlePatientStatusChanged(patient.patientId, updated)}
+                          onDeleted={() => handlePatientDeleted(patient.patientId)}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>

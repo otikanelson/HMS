@@ -179,13 +179,12 @@ const ChangePassword = () => {
 
         <form onSubmit={(e) => { handleSubmit(e); return false; }} className="lock-card" autoComplete="off">
           <div className="lock-brand">
-            <svg width="20" height="20" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-              <path
-                d="M5 7a2 2 0 0 1 2-2h6l2 2h6a2 2 0 0 1 2 2v1H5V7Z"
-                fill="none" stroke="white" strokeWidth="1.4"
-              />
-              <rect x="5" y="9.5" width="18" height="11.5" rx="1.5" fill="none" stroke="white" strokeWidth="1.4" />
-            </svg>
+            <div className="lock-brand-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
             <span>Change Your Password</span>
           </div>
 

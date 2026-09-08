@@ -634,10 +634,21 @@ const Dashboard = () => {
                 className="btn btn-primary"
                 style={{ fontSize: '0.875rem', padding: 'var(--space-2) var(--space-3)' }}
               >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                  <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/>
-                </svg>
-                {showAdminNoteForm ? 'Cancel' : 'Add Note'}
+                {showAdminNoteForm ? (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                      <path fillRule="evenodd" d="M2.5 7.5a.5.5 0 01.5-.5h10a.5.5 0 010 1H3a.5.5 0 01-.5-.5z"/>
+                    </svg>
+                    {' Cancel'}
+                  </>
+                ) : (
+                  <>
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                      <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z"/>
+                    </svg>
+                    {' Add Note'}
+                  </>
+                )}
               </button>
             </div>
 
@@ -893,16 +904,16 @@ const Dashboard = () => {
                   <span className="shift-info-value">{myShift.shiftDisplay || 'Not set'}</span>
                 </div>
                 <div className="shift-info-item">
-                  <span className="shift-info-label">Status</span>
-                  <span className={`shift-status-badge ${myShift.onDuty ? 'status-on-duty' : 'status-off-duty'}`}>
-                    {myShift.statusDisplay || 'Unknown'}
+                  <span className="shift-info-label">Today's Status</span>
+                  <span className={`shift-status-badge ${myShift.statusDisplay === 'On Duty' ? 'status-on-duty' : 'status-off-duty'}`}>
+                    {myShift.statusDisplay || 'Off Duty'}
                   </span>
                 </div>
               </div>
-              {myShift.weeklySchedule && (
+              {myShift.WeeklySchedule && (
                 <div className="shift-schedule">
                   <h4 className="shift-schedule-title">Week at a Glance</h4>
-                  <div className="weekly-schedule-grid">
+                  <div className="Weekly-schedule-grid">
                     {[
                       { key: 'monday', label: 'Monday' },
                       { key: 'tuesday', label: 'Tuesday' },
@@ -912,7 +923,7 @@ const Dashboard = () => {
                       { key: 'saturday', label: 'Saturday' },
                       { key: 'sunday', label: 'Sunday' }
                     ].map(day => {
-                      const shift = myShift.weeklySchedule[day.key] || 'off';
+                      const shift = myShift.WeeklySchedule[day.key] || 'off';
                       const shiftLabel = shift === 'day' ? 'Day' : shift === 'night' ? 'Night' : 'Off';
                       const isToday = (() => {
                         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -922,7 +933,7 @@ const Dashboard = () => {
                       return (
                         <div 
                           key={day.key} 
-                          className={`weekly-schedule-day ${isToday ? 'is-today' : ''}`}
+                          className={`Weekly-schedule-day ${isToday ? 'is-today' : ''}`}
                           style={{
                             padding: 'var(--space-3)',
                             background: isToday ? 'var(--primary-50)' : 'var(--gray-50)',
@@ -1050,7 +1061,7 @@ const Dashboard = () => {
           <div className="on-duty-card">
             <div className="card-header">
               <h2 className="card-title">On Duty Staff</h2>
-              <p className="card-subtitle">Currently active staff members</p>
+              <p className="card-subtitle">Staff scheduled for today</p>
             </div>
 
             <div className="staff-list">
@@ -1066,7 +1077,7 @@ const Dashboard = () => {
                   </div>
                   <div className="staff-status">
                     <span className="badge badge-on-duty">
-                      On Duty
+                      {staff.shiftDisplay || 'On Duty'}
                     </span>
                   </div>
                 </Link>

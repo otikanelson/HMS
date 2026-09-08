@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
-import './Weeklyschedule.css';
+import './WeeklySchedule.css';
 
 const DAYS = [
   { key: 'monday', label: 'Mon' },
@@ -28,8 +28,8 @@ async function fetchScheduleOverview() {
   return res.data;
 }
 
-async function updateStaffSchedule(staffId, weeklySchedule) {
-  const res = await axios.put(`/api/staff/${staffId}/schedule`, { weeklySchedule });
+async function updateStaffSchedule(staffId, WeeklySchedule) {
+  const res = await axios.put(`/api/staff/${staffId}/schedule`, { WeeklySchedule });
   return res.data;
 }
 
@@ -42,6 +42,9 @@ const WeeklySchedule = () => {
   const [error, setError] = useState('');
   const [savingCell, setSavingCell] = useState(null);
   const [savedCell, setSavedCell] = useState(null);
+  const [pendingChanges, setPendingChanges] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const today = todayKey();
 
   const loadSchedule = useCallback(async () => {
@@ -61,40 +64,55 @@ const WeeklySchedule = () => {
     loadSchedule();
   }, [loadSchedule]);
 
-  const handleCellChange = async (staffId, dayKey, newValue) => {
-    const cellId = `${staffId}-${dayKey}`;
+  const handleCellChange = (staffId, dayKey, newValue) => {
     const rowIndex = rows.findIndex((r) => r.staffId === staffId);
     if (rowIndex === -1) return;
 
-    const previousSchedule = rows[rowIndex].weeklySchedule;
+    const previousSchedule = rows[rowIndex].WeeklySchedule;
     const updatedSchedule = { ...previousSchedule, [dayKey]: newValue };
 
     // Optimistic update
     setRows((prev) => {
       const next = [...prev];
-      next[rowIndex] = { ...next[rowIndex], weeklySchedule: updatedSchedule };
+      next[rowIndex] = { ...next[rowIndex], WeeklySchedule: updatedSchedule };
       return next;
     });
-    setSavingCell(cellId);
+
+    // Track pending change
+    setPendingChanges((prev) => ({
+      ...prev,
+      [staffId]: updatedSchedule,
+    }));
+
     setError('');
+    setSaveSuccess(false);
+  };
+
+  const handleSaveSchedule = async () => {
+    if (Object.keys(pendingChanges).length === 0) return;
+
+    setIsSaving(true);
+    setError('');
+    setSaveSuccess(false);
 
     try {
-      await updateStaffSchedule(staffId, updatedSchedule);
-      setSavedCell(cellId);
-      setTimeout(() => setSavedCell((current) => (current === cellId ? null : current)), 1200);
+      // Save changes sequentially to avoid race conditions with token refresh
+      for (const [staffId, schedule] of Object.entries(pendingChanges)) {
+        await updateStaffSchedule(staffId, schedule);
+      }
+
+      setPendingChanges({});
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
-      // Revert on failure
-      setRows((prev) => {
-        const next = [...prev];
-        next[rowIndex] = { ...next[rowIndex], weeklySchedule: previousSchedule };
-        return next;
-      });
       setError(
         err.response?.data?.error ||
-          "That change didn't save. Please try again."
+          "Changes didn't save. Please try again."
       );
+      // Reload schedule on error to ensure UI is in sync
+      loadSchedule();
     } finally {
-      setSavingCell(null);
+      setIsSaving(false);
     }
   };
 
@@ -114,6 +132,29 @@ const WeeklySchedule = () => {
       <div className="schedule-heading">
         <h2>Weekly Schedule</h2>
         {!canEdit && <span className="schedule-readonly-tag">View only</span>}
+        {canEdit && Object.keys(pendingChanges).length > 0 && (
+          <button
+            onClick={handleSaveSchedule}
+            disabled={isSaving}
+            className="schedule-save-button"
+          >
+            {isSaving ? (
+              'Saving...'
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                </svg>
+                Save Schedule
+              </>
+            )}
+          </button>
+        )}
+        {saveSuccess && (
+          <span className="schedule-success-message">
+            ✓ Schedule saved successfully
+          </span>
+        )}
       </div>
 
       {error && <div className="schedule-error">{error}</div>}
@@ -144,7 +185,7 @@ const WeeklySchedule = () => {
                     <div className="schedule-staff-role">{row.role}</div>
                   </td>
                   {DAYS.map((d) => {
-                    const value = row.weeklySchedule?.[d.key] || 'off';
+                    const value = row.WeeklySchedule?.[d.key] || 'off';
                     const cellId = `${row.staffId}-${d.key}`;
                     const isTodayCol = d.key === today;
 
@@ -162,7 +203,7 @@ const WeeklySchedule = () => {
                               onChange={(e) =>
                                 handleCellChange(row.staffId, d.key, e.target.value)
                               }
-                              disabled={savingCell === cellId}
+                              disabled={isSaving}
                               className="schedule-select"
                               aria-label={`${row.fullName} — ${d.label}`}
                             >
@@ -170,9 +211,6 @@ const WeeklySchedule = () => {
                               <option value="night">Night</option>
                               <option value="off">Off</option>
                             </select>
-                            {savedCell === cellId && (
-                              <span className="schedule-saved-tick" aria-hidden="true">✓</span>
-                            )}
                           </div>
                         ) : (
                           <span className="schedule-badge">{SHIFT_LABELS[value]}</span>

@@ -12,6 +12,7 @@ const AddPatient = () => {
     shelfNumber: '',
     folderNumber: ''
   });
+  const [admitImmediately, setAdmitImmediately] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -233,6 +234,20 @@ const AddPatient = () => {
 
       const response = await axios.post('/api/patients', patientData);
       
+      const createdPatient = response.data.patient;
+      
+      // If "Admit Immediately" is checked, update patient status to admitted
+      if (admitImmediately && createdPatient) {
+        try {
+          await axios.put(`/api/patients/${createdPatient.patientId}/status`, { 
+            status: 'admitted' 
+          });
+        } catch (statusErr) {
+          console.error('Failed to admit patient:', statusErr);
+          // Continue with success message even if admission fails
+        }
+      }
+      
       // Handle different possible response structures
       let location;
       if (response.data.patient?.locationDisplay) {
@@ -244,7 +259,8 @@ const AddPatient = () => {
         location = `Cabinet ${patientData.cabinetNumber} → Shelf ${patientData.shelfNumber} → Folder ${patientData.folderNumber}`;
       }
       
-      setSuccess(`Patient file indexed successfully! Location: ${location}`);
+      const statusMessage = admitImmediately ? ' Patient has been admitted.' : '';
+      setSuccess(`Patient file indexed successfully! Location: ${location}${statusMessage}`);
       
       // Scroll to success message
       setTimeout(() => {
@@ -266,6 +282,7 @@ const AddPatient = () => {
         shelfNumber: '',
         folderNumber: ''
       });
+      setAdmitImmediately(false);
 
     } catch (err) {
       if (err.response?.status === 400) {
@@ -301,6 +318,7 @@ const AddPatient = () => {
       shelfNumber: '',
       folderNumber: ''
     });
+    setAdmitImmediately(false);
     setError('');
     setSuccess('');
   };
@@ -441,6 +459,24 @@ const AddPatient = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="form-section">
+            <h3>Patient Status</h3>
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={admitImmediately}
+                  onChange={(e) => setAdmitImmediately(e.target.checked)}
+                  className="checkbox-input"
+                />
+                <span className="checkbox-text">
+                  <strong>Admit patient immediately</strong>
+                  <small>Patient will be marked as admitted right after file creation</small>
+                </span>
+              </label>
+            </div>
           </div>
 
           <div className="form-actions">

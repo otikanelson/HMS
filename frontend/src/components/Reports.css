@@ -1,0 +1,207 @@
+.reports-page {
+  max-width: 900px;
+}
+
+.reports-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.reports-header h1 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--gray-900);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.reports-subtitle {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.reports-flagged-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--gray-600);
+  cursor: pointer;
+  white-space: nowrap;
+  padding-top: var(--space-2);
+}
+
+.reports-error {
+  background: var(--error-50);
+  color: var(--error-600);
+  border: 1px solid #fecaca;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  margin-bottom: var(--space-4);
+}
+
+.reports-status-text {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+.reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.report-row {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.report-row.is-flagged {
+  border-color: var(--error-500);
+  background: var(--error-50);
+}
+
+.report-row-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.report-row-text {
+  font-size: 0.875rem;
+  color: var(--gray-800);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.report-actor {
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+.report-role-tag {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--gray-500);
+  background: var(--gray-100);
+  padding: 0.1rem var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.report-target {
+  color: var(--gray-500);
+}
+
+.report-time {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  white-space: nowrap;
+}
+
+.report-flag-note {
+  margin-top: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--error-600);
+}
+
+.report-row-actions {
+  margin-top: var(--space-3);
+}
+
+.report-flag-btn {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--gray-500);
+  background: none;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+}
+
+.report-flag-btn:hover {
+  background: var(--gray-50);
+  color: var(--gray-700);
+}
+
+.report-flag-form {
+  margin-top: var(--space-3);
+  background: var(--gray-50);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+
+.report-flag-form textarea {
+  width: 100%;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.report-unflag-confirm-text {
+  font-size: 0.8125rem;
+  color: var(--gray-700);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.report-flag-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.report-btn-primary,
+.report-btn-secondary {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.report-btn-primary {
+  background: var(--primary-600);
+  color: white;
+}
+.report-btn-primary:hover:not(:disabled) { background: var(--primary-700); }
+.report-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.report-btn-secondary {
+  background: white;
+  color: var(--gray-700);
+  border-color: var(--gray-300);
+}
+.report-btn-secondary:hover:not(:disabled) { background: var(--gray-50); }
+.report-btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.reports-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.reports-page-indicator {
+  font-size: 0.8125rem;
+  color: var(--gray-500);
+}

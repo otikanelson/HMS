@@ -50,6 +50,11 @@ const patientFileSchema = new mongoose.Schema({
     min: [1, 'Folder number must be at least 1'],
     max: [100, 'Folder number cannot exceed 100']
   },
+  status: {
+    type: String,
+    enum: ['admitted', 'discharged', 'archived'],
+    default: 'discharged'
+  },
   // Audit trail fields
   createdAt: {
     type: Date,

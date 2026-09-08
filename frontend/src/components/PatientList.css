@@ -234,3 +234,184 @@
     padding: 6px 10px;
   }
 }
+
+/* Expandable rows styling */
+.expand-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-600);
+  border-radius: var(--radius-sm);
+  transition: all 150ms ease;
+}
+
+.expand-btn:hover {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+.expand-btn:active {
+  background: var(--gray-200);
+}
+
+.row-expanded {
+  background: var(--primary-50);
+}
+
+.expanded-row td {
+  padding: 0 !important;
+  border-top: none !important;
+}
+
+.expanded-content {
+  padding: var(--space-4);
+  background: var(--gray-50);
+  border-top: 2px solid var(--primary-100);
+}
+
+/* Quick action buttons in table */
+.quick-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 150ms ease;
+  white-space: nowrap;
+}
+
+.quick-action-admit {
+  background: var(--primary-50);
+  color: var(--primary-700);
+  border-color: var(--primary-200);
+}
+
+.quick-action-admit:hover {
+  background: var(--primary-100);
+  border-color: var(--primary-300);
+}
+
+.quick-action-discharge {
+  background: var(--gray-50);
+  color: var(--gray-700);
+  border-color: var(--gray-200);
+}
+
+.quick-action-discharge:hover {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+}
+
+.quick-action-archive {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.quick-action-archive:hover {
+  background: #fde68a;
+  border-color: #fcd34d;
+}
+
+.quick-action-reactivate {
+  background: #d1fae5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.quick-action-reactivate:hover {
+  background: #a7f3d0;
+  border-color: #6ee7b7;
+}
+
+.quick-action-btn:active {
+  transform: translateY(1px);
+}
+
+.quick-action-btn svg {
+  flex-shrink: 0;
+}
+
+/* Excel-style Status Picker Dropdown */
+.status-picker {
+  width: 100%;
+  max-width: 180px;
+  padding: 6px 10px;
+  border: 2px solid #3b82f6;
+  background: white;
+  font-size: 0.875rem;
+  border-radius: 4px;
+  color: #1e40af;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  transition: all 150ms ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%231e40af' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 35px;
+}
+
+.status-picker:hover:not(:disabled) {
+  border-color: #1d4ed8;
+  background-color: #eff6ff;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15);
+}
+
+.status-picker:focus {
+  outline: none;
+  border-color: #1d4ed8;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+  background-color: white;
+}
+
+.status-picker:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #6b7280;
+}
+
+.status-picker option {
+  padding: 8px;
+  font-weight: 500;
+}
+
+.status-picker option[value="admitted"] {
+  color: #1e40af;
+}
+
+.status-picker option[value="discharged"] {
+  color: #4b5563;
+}
+
+.status-picker option[value="archived"] {
+  color: #92400e;
+}
+
+/* Mobile Responsive for Status Picker */
+@media (max-width: 768px) {
+  .status-picker {
+    max-width: 150px;
+    font-size: 0.8125rem;
+    padding: 5px 8px;
+    padding-right: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .status-picker {
+    max-width: 130px;
+    font-size: 0.75rem;
+  }
+}
