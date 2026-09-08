@@ -18,7 +18,7 @@ const DAY_KEYS_BY_JS_GETDAY = [
 ];
 
 const SHIFT_LABELS = { day: 'Day', night: 'Night', off: 'Off' };
-
+ 
 function todayKey() {
   return DAY_KEYS_BY_JS_GETDAY[new Date().getDay()];
 }
