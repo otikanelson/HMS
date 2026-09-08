@@ -12,8 +12,8 @@ import AddPatient from './components/AddPatient';
 import AddStaff from './components/AddStaff';
 import ChangePassword from './components/ChangePassword';
 import Reports from './components/Reports';
-import PayrollRunsList from './components/Payrollrunslist';
-import PayrollRunDetail from './components/Payrollrundetail';
+import PayrollRunsList from './components/PayrollRunsList';
+import PayrollRunDetail from './components/PayrollRunDetail';
 import Login from './components/Login';
 import './App.css';
 
