@@ -1,15 +1,11 @@
 import axios from 'axios';
 
-// Configure axios baseURL based on environment
-const baseURL = process.env.REACT_APP_API_URL || '';
+// Configure axios globally for all requests
+if (process.env.REACT_APP_API_URL) {
+  axios.defaults.baseURL = process.env.REACT_APP_API_URL;
+}
 
-// Create axios instance with default config
-const axiosInstance = axios.create({
-  baseURL,
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+axios.defaults.withCredentials = true;
+axios.defaults.headers.common['Content-Type'] = 'application/json';
 
-export default axiosInstance;
+export default axios;
