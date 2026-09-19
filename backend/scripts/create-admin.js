@@ -3,10 +3,19 @@ const User = require('../src/models/User');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
+// Admin password must be set via environment variable for security
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!ADMIN_PASSWORD) {
+  console.error('❌ ERROR: ADMIN_PASSWORD environment variable is required');
+  console.error('Usage: ADMIN_PASSWORD=your-secure-password node scripts/create-admin.js');
+  process.exit(1);
+}
+
 const users = [
   {
     username: 'nelson',
-    password: 'NELSON2005',
+    password: ADMIN_PASSWORD,
     fullName: 'Nelson - System Administrator',
     accessLevel: 'ADMINISTRATOR',
     phoneNumber: '+234 800 000 0001',

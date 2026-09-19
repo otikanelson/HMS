@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { PatientStatusBadge } from './PatientStatusControl';
 import PatientStatusControl from './PatientStatusControl';
 import PatientStatusFilter from './PatientStatusFilter';
