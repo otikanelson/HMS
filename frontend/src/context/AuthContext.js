@@ -144,9 +144,18 @@ const setupAxiosInterceptors = (dispatch, getAccessToken) => {
       }
 
       const accessToken = getAccessToken();
-      if (accessToken && config.url?.startsWith('/api/')) {
+      
+      // Add auth header to all API calls except auth endpoints
+      const skipAuthHeader = [
+        '/api/auth/login',
+        '/api/auth/refresh',
+        '/api/auth/validate'
+      ].some(endpoint => config.url?.includes(endpoint));
+      
+      if (accessToken && config.url?.startsWith('/api/') && !skipAuthHeader) {
         config.headers.Authorization = `Bearer ${accessToken}`;
       }
+      
       return config;
     },
     (error) => Promise.reject(error)
@@ -170,7 +179,12 @@ const setupAxiosInterceptors = (dispatch, getAccessToken) => {
         return Promise.reject(error);
       }
 
-      if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/api/auth/login') {
+      // Skip refresh for login and refresh endpoints
+      if (originalRequest.url === '/api/auth/login' || originalRequest.url === '/api/auth/refresh') {
+        return Promise.reject(error);
+      }
+
+      if (error.response?.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true;
 
         const { refreshToken } = storage.getTokens();
@@ -198,17 +212,28 @@ const setupAxiosInterceptors = (dispatch, getAccessToken) => {
             return axios(originalRequest);
 
           } catch (refreshError) {
-            // Refresh failed, log out user
+            // Refresh failed, clear auth and redirect to login
             console.log('Token refresh failed, logging out');
             dispatch({ type: AUTH_ACTIONS.LOGOUT });
             storage.clearTokens();
+            
+            // Redirect to login page
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login';
+            }
+            
             return Promise.reject(refreshError);
           }
         } else {
-          // No refresh token, log out user
+          // No refresh token, clear auth and redirect to login
           console.log('No refresh token, logging out');
           dispatch({ type: AUTH_ACTIONS.LOGOUT });
           storage.clearTokens();
+          
+          // Redirect to login page
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
         }
       }
 
@@ -255,8 +280,15 @@ export function AuthProvider({ children }) {
         }
       }
 
-      const { accessToken } = storage.getTokens();
+      const { accessToken, refreshToken } = storage.getTokens();
       
+      // No tokens at all - not logged in
+      if (!accessToken && !refreshToken) {
+        dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: { isLoading: false } });
+        return;
+      }
+
+      // Have tokens - try to validate
       if (accessToken) {
         try {
           const response = await axios.get('/api/auth/validate');
@@ -266,17 +298,28 @@ export function AuthProvider({ children }) {
             payload: { 
               user: response.data.user,
               accessToken,
-              refreshToken: storage.getTokens().refreshToken
+              refreshToken
             }
           });
 
         } catch (error) {
-          console.log('Token validation failed:', error.message);
-          // Invalid token, clear storage
-          storage.clearTokens();
-          dispatch({ type: AUTH_ACTIONS.LOGOUT });
+          console.log('Token validation failed:', error.response?.status, error.message);
+          
+          // If validation fails with 401, clear everything and stop
+          // The interceptor will NOT try to refresh on the validation endpoint
+          if (error.response?.status === 401) {
+            console.log('Tokens are invalid, clearing auth state');
+            storage.clearTokens();
+            dispatch({ type: AUTH_ACTIONS.LOGOUT });
+          } else {
+            // Network or other error - keep trying but mark as not loading
+            dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: { isLoading: false } });
+          }
         }
       } else {
+        // Have refresh token but no access token - clear and require login
+        console.log('Only refresh token present, clearing');
+        storage.clearTokens();
         dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: { isLoading: false } });
       }
     };
