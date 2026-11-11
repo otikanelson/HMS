@@ -4,8 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import '@fontsource/atkinson-hyperlegible/400.css';
 import '@fontsource/atkinson-hyperlegible/700.css';
-import logo from '../logo.png';
 import './Login.css';
+
+const BACKGROUND_IMAGE =
+  'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1920&q=80';
 
 function useClock() {
   const [now, setNow] = useState(new Date());
@@ -269,6 +271,9 @@ const Login = () => {
 
   return (
     <div className="lock-screen">
+      <div className="lock-media" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }} />
+      <div className="lock-scrim" />
+
       <div className="lock-content">
         <div className="lock-clock">
           <div className="lock-time">{timeString}</div>
@@ -280,7 +285,7 @@ const Login = () => {
           <div className="lock-card">
             <div className="lock-brand">
               <div className="lock-brand-icon">
-                <img src={logo} alt="Tender Care Clinic" />
+                <img src="/Icon.png" alt="Tender Care Clinic" />
               </div>
               <div className="lock-brand-text">
                 <div className="lock-brand-title">Tender Care Clinic</div>
