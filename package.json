@@ -15,7 +15,7 @@
     "build:full": "npm run build:frontend && npm run build:backend", 
     "dev:frontend": "cd frontend && npm start",
     "dev:backend": "cd backend && npm run dev",
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "test": "npm run test:frontend && npm run test:backend",
     "test:frontend": "cd frontend && npm test -- --watchAll=false",
     "test:backend": "cd backend && npm test",

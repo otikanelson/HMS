@@ -14,6 +14,9 @@ import ChangePassword from './components/ChangePassword';
 import Reports from './components/Reports';
 import PayrollRunsList from './components/PayrollRunsList';
 import PayrollRunDetail from './components/PayrollRunDetail';
+import FileDesk from './components/FileDesk';
+import VisitDetails from './components/VisitDetails';
+import PatientHistory from './components/PatientHistory';
 import Login from './components/Login';
 import './App.css';
 
@@ -34,6 +37,13 @@ function AppLayout() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/patients" element={<PatientList />} />
+          <Route path="/patients/:patientId/history" element={<PatientHistory />} />
+          <Route path="/file-desk" element={
+            <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR', 'RECORDS_OPERATOR']}>
+              <FileDesk />
+            </ProtectedRoute>
+          } />
+          <Route path="/visits/:id" element={<VisitDetails />} />
           <Route path="/staff" element={
             <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR', 'RECORDS_OPERATOR']}>
               <StaffList />

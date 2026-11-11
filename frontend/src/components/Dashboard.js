@@ -1010,6 +1010,11 @@ const Dashboard = () => {
               <span className="stat-value">{stats.totalPatients.toLocaleString()}</span>
               <span className="stat-caption">Total files indexed</span>
             </Link>
+            <Link to="/file-desk" className="stat-cell stat-cell-link">
+              <span className="stat-label">Files Out</span>
+              <span className="stat-value">{stats.filesOut || 0}</span>
+              <span className="stat-caption">Need attention</span>
+            </Link>
             <Link to="/staff" className="stat-cell stat-cell-link">
               <span className="stat-label">Staff Users</span>
               <span className="stat-value">{stats.staffCount}</span>
@@ -1108,7 +1113,7 @@ const Dashboard = () => {
                   <strong>Purpose:</strong> Digital patient file indexing and location tracking for Tender Care Hospital
                 </div>
                 <div className="info-item">
-                  <strong>Data Policy:</strong> No medical records stored - location and contact data only
+                  <strong>Data Policy:</strong> Visit details (BP, heart rate, tests, medications) are stored. Paper files remain the main record.
                 </div>
                 <div className="info-item">
                   <strong>Search Methods:</strong> Patient ID, full name, or phone number

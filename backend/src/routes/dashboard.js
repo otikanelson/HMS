@@ -28,6 +28,15 @@ router.get('/stats', async (req, res) => {
     const Staff = require('../models/Staff');
     const staffCount = await Staff.countDocuments();
 
+    // Get files out count
+    const Visit = require('../models/Visit');
+    const filesOut = await Visit.countDocuments({
+      $or: [
+        { fileStatus: 'out' },
+        { fileStatus: 'returned', documentationStatus: 'pending' }
+      ]
+    });
+
     // Get recent patients (last 5 added)
     const recentPatients = await PatientFile.find()
       .sort({ createdAt: -1 })
@@ -61,6 +70,7 @@ router.get('/stats', async (req, res) => {
       totalPatients,
       patientsWithPhone,
       staffCount,
+      filesOut,
       cabinetCount: cabinetStats.length,
       recentPatients: recentPatientsWithLocation,
       cabinetDistribution: cabinetStats,

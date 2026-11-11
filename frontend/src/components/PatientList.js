@@ -314,41 +314,50 @@ const PatientList = () => {
                         <PatientStatusBadge status={patient.status || 'discharged'} />
                       </td>
                       <td>
-                        <select
-                          className="status-picker"
-                          value={patient.status || 'discharged'}
-                          onChange={(e) => handleQuickStatusChange(patient.patientId, e.target.value)}
-                          disabled={
-                            (patient.status === 'discharged' && !canAdmitDischarge && !canArchive) ||
-                            (patient.status === 'admitted' && !canAdmitDischarge) ||
-                            (patient.status === 'archived' && !canArchive)
-                          }
-                        >
-                          {/* Discharged can go to admitted or archived */}
-                          {patient.status === 'discharged' && (
-                            <>
-                              <option value="discharged">-- Select Action --</option>
-                              {canAdmitDischarge && <option value="admitted">Admit Patient</option>}
-                              {canArchive && <option value="archived">Archive File</option>}
-                            </>
-                          )}
-                          
-                          {/* Admitted can discharge */}
-                          {patient.status === 'admitted' && (
-                            <>
-                              <option value="admitted">-- Select Action --</option>
-                              {canAdmitDischarge && <option value="discharged">↗ Discharge Patient</option>}
-                            </>
-                          )}
-                          
-                          {/* Archived can reactivate to discharged */}
-                          {patient.status === 'archived' && (
-                            <>
-                              <option value="archived">-- Select Action --</option>
-                              {canArchive && <option value="discharged">↻ Reactivate File</option>}
-                            </>
-                          )}
-                        </select>
+                        <div className="action-cell">
+                          <select
+                            className="status-picker"
+                            value={patient.status || 'discharged'}
+                            onChange={(e) => handleQuickStatusChange(patient.patientId, e.target.value)}
+                            disabled={
+                              (patient.status === 'discharged' && !canAdmitDischarge && !canArchive) ||
+                              (patient.status === 'admitted' && !canAdmitDischarge) ||
+                              (patient.status === 'archived' && !canArchive)
+                            }
+                          >
+                            {/* Discharged can go to admitted or archived */}
+                            {patient.status === 'discharged' && (
+                              <>
+                                <option value="discharged">-- Select Action --</option>
+                                {canAdmitDischarge && <option value="admitted">Admit Patient</option>}
+                                {canArchive && <option value="archived">Archive File</option>}
+                              </>
+                            )}
+                            
+                            {/* Admitted can discharge */}
+                            {patient.status === 'admitted' && (
+                              <>
+                                <option value="admitted">-- Select Action --</option>
+                                {canAdmitDischarge && <option value="discharged">↗ Discharge Patient</option>}
+                              </>
+                            )}
+                            
+                            {/* Archived can reactivate to discharged */}
+                            {patient.status === 'archived' && (
+                              <>
+                                <option value="archived">-- Select Action --</option>
+                                {canArchive && <option value="discharged">↻ Reactivate File</option>}
+                              </>
+                            )}
+                          </select>
+                          <a
+                            href={`/patients/${patient.patientId}/history`}
+                            className="history-link"
+                            title="View visit history"
+                          >
+                            History
+                          </a>
+                        </div>
                       </td>
                       <td>
                     {isEditMode ? (

@@ -344,6 +344,18 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
       });
     }
 
+    // Guard: prevent archiving if file is still out
+    if (requestedStatus === 'archived') {
+      const Visit = require('../models/Visit');
+      const openVisit = await Visit.findOne({ patient: patient._id, fileStatus: 'out' });
+      if (openVisit) {
+        return res.status(409).json({
+          error: 'File is still out',
+          message: 'This file is still out. Mark it as returned before archiving.'
+        });
+      }
+    }
+
     // Define valid transitions and who can perform them
     const transitions = {
       'discharged->admitted': ['ADMINISTRATOR', 'RECORDS_OPERATOR', 'CLINICAL_STAFF'],
@@ -420,7 +432,7 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
 // DELETE /api/patients/:id - Delete patient file (ADMINISTRATOR only)
 router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
   try {
-    const patient = await PatientFile.findOneAndDelete({ patientId: req.params.id });
+    const patient = await PatientFile.findOne({ patientId: req.params.id });
     
     if (!patient) {
       return res.status(404).json({
@@ -428,6 +440,18 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
         message: `No patient found with ID: ${req.params.id}`
       });
     }
+
+    // Guard: prevent deletion if visit records exist
+    const Visit = require('../models/Visit');
+    const visitCount = await Visit.countDocuments({ patient: patient._id });
+    if (visitCount > 0) {
+      return res.status(409).json({
+        error: 'Patient has visit records',
+        message: "This patient has visit records and can't be deleted. Archive the file instead."
+      });
+    }
+
+    await PatientFile.findOneAndDelete({ patientId: req.params.id });
 
     res.json({
       message: 'Patient file deleted successfully',

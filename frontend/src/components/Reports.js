@@ -14,6 +14,11 @@ const ACTION_LABELS = {
   PATIENT_REACTIVATED: 'reactivated a patient file',
   NOTICE_CREATED: 'posted a notice',
   NOTICE_DELETED: 'removed a notice',
+  FILE_CHECKED_OUT: 'took a patient file out',
+  FILE_RETURNED: 'received a patient file back',
+  VISIT_DOCUMENTED: 'recorded visit details',
+  VISIT_CORRECTED: 'corrected a visit record',
+  PATIENT_RECORD_VIEWED: "opened a patient's visit history",
 };
 
 const ROLE_LABELS = {

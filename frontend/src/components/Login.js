@@ -236,7 +236,7 @@ const Login = () => {
                       <span className="login-notice-date">{formatNoticeDate(notice.createdAt)}</span>
                     </div>
                     <h4 className="login-notice-title">{notice.title}</h4>
-                    <p className="login-notice-body">{notice.content}</p>
+                    <p className="login-notice-body">{notice.body}</p>
                   </div>
                 ))}
               </div>

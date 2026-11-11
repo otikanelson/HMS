@@ -15,6 +15,13 @@ class Database {
         return this.connection;
       }
 
+      // Check if MongoDB URI is configured
+      if (!process.env.MONGODB_URI) {
+        console.log('⚠️ MONGODB_URI not configured in .env file');
+        console.log('📝 Server will continue without database connection for now...\n');
+        return null;
+      }
+
       // MongoDB connection options for reliability
       const options = {
         maxPoolSize: 10, // Maintain up to 10 socket connections
@@ -60,6 +67,12 @@ class Database {
       console.error('💥 Failed to connect to MongoDB:', error.message);
       this.isConnected = false;
       
+      // If MongoDB URI is not configured, don't retry
+      if (!process.env.MONGODB_URI) {
+        console.log('⚠️ Server will continue without database connection\n');
+        return null;
+      }
+      
       // If MongoDB URI has placeholders, show helpful message
       if (process.env.MONGODB_URI?.includes('<')) {
         console.log('\n📝 MongoDB Setup Required:');
@@ -69,7 +82,7 @@ class Database {
         console.log('4. Copy the connection string');
         console.log('5. Update MONGODB_URI in your .env file\n');
         console.log('⚠️ Server will continue without database connection for now...\n');
-        return; // Don't retry if it's a configuration issue
+        return null; // Don't retry if it's a configuration issue
       }
       
       // Don't crash the app, allow retry for real connection issues

@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/notices - Create notice (Administrator only)
-router.post('/', requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
+router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
   try {
     const { title, body, type } = req.body;
 
@@ -68,7 +68,7 @@ router.post('/', requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
       title: title.trim(),
       body: body.trim(),
       type: type || 'info',
-      postedBy: req.user.id
+      postedBy: req.user.userId
     });
 
     await notice.save();
@@ -109,7 +109,7 @@ router.post('/', requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
 });
 
 // DELETE /api/notices/:id - Soft-delete notice (Administrator only)
-router.delete('/:id', requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
+router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
   try {
     const { id } = req.params;
 
