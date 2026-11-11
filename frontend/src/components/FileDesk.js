@@ -3,45 +3,45 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import './FileDesk.css';
 
+const STAGE_LABELS = {
+  waiting_for_file: 'Finding file',
+  with_doctor: 'With doctor',
+  needs_recording: 'File back - needs recording',
+  filed: 'Done - file back in cabinet'
+};
+
 const FileDesk = () => {
   const [patientNumber, setPatientNumber] = useState('');
   const [foundPatient, setFoundPatient] = useState(null);
   const [searchError, setSearchError] = useState('');
   const [searching, setSearching] = useState(false);
-  const [checkingOut, setCheckingOut] = useState(false);
+  const [starting, setStarting] = useState(false);
   const [success, setSuccess] = useState('');
+  const [conflictVisitId, setConflictVisitId] = useState(null);
 
-  const [openFiles, setOpenFiles] = useState([]);
-  const [loadingFiles, setLoadingFiles] = useState(true);
-  const [filesError, setFilesError] = useState('');
+  const [openVisits, setOpenVisits] = useState([]);
+  const [loadingVisits, setLoadingVisits] = useState(true);
+  const [visitsError, setVisitsError] = useState('');
 
-  const [returningId, setReturningId] = useState(null);
-  const [showReturnConfirm, setShowReturnConfirm] = useState(null);
+  const [fileBackingId, setFileBackingId] = useState(null);
 
   const numberInputRef = useRef(null);
-  const refreshInterval = useRef(null);
 
   useEffect(() => {
-    fetchOpenFiles();
-    refreshInterval.current = setInterval(fetchOpenFiles, 60000);
-    return () => {
-      if (refreshInterval.current) {
-        clearInterval(refreshInterval.current);
-      }
-    };
+    fetchOpenVisits();
   }, []);
 
-  const fetchOpenFiles = async () => {
+  const fetchOpenVisits = async () => {
     try {
-      setLoadingFiles(true);
-      setFilesError('');
+      setLoadingVisits(true);
+      setVisitsError('');
       const response = await axios.get('/api/visits/open');
-      setOpenFiles(response.data.visits || []);
+      setOpenVisits(response.data.visits || []);
     } catch (err) {
-      console.error('Failed to fetch open files:', err);
-      setFilesError('Failed to load open files');
+      console.error('Failed to fetch open visits:', err);
+      setVisitsError('Failed to load visits');
     } finally {
-      setLoadingFiles(false);
+      setLoadingVisits(false);
     }
   };
 
@@ -54,6 +54,7 @@ const FileDesk = () => {
       setSearchError('');
       setSuccess('');
       setFoundPatient(null);
+      setConflictVisitId(null);
 
       const response = await axios.get(`/api/patients/${patientNumber.trim()}`);
       setFoundPatient(response.data);
@@ -69,20 +70,21 @@ const FileDesk = () => {
     }
   };
 
-  const handleCheckout = async () => {
+  const handleStart = async () => {
     if (!foundPatient) return;
 
     try {
-      setCheckingOut(true);
+      setStarting(true);
       setSearchError('');
-      const response = await axios.post('/api/visits/checkout', {
+      setConflictVisitId(null);
+      await axios.post('/api/visits/start', {
         patientId: foundPatient.patientId
       });
       
-      setSuccess(`File taken out for ${foundPatient.fullName}`);
+      setSuccess(`Visit started for ${foundPatient.fullName}.`);
       setFoundPatient(null);
       setPatientNumber('');
-      await fetchOpenFiles();
+      await fetchOpenVisits();
       
       setTimeout(() => {
         setSuccess('');
@@ -91,36 +93,43 @@ const FileDesk = () => {
         }
       }, 3000);
     } catch (err) {
-      console.error('Checkout error:', err);
+      console.error('Start visit error:', err);
       if (err.response?.status === 409) {
         setSearchError(err.response.data.message);
+        if (err.response.data.visitId) {
+          setConflictVisitId(err.response.data.visitId);
+        }
       } else {
-        setSearchError(err.response?.data?.message || err.response?.data?.error || 'Checkout failed');
+        setSearchError(err.response?.data?.message || err.response?.data?.error || 'Failed to start visit');
       }
     } finally {
-      setCheckingOut(false);
-    }
-  };
-
-  const handleMarkReturned = async (visitId) => {
-    try {
-      setReturningId(visitId);
-      await axios.put(`/api/visits/${visitId}/return`);
-      setShowReturnConfirm(visitId);
-      await fetchOpenFiles();
-    } catch (err) {
-      console.error('Return error:', err);
-      alert(err.response?.data?.message || err.response?.data?.error || 'Failed to mark file as returned');
-      setReturningId(null);
+      setStarting(false);
     }
   };
 
   const handleClearPatient = () => {
     setFoundPatient(null);
     setSearchError('');
+    setConflictVisitId(null);
     setPatientNumber('');
     if (numberInputRef.current) {
       numberInputRef.current.focus();
+    }
+  };
+
+  const handleFileBack = async (visitId) => {
+    if (!window.confirm('Is the paper file back in your hands?')) return;
+
+    try {
+      setFileBackingId(visitId);
+      await axios.post(`/api/visits/${visitId}/file-back`);
+      await fetchOpenVisits();
+    } catch (err) {
+      console.error('File back error:', err);
+      setVisitsError(err.response?.data?.message || err.response?.data?.error || 'Failed to mark file as back');
+      setTimeout(() => setVisitsError(''), 5000);
+    } finally {
+      setFileBackingId(null);
     }
   };
 
@@ -147,17 +156,16 @@ const FileDesk = () => {
     return `ends in ${lastFour}`;
   };
 
-  const outFiles = openFiles.filter(v => v.fileStatus === 'out');
-  const backFiles = openFiles.filter(v => v.fileStatus === 'returned' && v.documentationStatus === 'pending');
+  const carriedOverCount = openVisits.filter(v => v.carriedOver).length;
 
   return (
     <div className="file-desk">
       <div className="file-desk-header">
         <div>
           <h2 className="file-desk-title">File Desk</h2>
-          <p className="file-desk-subtitle">Check out patient files and track returns</p>
+          <p className="file-desk-subtitle">Start visits, check in patients, and track files</p>
         </div>
-        <button onClick={fetchOpenFiles} className="btn btn-outline" disabled={loadingFiles}>
+        <button onClick={fetchOpenVisits} className="btn btn-outline" disabled={loadingVisits}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path fillRule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z"/>
             <path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z"/>
@@ -182,6 +190,7 @@ const FileDesk = () => {
               onChange={(e) => {
                 setPatientNumber(e.target.value);
                 setSearchError('');
+                setConflictVisitId(null);
               }}
               placeholder="Patient number"
               className="search-input"
@@ -197,6 +206,11 @@ const FileDesk = () => {
         {searchError && (
           <div className="alert alert-error" style={{ marginTop: 'var(--space-4)' }}>
             {searchError}
+            {conflictVisitId && (
+              <div style={{ marginTop: 'var(--space-2)' }}>
+                <Link to={`/visits/${conflictVisitId}`} className="link">Open that visit</Link>
+              </div>
+            )}
             {searchError.includes('Check the number') && (
               <div style={{ marginTop: 'var(--space-2)' }}>
                 <Link to="/add-patient" className="link">Add a new patient</Link>
@@ -211,7 +225,6 @@ const FileDesk = () => {
               <div>
                 <h3 className="found-patient-name">{foundPatient.fullName}</h3>
                 <p className="found-patient-phone">{formatPhone(foundPatient.phoneNumber)}</p>
-                <p className="found-patient-status">Status: {foundPatient.status}</p>
               </div>
               <button onClick={handleClearPatient} className="btn-clear">
                 Not them
@@ -221,130 +234,92 @@ const FileDesk = () => {
               {foundPatient.locationDisplay}
             </div>
             <button 
-              onClick={handleCheckout} 
+              onClick={handleStart} 
               className="btn btn-primary btn-large"
-              disabled={checkingOut}
+              disabled={starting}
             >
-              {checkingOut ? 'Taking out...' : 'Take this file out'}
+              {starting ? 'Starting visit...' : 'This is them - start visit'}
             </button>
           </div>
         )}
       </div>
 
       <div className="file-desk-lists">
-        <div className="file-list-section">
-          <h3 className="file-list-title">Files out right now</h3>
-          {loadingFiles ? (
-            <div className="loading-state">
-              <div className="spinner"></div>
-              <p>Loading files...</p>
-            </div>
-          ) : filesError ? (
-            <div className="alert alert-error">{filesError}</div>
-          ) : outFiles.length === 0 ? (
-            <p className="empty-state">No files are out right now.</p>
-          ) : (
-            <div className="file-items">
-              {outFiles.map((visit) => (
-                <div key={visit._id} className={`file-item ${visit.carriedOver ? 'carried-over' : ''}`}>
-                  {visit.carriedOver && (
-                    <span className="carried-over-badge">
-                      Still out from {formatDate(visit.checkedOutAt)}
-                    </span>
-                  )}
-                  <div className="file-item-main">
-                    <div className="file-item-info">
-                      <h4 className="file-item-name">{visit.patientName}</h4>
-                      <p className="file-item-number">Patient {visit.patientId}</p>
-                      <p className="file-item-location">{visit.fileLocation}</p>
-                    </div>
-                    <div className="file-item-meta">
-                      <p className="file-item-time">
-                        {formatTime(visit.checkedOutAt)}
-                      </p>
-                      <p className="file-item-user">
-                        {visit.checkedOutBy?.fullName || 'Unknown'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="file-item-actions">
-                    {showReturnConfirm === visit._id ? (
-                      <div className="return-confirm-actions">
-                        <Link 
-                          to={`/visits/${visit._id}`}
-                          className="btn btn-primary btn-small"
-                        >
-                          Enter details now
-                        </Link>
-                        <button
-                          onClick={() => setShowReturnConfirm(null)}
-                          className="btn btn-outline btn-small"
-                        >
-                          Do it later
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          if (window.confirm('Is the paper file back in your hands?')) {
-                            handleMarkReturned(visit._id);
-                          }
-                        }}
-                        className="btn btn-outline"
-                        disabled={returningId === visit._id}
-                      >
-                        {returningId === visit._id ? 'Marking...' : 'Mark returned'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {openVisits.length === 0 && !loadingVisits ? (
+          <div className="list-banner list-banner-success">
+            All patients are filed. You can close for the day.
+          </div>
+        ) : carriedOverCount > 0 ? (
+          <div className="list-banner list-banner-error">
+            {carriedOverCount} {carriedOverCount === 1 ? 'visit' : 'visits'} from before today are not filed.
+          </div>
+        ) : openVisits.length > 0 ? (
+          <div className="list-banner list-banner-info">
+            {openVisits.length} not filed yet.
+          </div>
+        ) : null}
 
         <div className="file-list-section">
-          <h3 className="file-list-title">Back on the desk - details not entered yet</h3>
-          {loadingFiles ? (
+          <h3 className="file-list-title">Patients not yet filed</h3>
+          {visitsError && (
+            <div className="alert alert-error" style={{ marginBottom: 'var(--space-4)' }}>
+              {visitsError}
+            </div>
+          )}
+          {loadingVisits ? (
             <div className="loading-state">
               <div className="spinner"></div>
-              <p>Loading files...</p>
+              <p>Loading visits...</p>
             </div>
-          ) : filesError ? (
-            <div className="alert alert-error">{filesError}</div>
-          ) : backFiles.length === 0 ? (
-            <p className="empty-state">All returned files have been documented.</p>
+          ) : openVisits.length === 0 ? (
+            <p className="empty-state">No visits in progress.</p>
           ) : (
             <div className="file-items">
-              {backFiles.map((visit) => (
+              {openVisits.map((visit) => (
                 <div key={visit._id} className={`file-item ${visit.carriedOver ? 'carried-over' : ''}`}>
                   {visit.carriedOver && (
                     <span className="carried-over-badge">
-                      Still not documented from {formatDate(visit.checkedOutAt)}
+                      From {formatDate(visit.startedAt)} - not filed
                     </span>
                   )}
                   <div className="file-item-main">
                     <div className="file-item-info">
                       <h4 className="file-item-name">{visit.patientName}</h4>
                       <p className="file-item-number">Patient {visit.patientId}</p>
-                      <p className="file-item-location">{visit.fileLocation}</p>
+                      <p className="file-item-location">{visit.currentLocation}</p>
                     </div>
                     <div className="file-item-meta">
+                      <span className="stage-chip stage-chip-{visit.stage}">
+                        {STAGE_LABELS[visit.stage]}
+                      </span>
                       <p className="file-item-time">
-                        Returned {formatTime(visit.returnedAt)}
+                        since {formatTime(visit.startedAt)}
                       </p>
                       <p className="file-item-user">
-                        {visit.returnedBy?.fullName || 'Unknown'}
+                        {visit.startedBy?.fullName || 'Unknown'}
                       </p>
                     </div>
                   </div>
                   <div className="file-item-actions">
-                    <Link
-                      to={`/visits/${visit._id}`}
-                      className="btn btn-primary"
-                    >
-                      Enter details
-                    </Link>
+                    {visit.stage === 'waiting_for_file' && (
+                      <Link to={`/visits/${visit._id}`} className="btn btn-primary">
+                        Check-in
+                      </Link>
+                    )}
+                    {visit.stage === 'with_doctor' && (
+                      <button
+                        onClick={() => handleFileBack(visit._id)}
+                        className="btn btn-primary"
+                        disabled={fileBackingId === visit._id}
+                      >
+                        {fileBackingId === visit._id ? 'Marking...' : 'File is back'}
+                      </button>
+                    )}
+                    {visit.stage === 'needs_recording' && (
+                      <Link to={`/visits/${visit._id}`} className="btn btn-primary">
+                        Record and file
+                      </Link>
+                    )}
                   </div>
                 </div>
               ))}

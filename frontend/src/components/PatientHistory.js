@@ -3,6 +3,13 @@ import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
 import './PatientHistory.css';
 
+const STAGE_LABELS = {
+  waiting_for_file: 'Finding file',
+  with_doctor: 'With doctor',
+  needs_recording: 'File back - needs recording',
+  filed: 'Done - file back in cabinet'
+};
+
 const PatientHistory = () => {
   const { patientId } = useParams();
   const [patient, setPatient] = useState(null);
@@ -12,6 +19,7 @@ const PatientHistory = () => {
 
   useEffect(() => {
     fetchHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientId]);
 
   const fetchHistory = async () => {
@@ -87,86 +95,101 @@ const PatientHistory = () => {
         </div>
       ) : (
         <div className="visits-list">
-          {visits.map((visit) => (
-            <div key={visit._id} className="visit-card">
-              <div className="visit-card-header">
-                <span className="visit-card-date">{formatDate(visit.createdAt)}</span>
-                {visit.documentationStatus === 'pending' && (
-                  <span className="visit-status-badge pending">Details not entered yet</span>
+          {visits.map((visit) => {
+            const isFiled = visit.stage === 'filed';
+
+            return (
+              <div key={visit._id} className="visit-card">
+                <div className="visit-card-header">
+                  <span className="visit-card-date">{formatDate(visit.startedAt)}</span>
+                  {!isFiled && (
+                    <span className="visit-status-badge pending">
+                      Not filed yet - {STAGE_LABELS[visit.stage]}
+                    </span>
+                  )}
+                </div>
+
+                {!isFiled ? (
+                  <div className="visit-card-body">
+                    <p className="visit-pending-text">
+                      This visit has not been filed yet. Current stage: {STAGE_LABELS[visit.stage]}
+                    </p>
+                    <Link to={`/visits/${visit._id}`} className="btn btn-primary btn-small">
+                      Open visit
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="visit-card-body">
+                    {/* Vitals */}
+                    <div className="visit-detail-section">
+                      <h4>Check-in</h4>
+                      {visit.vitalsNotTaken ? (
+                        <p><strong>Not taken:</strong> {visit.vitalsNotTakenReason}</p>
+                      ) : visit.vitals && visit.vitals.systolic ? (
+                        <>
+                          <p><strong>BP:</strong> {visit.vitals.systolic}/{visit.vitals.diastolic} mmHg</p>
+                          <p><strong>Heart rate:</strong> {visit.vitals.heartRate} bpm</p>
+                        </>
+                      ) : null}
+                    </div>
+
+                    {/* Tests */}
+                    {visit.testsNone ? (
+                      <div className="visit-detail-section">
+                        <h4>Tests</h4>
+                        <p>None</p>
+                      </div>
+                    ) : visit.tests && visit.tests.length > 0 ? (
+                      <div className="visit-detail-section">
+                        <h4>Tests</h4>
+                        <ul className="visit-list">
+                          {visit.tests.map((test, index) => (
+                            <li key={index}>{test}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {/* Medications */}
+                    {visit.medicationsNone ? (
+                      <div className="visit-detail-section">
+                        <h4>Medicines</h4>
+                        <p>None</p>
+                      </div>
+                    ) : visit.medications && visit.medications.length > 0 ? (
+                      <div className="visit-detail-section">
+                        <h4>Medicines</h4>
+                        <ul className="visit-list">
+                          {visit.medications.map((med, index) => (
+                            <li key={index}>{med}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {/* Notes */}
+                    {visit.notes && (
+                      <div className="visit-detail-section">
+                        <h4>Notes</h4>
+                        <p className="visit-notes">{visit.notes}</p>
+                      </div>
+                    )}
+
+                    <div className="visit-card-footer">
+                      <p className="visit-documented-by">
+                        Filed by {visit.filedBy?.fullName || 'Unknown'}
+                      </p>
+                      {visit.lastEditedBy && (
+                        <p className="visit-edited-note">
+                          Last edited by {visit.lastEditedBy.fullName} on {formatDate(visit.lastEditedAt)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
-
-              {visit.documentationStatus === 'pending' ? (
-                <div className="visit-card-body">
-                  <p className="visit-pending-text">This visit has not been documented yet.</p>
-                  <Link to={`/visits/${visit._id}`} className="btn btn-primary btn-small">
-                    Enter details
-                  </Link>
-                </div>
-              ) : (
-                <div className="visit-card-body">
-                  {visit.vitals && (visit.vitals.systolic || visit.vitals.heartRate) && (
-                    <div className="visit-detail-section">
-                      <h4>Vitals</h4>
-                      {visit.vitals.systolic && visit.vitals.diastolic && (
-                        <p><strong>Blood Pressure:</strong> {visit.vitals.systolic}/{visit.vitals.diastolic} mmHg</p>
-                      )}
-                      {visit.vitals.heartRate && (
-                        <p><strong>Heart Rate:</strong> {visit.vitals.heartRate} bpm</p>
-                      )}
-                    </div>
-                  )}
-
-                  {visit.tests && visit.tests.length > 0 && (
-                    <div className="visit-detail-section">
-                      <h4>Tests</h4>
-                      <ul className="visit-list">
-                        {visit.tests.map((test, index) => (
-                          <li key={index}>
-                            <strong>{test.name}:</strong> {test.result || 'No result recorded'}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {visit.medications && visit.medications.length > 0 && (
-                    <div className="visit-detail-section">
-                      <h4>Medications</h4>
-                      <ul className="visit-list">
-                        {visit.medications.map((med, index) => (
-                          <li key={index}>
-                            <strong>{med.name}</strong>
-                            {med.dose && ` - ${med.dose}`}
-                            {med.frequency && ` - ${med.frequency}`}
-                            {med.duration && ` for ${med.duration}`}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {visit.notes && (
-                    <div className="visit-detail-section">
-                      <h4>Notes</h4>
-                      <p className="visit-notes">{visit.notes}</p>
-                    </div>
-                  )}
-
-                  <div className="visit-card-footer">
-                    <p className="visit-documented-by">
-                      Documented by {visit.documentedBy?.fullName || 'Unknown'}
-                    </p>
-                    {visit.lastEditedBy && (
-                      <p className="visit-edited-note">
-                        Last edited by {visit.lastEditedBy.fullName} on {formatDate(visit.lastEditedAt)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

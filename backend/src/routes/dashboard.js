@@ -30,12 +30,7 @@ router.get('/stats', async (req, res) => {
 
     // Get files out count
     const Visit = require('../models/Visit');
-    const filesOut = await Visit.countDocuments({
-      $or: [
-        { fileStatus: 'out' },
-        { fileStatus: 'returned', documentationStatus: 'pending' }
-      ]
-    });
+    const filesOut = await Visit.countDocuments({ isOpen: true });
 
     // Get recent patients (last 5 added)
     const recentPatients = await PatientFile.find()

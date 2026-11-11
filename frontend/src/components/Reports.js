@@ -19,6 +19,9 @@ const ACTION_LABELS = {
   VISIT_DOCUMENTED: 'recorded visit details',
   VISIT_CORRECTED: 'corrected a visit record',
   PATIENT_RECORD_VIEWED: "opened a patient's visit history",
+  VISIT_STARTED: 'started a patient visit',
+  SENT_TO_DOCTOR: 'sent a patient to the doctor',
+  VISIT_FILED: 'recorded and filed a visit',
 };
 
 const ROLE_LABELS = {

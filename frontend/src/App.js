@@ -38,11 +38,7 @@ function AppLayout() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/patients" element={<PatientList />} />
           <Route path="/patients/:patientId/history" element={<PatientHistory />} />
-          <Route path="/file-desk" element={
-            <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR', 'RECORDS_OPERATOR']}>
-              <FileDesk />
-            </ProtectedRoute>
-          } />
+          <Route path="/file-desk" element={<FileDesk />} />
           <Route path="/visits/:id" element={<VisitDetails />} />
           <Route path="/staff" element={
             <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR', 'RECORDS_OPERATOR']}>
@@ -88,9 +84,7 @@ function PublicRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Login />} />
     </Routes>
   );
 }
@@ -121,7 +115,7 @@ function App() {
           } />
           
           {/* Root route - show landing if not authenticated, dashboard if authenticated */}
-          <Route path="/" element={<PublicRoutes />} />
+          <Route path="/*" element={<PublicRoutes />} />
         </Routes>
       </Router>
     </AuthProvider>

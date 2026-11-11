@@ -1011,9 +1011,9 @@ const Dashboard = () => {
               <span className="stat-caption">Total files indexed</span>
             </Link>
             <Link to="/file-desk" className="stat-cell stat-cell-link">
-              <span className="stat-label">Files Out</span>
+              <span className="stat-label">Not filed yet</span>
               <span className="stat-value">{stats.filesOut || 0}</span>
-              <span className="stat-caption">Need attention</span>
+              <span className="stat-caption">Visits in progress</span>
             </Link>
             <Link to="/staff" className="stat-cell stat-cell-link">
               <span className="stat-label">Staff Users</span>

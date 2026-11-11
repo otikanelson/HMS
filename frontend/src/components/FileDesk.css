@@ -74,8 +74,7 @@
   margin: 0 0 var(--space-1) 0;
 }
 
-.found-patient-phone,
-.found-patient-status {
+.found-patient-phone {
   font-size: 0.875rem;
   color: var(--gray-600);
   margin: 0;
@@ -115,7 +114,33 @@
 .file-desk-lists {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-4);
+}
+
+.list-banner {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.list-banner-success {
+  background: var(--success-50);
+  color: var(--success-700);
+  border: 1px solid var(--success-200);
+}
+
+.list-banner-error {
+  background: var(--error-50);
+  color: var(--error-700);
+  border: 1px solid var(--error-200);
+}
+
+.list-banner-info {
+  background: var(--primary-50);
+  color: var(--primary-700);
+  border: 1px solid var(--primary-200);
 }
 
 .file-list-section {
@@ -167,6 +192,7 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: var(--space-3);
+  gap: var(--space-4);
 }
 
 .file-item-info {
@@ -180,49 +206,55 @@
   margin: 0 0 var(--space-1) 0;
 }
 
-.file-item-number,
-.file-item-location {
+.file-item-number {
   font-size: 0.875rem;
   color: var(--gray-600);
   margin: 0;
 }
 
 .file-item-location {
+  font-size: 1rem;
   font-family: var(--font-family-mono);
   color: var(--primary-600);
-  margin-top: var(--space-1);
+  font-weight: 600;
+  margin-top: var(--space-2);
+  margin-bottom: 0;
 }
 
 .file-item-meta {
   text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
 }
 
-.file-item-time,
+.stage-chip {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--primary-100);
+  color: var(--primary-700);
+  white-space: nowrap;
+}
+
+.file-item-time {
+  font-size: 0.875rem;
+  color: var(--gray-600);
+  margin: 0;
+}
+
 .file-item-user {
   font-size: 0.875rem;
   color: var(--gray-600);
   margin: 0;
 }
 
-.file-item-time {
-  font-weight: 500;
-  margin-bottom: var(--space-1);
-}
-
 .file-item-actions {
   display: flex;
   gap: var(--space-2);
   justify-content: flex-end;
-}
-
-.return-confirm-actions {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.btn-small {
-  padding: var(--space-1) var(--space-3);
-  font-size: 0.875rem;
 }
 
 .loading-state,
@@ -265,11 +297,11 @@
   }
 
   .file-item-meta {
+    align-items: flex-start;
     text-align: left;
   }
 
-  .file-item-actions,
-  .return-confirm-actions {
+  .file-item-actions {
     flex-direction: column;
   }
 

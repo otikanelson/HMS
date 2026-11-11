@@ -344,14 +344,14 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
       });
     }
 
-    // Guard: prevent archiving if file is still out
+    // Guard: prevent archiving if visit is in progress
     if (requestedStatus === 'archived') {
       const Visit = require('../models/Visit');
-      const openVisit = await Visit.findOne({ patient: patient._id, fileStatus: 'out' });
+      const openVisit = await Visit.findOne({ patient: patient._id, isOpen: true });
       if (openVisit) {
         return res.status(409).json({
-          error: 'File is still out',
-          message: 'This file is still out. Mark it as returned before archiving.'
+          error: 'Visit in progress',
+          message: 'This patient has a visit in progress. Finish it before archiving.'
         });
       }
     }

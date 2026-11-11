@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import '@fontsource/atkinson-hyperlegible/400.css';
+import '@fontsource/atkinson-hyperlegible/700.css';
+import logo from '../logo.png';
 import './Login.css';
-
-const BACKGROUND_IMAGE =
-  'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1920&q=80';
 
 function useClock() {
   const [now, setNow] = useState(new Date());
@@ -51,6 +51,31 @@ const Login = () => {
 
   const NOTICE_LABELS = { update: 'Update', info: 'Info', urgent: 'Urgent' };
 
+  // State for name picker search
+  const [nameFilter, setNameFilter] = useState('');
+  
+  // Hash function for avatar colors
+  const hashCode = (str) => {
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    }
+    return Math.abs(hash);
+  };
+  
+  const getAvatarColor = (name) => {
+    const colors = [
+      '#be185d', // magenta
+      '#0e7490', // teal
+      '#1d4ed8', // blue
+      '#c2410c', // orange
+      '#7c3aed', // purple
+      '#0f766e'  // green
+    ];
+    const index = hashCode(name) % colors.length;
+    return colors[index];
+  };
+
   useEffect(() => {
     fetchNotices();
   }, []);
@@ -85,6 +110,7 @@ const Login = () => {
 
   const handleOpenStaffModal = () => {
     setShowStaffModal(true);
+    setNameFilter('');
     fetchStaffList();
     setErrors({});
   };
@@ -96,6 +122,7 @@ const Login = () => {
     setShowPassword(false);
     setUseUsernameLogin(false);
     setUsername('');
+    setNameFilter('');
     setErrors({});
   };
 
@@ -103,6 +130,11 @@ const Login = () => {
     setSelectedStaff(staff);
     setPassword('');
     setErrors({});
+    // Focus password field after selection
+    setTimeout(() => {
+      const passwordInput = document.querySelector('.modal-content input[type="password"]');
+      if (passwordInput) passwordInput.focus();
+    }, 100);
   };
 
   const handleBackToStaffList = () => {
@@ -187,12 +219,56 @@ const Login = () => {
       .toUpperCase()
       .slice(0, 2);
   };
+  
+  // Group staff by role
+  const groupedStaff = () => {
+    if (staffList.length <= 6) {
+      // Flat list with roles shown
+      return { flat: staffList.sort((a, b) => a.fullName.localeCompare(b.fullName)) };
+    }
+    
+    // Group by role
+    const roleOrder = ['Doctor', 'Nurse', 'Trainee Nurse', 'Midwife', 'Maintenance'];
+    const groups = {};
+    
+    staffList.forEach(staff => {
+      const role = staff.roleDisplay || 'Other';
+      if (!groups[role]) groups[role] = [];
+      groups[role].push(staff);
+    });
+    
+    // Sort each group alphabetically
+    Object.keys(groups).forEach(role => {
+      groups[role].sort((a, b) => a.fullName.localeCompare(b.fullName));
+    });
+    
+    // Order groups
+    const orderedGroups = {};
+    roleOrder.forEach(role => {
+      if (groups[role]) orderedGroups[role] = groups[role];
+    });
+    
+    // Add remaining roles
+    Object.keys(groups).forEach(role => {
+      if (!roleOrder.includes(role)) {
+        orderedGroups[role] = groups[role];
+      }
+    });
+    
+    return orderedGroups;
+  };
+  
+  // Filter staff by name
+  const filteredStaff = () => {
+    if (!nameFilter) return staffList;
+    const lower = nameFilter.toLowerCase();
+    return staffList.filter(staff => 
+      staff.fullName.toLowerCase().includes(lower)
+    );
+  };
 
   return (
     <div className="lock-screen">
-      <div className="lock-media" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }} />
-      <div className="lock-scrim" />
-
       <div className="lock-content">
         <div className="lock-clock">
           <div className="lock-time">{timeString}</div>
@@ -204,12 +280,12 @@ const Login = () => {
           <div className="lock-card">
             <div className="lock-brand">
               <div className="lock-brand-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
+                <img src={logo} alt="Tender Care Clinic" />
               </div>
-              <span>Tender Care Clinic</span>
+              <div className="lock-brand-text">
+                <div className="lock-brand-title">Tender Care Clinic</div>
+                <div className="lock-brand-subtitle">Staff sign-in</div>
+              </div>
             </div>
 
             <button
@@ -218,16 +294,16 @@ const Login = () => {
               className="lock-submit"
               disabled={isLoading}
             >
-              Sign In
+              Sign in
             </button>
 
-            <p className="lock-footnote">Hospital Management System</p>
+            <p className="lock-footnote">Pick your name, then type your password.</p>
           </div>
 
           {/* Notices Section */}
           {notices.length > 0 && (
             <div className="login-notices">
-              <h3 className="login-notices-title">Staff Notices</h3>
+              <h3 className="login-notices-title">Staff notices</h3>
               <div className="login-notices-list">
                 {notices.map((notice) => (
                   <div key={notice._id} className={`login-notice login-notice-${notice.type}`}>
@@ -247,8 +323,17 @@ const Login = () => {
 
       {/* Staff Selection Modal */}
       {showStaffModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div 
+          className="modal-overlay" 
+          onClick={handleCloseModal}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') handleCloseModal();
+          }}
+        >
+          <div 
+            className={`modal-content ${selectedStaff ? 'modal-content-narrow' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button className="modal-close" onClick={handleCloseModal} aria-label="Close">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -261,8 +346,8 @@ const Login = () => {
               !selectedStaff ? (
                 <>
                   <div className="modal-header">
-                    <h2>Select Your Name</h2>
-                    <p>Choose your name from the list below</p>
+                    <h2>Who is signing in?</h2>
+                    <p>Choose your name.</p>
                   </div>
 
                   {errors.general && (
@@ -272,51 +357,125 @@ const Login = () => {
                   {staffLoading ? (
                     <div className="staff-list-loading">Loading staff list...</div>
                   ) : (
-                    <div className="staff-selection-grid">
-                      {staffList.map((staff) => (
-                        <div
-                          key={staff._id}
-                          className="staff-card"
-                          onClick={() => handleStaffSelect(staff)}
-                        >
-                          <div className="staff-avatar">
-                            {getInitials(staff.fullName)}
-                          </div>
-                          <h3>{staff.fullName}</h3>
-                          <p>{staff.roleDisplay}</p>
+                    <>
+                      {/* Show search only if more than 8 staff */}
+                      {staffList.length > 8 && (
+                        <div className="staff-search-box">
+                          <input
+                            type="text"
+                            className="staff-search-input"
+                            placeholder="Type your name to find it"
+                            value={nameFilter}
+                            onChange={(e) => setNameFilter(e.target.value)}
+                            autoFocus
+                          />
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      )}
 
-                  <div className="modal-footer">
-                    <button
-                      type="button"
-                      onClick={handleSwitchToUsername}
-                      className="link-button"
-                    >
-                      Sign in with username instead
-                    </button>
-                  </div>
+                      <div className="staff-picker-scroll">
+                        {(() => {
+                          const filtered = filteredStaff();
+                          
+                          if (filtered.length === 0) {
+                            return <div className="staff-no-results">No one found. Check the spelling.</div>;
+                          }
+                          
+                          const groups = groupedStaff();
+                          
+                          if (groups.flat) {
+                            // Flat list (6 or fewer staff)
+                            return (
+                              <div className="staff-selection-list">
+                                {groups.flat.map((staff) => (
+                                  <button
+                                    key={staff._id}
+                                    className="staff-button"
+                                    onClick={() => handleStaffSelect(staff)}
+                                  >
+                                    <div 
+                                      className="staff-avatar-circle"
+                                      style={{ backgroundColor: getAvatarColor(staff.fullName) }}
+                                    >
+                                      {getInitials(staff.fullName)}
+                                    </div>
+                                    <div className="staff-button-text">
+                                      <div className="staff-button-name">{staff.fullName}</div>
+                                      <div className="staff-button-role">{staff.roleDisplay}</div>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            );
+                          } else {
+                            // Grouped list (more than 6 staff)
+                            return (
+                              <div className="staff-selection-grouped">
+                                {Object.entries(groups).map(([role, members]) => (
+                                  <div key={role} className="staff-group">
+                                    <div className="staff-group-title">{role}s</div>
+                                    <div className="staff-group-list">
+                                      {members
+                                        .filter(staff => 
+                                          !nameFilter || 
+                                          staff.fullName.toLowerCase().includes(nameFilter.toLowerCase())
+                                        )
+                                        .map((staff) => (
+                                          <button
+                                            key={staff._id}
+                                            className="staff-button"
+                                            onClick={() => handleStaffSelect(staff)}
+                                          >
+                                            <div 
+                                              className="staff-avatar-circle"
+                                              style={{ backgroundColor: getAvatarColor(staff.fullName) }}
+                                            >
+                                              {getInitials(staff.fullName)}
+                                            </div>
+                                            <div className="staff-button-text">
+                                              <div className="staff-button-name">{staff.fullName}</div>
+                                            </div>
+                                          </button>
+                                        ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          }
+                        })()}
+                      </div>
+
+                      <div className="modal-footer">
+                        <button
+                          type="button"
+                          onClick={handleSwitchToUsername}
+                          className="link-button"
+                        >
+                          Sign in with a username instead
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </>
               ) : (
                 // Password entry for selected staff
                 <>
-                  <div className="modal-header">
-                    <div className="selected-staff-info">
-                      <div className="staff-avatar staff-avatar-large">
-                        {getInitials(selectedStaff.fullName)}
-                      </div>
-                      <div className="selected-staff-details">
-                        <h3 className="selected-staff-name">{selectedStaff.fullName}</h3>
-                        <p className="selected-staff-role">{selectedStaff.roleDisplay}</p>
-                      </div>
+                  <div className="password-step-header">
+                    <div 
+                      className="staff-avatar-large"
+                      style={{ backgroundColor: getAvatarColor(selectedStaff.fullName) }}
+                    >
+                      {getInitials(selectedStaff.fullName)}
+                    </div>
+                    <div className="password-step-info">
+                      <div className="password-step-name">{selectedStaff.fullName}</div>
+                      <div className="password-step-role">{selectedStaff.roleDisplay}</div>
                     </div>
                   </div>
 
                   <form onSubmit={handleStaffPasswordSubmit}>
                     {errors.general && (
-                      <div className="lock-error">{errors.general}</div>
+                      <div className="lock-error-visible">{errors.general}</div>
                     )}
 
                     <div className="lock-field">
@@ -324,7 +483,7 @@ const Login = () => {
                         <input
                           type={showPassword ? 'text' : 'password'}
                           className={`lock-input ${errors.password ? 'error' : ''}`}
-                          placeholder="Enter your password"
+                          placeholder="Your password"
                           value={password}
                           onChange={(e) => {
                             setPassword(e.target.value);
@@ -369,16 +528,16 @@ const Login = () => {
                           Signing in...
                         </>
                       ) : (
-                        'Sign In'
+                        'Sign in'
                       )}
                     </button>
 
                     <button
                       type="button"
                       onClick={handleBackToStaffList}
-                      className="lock-back-btn"
+                      className="link-button-secondary"
                     >
-                      ← Back to staff list
+                      Choose a different name
                     </button>
                   </form>
                 </>
@@ -387,13 +546,13 @@ const Login = () => {
               // Username/Password Login
               <>
                 <div className="modal-header">
-                  <h2>Sign In with Username</h2>
+                  <h2>Sign in with username</h2>
                   <p>For administrators and special accounts</p>
                 </div>
 
                 <form onSubmit={handleUsernameSubmit}>
                   {errors.general && (
-                    <div className="lock-error">{errors.general}</div>
+                    <div className="lock-error-visible">{errors.general}</div>
                   )}
 
                   <div className="lock-field">
@@ -462,16 +621,16 @@ const Login = () => {
                         Signing in...
                       </>
                     ) : (
-                      'Sign In'
+                      'Sign in'
                     )}
                   </button>
 
                   <button
                     type="button"
                     onClick={handleBackToStaffSelection}
-                    className="lock-back-btn"
+                    className="link-button-secondary"
                   >
-                    ← Back to staff selection
+                    Back to staff selection
                   </button>
                 </form>
               </>

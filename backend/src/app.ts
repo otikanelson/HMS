@@ -42,7 +42,13 @@ app.set('trust proxy', 1);
 // Middleware
 app.use(cors({
 origin: process.env.NODE_ENV === 'production' 
-  ? ['https://detendercare.vercel.app', process.env.FRONTEND_URL].filter(url => url !== undefined) as string[]
+  ? [
+      'https://detendercare.vercel.app', 
+      process.env.FRONTEND_URL,
+      'http://localhost:3001',
+      'http://localhost:3000',
+      'http://localhost:3002'
+    ].filter(url => url !== undefined) as string[]
   : ['http://localhost:3001', 'http://localhost:3000', 'http://localhost:3002'],
   credentials: true
 }));

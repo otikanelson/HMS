@@ -9,7 +9,7 @@ const visitSchema = new mongoose.Schema({
     index: true
   },
 
-  // Snapshot fields
+  // Snapshot fields (captured at visit start)
   patientId: {
     type: String,
     required: true
@@ -23,42 +23,70 @@ const visitSchema = new mongoose.Schema({
     required: true
   },
 
-  // File tracking
-  fileStatus: {
+  // Stage tracking
+  stage: {
     type: String,
-    enum: ['out', 'returned'],
-    default: 'out',
-    index: true
-  },
-  documentationStatus: {
-    type: String,
-    enum: ['pending', 'done'],
-    default: 'pending',
-    index: true
-  },
-
-  // Checkout info
-  checkedOutBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  checkedOutAt: {
-    type: Date,
+    enum: ['waiting_for_file', 'with_doctor', 'needs_recording', 'filed'],
+    default: 'waiting_for_file',
     required: true,
     index: true
   },
 
-  // Return info
-  returnedBy: {
+  // Visit lifecycle
+  isOpen: {
+    type: Boolean,
+    default: true,
+    index: true
+  },
+
+  // Who started the visit and when
+  startedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  startedAt: {
+    type: Date,
+    required: true
+  },
+
+  // Sent to doctor transition
+  sentToDoctorBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
-  returnedAt: {
+  sentToDoctorAt: {
     type: Date
   },
 
-  // Clinical details
+  // File back transition
+  fileBackBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  fileBackAt: {
+    type: Date
+  },
+
+  // Filed transition
+  filedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  filedAt: {
+    type: Date
+  },
+
+  // Last edited tracking
+  lastEditedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  lastEditedAt: {
+    type: Date
+  },
+
+  // Vitals
   vitals: {
     systolic: {
       type: Number,
@@ -77,57 +105,49 @@ const visitSchema = new mongoose.Schema({
     }
   },
 
+  // Vitals not taken
+  vitalsNotTaken: {
+    type: Boolean,
+    default: false
+  },
+  vitalsNotTakenReason: {
+    type: String,
+    maxlength: 200
+  },
+
+  // Who recorded vitals
+  vitalsBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  vitalsAt: {
+    type: Date
+  },
+
+  // Tests (simple string array)
   tests: [{
-    name: {
-      type: String,
-      required: true,
-      maxlength: 100
-    },
-    result: {
-      type: String,
-      maxlength: 200
-    }
+    type: String,
+    maxlength: 200
   }],
+  testsNone: {
+    type: Boolean,
+    default: false
+  },
 
+  // Medications (simple string array)
   medications: [{
-    name: {
-      type: String,
-      required: true,
-      maxlength: 100
-    },
-    dose: {
-      type: String,
-      maxlength: 100
-    },
-    frequency: {
-      type: String,
-      maxlength: 100
-    },
-    duration: {
-      type: String,
-      maxlength: 100
-    }
+    type: String,
+    maxlength: 200
   }],
+  medicationsNone: {
+    type: Boolean,
+    default: false
+  },
 
+  // Notes
   notes: {
     type: String,
     maxlength: 1000
-  },
-
-  // Documentation tracking
-  documentedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  documentedAt: {
-    type: Date
-  },
-  lastEditedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  lastEditedAt: {
-    type: Date
   }
 
 }, { timestamps: true });
@@ -136,14 +156,16 @@ const visitSchema = new mongoose.Schema({
 visitSchema.index({ patient: 1, createdAt: -1 });
 
 // Index for open files queries
-visitSchema.index({ fileStatus: 1, documentationStatus: 1 });
+visitSchema.index({ isOpen: 1 });
 
-// Partial unique index - only one file can be 'out' per patient at a time
+// Partial unique index - only one open visit per patient at a time
+// Using explicit name to avoid clashes with old index
 visitSchema.index(
   { patient: 1 },
   { 
     unique: true,
-    partialFilterExpression: { fileStatus: 'out' }
+    partialFilterExpression: { isOpen: true },
+    name: 'one_open_visit_per_patient'
   }
 );
 
