@@ -17,11 +17,15 @@ const ACTION_LABELS = {
   FILE_CHECKED_OUT: 'took a patient file out',
   FILE_RETURNED: 'received a patient file back',
   VISIT_DOCUMENTED: 'recorded visit details',
-  VISIT_CORRECTED: 'corrected a visit record',
+  VISIT_CORRECTED: 'corrected a finished visit',
+  VISIT_CANCELLED: 'cancelled a visit started by mistake',
+  VISIT_STEPPED_BACK: 'moved a visit back one step',
   PATIENT_RECORD_VIEWED: "opened a patient's visit history",
-  VISIT_STARTED: 'started a patient visit',
+  VISIT_STARTED: 'started a visit',
   SENT_TO_DOCTOR: 'sent a patient to the doctor',
   VISIT_FILED: 'recorded and filed a visit',
+  VISIT_REPORT_EDITED: 'edited a visit report',
+  PATIENT_DETAILS_UPDATED: "updated a patient's details",
 };
 
 const ROLE_LABELS = {

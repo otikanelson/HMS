@@ -413,7 +413,7 @@ router.post('/:id/file-back', requireAccessLevel(...ALL_ROLES), async (req, res)
 router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => {
   try {
     const { id } = req.params;
-    const { tests, testsNone, medications, medicationsNone, notes } = req.body;
+    const { chiefComplaint, diagnosis, treatmentPlan, payment, recordedBy, tests, testsNone, medications, medicationsNone, notes } = req.body;
 
     if (!isValidObjectId(id)) {
       return res.status(400).json({
@@ -450,6 +450,82 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
       return res.status(400).json({
         error: 'Vitals required',
         message: 'Vitals must be recorded before filing.'
+      });
+    }
+
+    // PART 1: Validate report fields (chiefComplaint, diagnosis, treatmentPlan, payment, recordedBy)
+    
+    // Chief complaint: required, 1-2000 characters
+    if (!chiefComplaint || !chiefComplaint.trim()) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Please write the patient\'s complaint.'
+      });
+    }
+    const trimmedChiefComplaint = chiefComplaint.trim();
+    if (trimmedChiefComplaint.length > 2000) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Please write the patient\'s complaint.'
+      });
+    }
+
+    // Diagnosis: required, 1-2000 characters
+    if (!diagnosis || !diagnosis.trim()) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Please write the diagnosis.'
+      });
+    }
+    const trimmedDiagnosis = diagnosis.trim();
+    if (trimmedDiagnosis.length > 2000) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Please write the diagnosis.'
+      });
+    }
+
+    // Treatment plan: optional, up to 2000 characters
+    const trimmedTreatmentPlan = treatmentPlan ? treatmentPlan.trim() : '';
+    if (trimmedTreatmentPlan && trimmedTreatmentPlan.length > 2000) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Treatment plan cannot exceed 2000 characters.'
+      });
+    }
+
+    // Payment: optional, must be number 0 or more, up to 2 decimal places
+    let trimmedPayment = '';
+    if (payment && payment.trim()) {
+      trimmedPayment = payment.trim();
+      // Check pattern: digits and optional decimal point with 1-2 decimal places
+      if (!/^(\d+(\.\d{1,2})?)$/.test(trimmedPayment)) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: 'Payment must be a number, e.g. 5000.'
+        });
+      }
+      const paymentNum = Number(trimmedPayment);
+      if (paymentNum < 0) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: 'Payment must be a number, e.g. 5000.'
+        });
+      }
+    }
+
+    // Recorded by: required, 1-200 characters
+    if (!recordedBy || !recordedBy.trim()) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Please say who recorded this visit.'
+      });
+    }
+    const trimmedRecordedBy = recordedBy.trim();
+    if (trimmedRecordedBy.length > 200) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Please say who recorded this visit.'
       });
     }
 
@@ -532,6 +608,11 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
       {
         stage: 'filed',
         isOpen: false,
+        chiefComplaint: trimmedChiefComplaint,
+        diagnosis: trimmedDiagnosis,
+        treatmentPlan: trimmedTreatmentPlan,
+        payment: trimmedPayment,
+        recordedBy: trimmedRecordedBy,
         tests: cleanedTests,
         testsNone: testsNone || false,
         medications: cleanedMeds,
@@ -580,7 +661,7 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
 router.put('/:id/correct', requireAccessLevel(...CAN_CORRECT), async (req, res) => {
   try {
     const { id } = req.params;
-    const { vitals, notTaken, reason, tests, testsNone, medications, medicationsNone, notes } = req.body;
+    const { vitals, notTaken, reason, chiefComplaint, diagnosis, treatmentPlan, payment, recordedBy, tests, testsNone, medications, medicationsNone, notes } = req.body;
 
     if (!isValidObjectId(id)) {
       return res.status(400).json({
@@ -610,6 +691,11 @@ router.put('/:id/correct', requireAccessLevel(...CAN_CORRECT), async (req, res) 
       vitals: visit.vitals,
       vitalsNotTaken: visit.vitalsNotTaken,
       vitalsNotTakenReason: visit.vitalsNotTakenReason,
+      chiefComplaint: visit.chiefComplaint,
+      diagnosis: visit.diagnosis,
+      treatmentPlan: visit.treatmentPlan,
+      payment: visit.payment,
+      recordedBy: visit.recordedBy,
       tests: visit.tests,
       testsNone: visit.testsNone,
       medications: visit.medications,
@@ -770,6 +856,112 @@ router.put('/:id/correct', requireAccessLevel(...CAN_CORRECT), async (req, res) 
       visit.notes = cleanedNotes;
     }
 
+    // PART 1 corrections: Report fields
+    let hasChanges = false;
+
+    // Chief complaint: if provided, required and 1-2000 chars
+    if (chiefComplaint !== undefined) {
+      if (!chiefComplaint.trim()) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: 'Please write the patient\'s complaint.'
+        });
+      }
+      const trimmedCC = chiefComplaint.trim();
+      if (trimmedCC.length > 2000) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: 'Please write the patient\'s complaint.'
+        });
+      }
+      if (visit.chiefComplaint !== trimmedCC) {
+        visit.chiefComplaint = trimmedCC;
+        hasChanges = true;
+      }
+    }
+
+    // Diagnosis: if provided, required and 1-2000 chars
+    if (diagnosis !== undefined) {
+      if (!diagnosis.trim()) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: 'Please write the diagnosis.'
+        });
+      }
+      const trimmedDx = diagnosis.trim();
+      if (trimmedDx.length > 2000) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: 'Please write the diagnosis.'
+        });
+      }
+      if (visit.diagnosis !== trimmedDx) {
+        visit.diagnosis = trimmedDx;
+        hasChanges = true;
+      }
+    }
+
+    // Treatment plan: optional, up to 2000
+    if (treatmentPlan !== undefined) {
+      const trimmedTP = treatmentPlan.trim();
+      if (trimmedTP.length > 2000) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: 'Treatment plan cannot exceed 2000 characters.'
+        });
+      }
+      if (visit.treatmentPlan !== trimmedTP) {
+        visit.treatmentPlan = trimmedTP;
+        hasChanges = true;
+      }
+    }
+
+    // Payment: optional, must be number 0+, up to 2 decimals
+    if (payment !== undefined) {
+      let trimmedPayment = '';
+      if (payment && payment.trim()) {
+        trimmedPayment = payment.trim();
+        if (!/^(\d+(\.\d{1,2})?)$/.test(trimmedPayment)) {
+          return res.status(400).json({
+            error: 'Validation error',
+            message: 'Payment must be a number, e.g. 5000.'
+          });
+        }
+        const paymentNum = Number(trimmedPayment);
+        if (paymentNum < 0) {
+          return res.status(400).json({
+            error: 'Validation error',
+            message: 'Payment must be a number, e.g. 5000.'
+          });
+        }
+      }
+      if (visit.payment !== trimmedPayment) {
+        visit.payment = trimmedPayment;
+        hasChanges = true;
+      }
+    }
+
+    // Recorded by: if provided, required 1-200 chars
+    if (recordedBy !== undefined) {
+      if (!recordedBy.trim()) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: 'Please say who recorded this visit.'
+        });
+      }
+      const trimmedRB = recordedBy.trim();
+      if (trimmedRB.length > 200) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: 'Please say who recorded this visit.'
+        });
+      }
+      if (visit.recordedBy !== trimmedRB) {
+        visit.recordedBy = trimmedRB;
+        hasChanges = true;
+      }
+    }
+
     visit.lastEditedBy = req.user.userId;
     visit.lastEditedAt = new Date();
 
@@ -780,12 +972,29 @@ router.put('/:id/correct', requireAccessLevel(...CAN_CORRECT), async (req, res) 
       vitals: visit.vitals,
       vitalsNotTaken: visit.vitalsNotTaken,
       vitalsNotTakenReason: visit.vitalsNotTakenReason,
+      chiefComplaint: visit.chiefComplaint,
+      diagnosis: visit.diagnosis,
+      treatmentPlan: visit.treatmentPlan,
+      payment: visit.payment,
+      recordedBy: visit.recordedBy,
       tests: visit.tests,
       testsNone: visit.testsNone,
       medications: visit.medications,
       medicationsNone: visit.medicationsNone,
       notes: visit.notes
     };
+
+    // Check if anything actually changed
+    const actualChanges = Object.keys(after).some(key => 
+      JSON.stringify(before[key]) !== JSON.stringify(after[key])
+    );
+
+    if (!actualChanges) {
+      return res.status(400).json({
+        error: 'No changes',
+        message: 'Nothing was changed.'
+      });
+    }
 
     // Log with before/after
     await logActivity({
@@ -865,8 +1074,8 @@ router.get('/patient/:patientId', requireAccessLevel(...ALL_ROLES), async (req, 
       });
     }
 
-    // Get visits (including unfinished)
-    const visits = await Visit.find({ patient: patient._id })
+    // Get visits (excluding cancelled)
+    const visits = await Visit.find({ patient: patient._id, stage: { $ne: 'cancelled' } })
       .sort({ createdAt: -1 })
       .limit(100)
       .populate('filedBy', 'fullName')
@@ -941,6 +1150,157 @@ router.get('/:id', requireAccessLevel(...ALL_ROLES), async (req, res) => {
     console.error('Get visit error:', error);
     res.status(500).json({
       error: 'Failed to retrieve visit',
+      message: 'Internal server error'
+    });
+  }
+});
+
+// POST /api/visits/:id/cancel - Cancel a visit (all roles)
+router.post('/:id/cancel', requireAccessLevel(...ALL_ROLES), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        error: 'Invalid ID',
+        message: "That isn't a valid record."
+      });
+    }
+
+    // Try to cancel: only if waiting_for_file, isOpen, no vitals recorded
+    const updated = await Visit.findOneAndUpdate(
+      {
+        _id: id,
+        stage: 'waiting_for_file',
+        isOpen: true,
+        vitalsNotTaken: { $ne: true },
+        'vitals.systolic': { $exists: false }
+      },
+      {
+        stage: 'cancelled',
+        isOpen: false,
+        cancelledBy: req.user.userId,
+        cancelledAt: new Date()
+      },
+      { new: true, runValidators: true }
+    ).populate('patient', 'patientId fullName');
+
+    if (!updated) {
+      // Check if the visit exists at all
+      const visit = await Visit.findById(id);
+      if (!visit) {
+        return res.status(404).json({
+          error: 'Visit not found',
+          message: 'That visit was not found.'
+        });
+      }
+      // Otherwise it can't be cancelled
+      return res.status(409).json({
+        error: 'Cannot cancel',
+        message: 'This visit can\'t be cancelled because a check-in has already been saved, or it has moved on. If it was sent to the doctor by mistake, go back a step instead.'
+      });
+    }
+
+    // Log activity
+    await logActivity({
+      req,
+      action: 'VISIT_CANCELLED',
+      targetType: 'PatientFile',
+      targetId: updated.patient._id,
+      targetLabel: updated.patientName
+    });
+
+    res.json({
+      message: 'Visit cancelled',
+      visit: updated.toObject()
+    });
+
+  } catch (error) {
+    console.error('Cancel visit error:', error);
+    res.status(500).json({
+      error: 'Failed to cancel visit',
+      message: 'Internal server error'
+    });
+  }
+});
+
+// POST /api/visits/:id/step-back - Move visit back one step (all roles)
+router.post('/:id/step-back', requireAccessLevel(...ALL_ROLES), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({
+        error: 'Invalid ID',
+        message: "That isn't a valid record."
+      });
+    }
+
+    const visit = await Visit.findById(id);
+    if (!visit) {
+      return res.status(404).json({
+        error: 'Visit not found',
+        message: 'That visit record was not found'
+      });
+    }
+
+    let fromStage = visit.stage;
+    let toStage, updateData;
+
+    if (fromStage === 'with_doctor') {
+      toStage = 'waiting_for_file';
+      updateData = {
+        stage: toStage,
+        sentToDoctorBy: undefined,
+        sentToDoctorAt: undefined
+      };
+    } else if (fromStage === 'needs_recording') {
+      toStage = 'with_doctor';
+      updateData = {
+        stage: toStage,
+        fileBackBy: undefined,
+        fileBackAt: undefined
+      };
+    } else {
+      return res.status(409).json({
+        error: 'Cannot step back',
+        message: 'You can\'t go back from here.'
+      });
+    }
+
+    // Atomic update
+    const updated = await Visit.findOneAndUpdate(
+      { _id: id, stage: fromStage },
+      updateData,
+      { new: true, runValidators: true }
+    ).populate('patient', 'patientId fullName');
+
+    if (!updated) {
+      return res.status(409).json({
+        error: 'Stage mismatch',
+        message: 'You can\'t go back from here.'
+      });
+    }
+
+    // Log activity
+    await logActivity({
+      req,
+      action: 'VISIT_STEPPED_BACK',
+      targetType: 'PatientFile',
+      targetId: updated.patient._id,
+      targetLabel: updated.patientName,
+      details: { from: fromStage, to: toStage }
+    });
+
+    res.json({
+      message: `Moved visit back to ${toStage === 'waiting_for_file' ? 'finding file' : 'with doctor'}`,
+      visit: updated.toObject()
+    });
+
+  } catch (error) {
+    console.error('Step back error:', error);
+    res.status(500).json({
+      error: 'Failed to move visit back',
       message: 'Internal server error'
     });
   }

@@ -5,8 +5,7 @@ const visitSchema = new mongoose.Schema({
   patient: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'PatientFile',
-    required: true,
-    index: true
+    required: true
   },
 
   // Snapshot fields (captured at visit start)
@@ -26,7 +25,7 @@ const visitSchema = new mongoose.Schema({
   // Stage tracking
   stage: {
     type: String,
-    enum: ['waiting_for_file', 'with_doctor', 'needs_recording', 'filed'],
+    enum: ['waiting_for_file', 'with_doctor', 'needs_recording', 'filed', 'cancelled'],
     default: 'waiting_for_file',
     required: true,
     index: true
@@ -35,8 +34,7 @@ const visitSchema = new mongoose.Schema({
   // Visit lifecycle
   isOpen: {
     type: Boolean,
-    default: true,
-    index: true
+    default: true
   },
 
   // Who started the visit and when
@@ -83,6 +81,15 @@ const visitSchema = new mongoose.Schema({
     ref: 'User'
   },
   lastEditedAt: {
+    type: Date
+  },
+
+  // Cancelled tracking
+  cancelledBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  cancelledAt: {
     type: Date
   },
 
@@ -148,6 +155,28 @@ const visitSchema = new mongoose.Schema({
   notes: {
     type: String,
     maxlength: 1000
+  },
+
+  // Medical Report Fields (Rich Text)
+  chiefComplaint: {
+    type: String,
+    maxlength: 5000
+  },
+  diagnosis: {
+    type: String,
+    maxlength: 5000
+  },
+  treatmentPlan: {
+    type: String,
+    maxlength: 5000
+  },
+  payment: {
+    type: String,
+    maxlength: 500
+  },
+  recordedBy: {
+    type: String,
+    maxlength: 200
   }
 
 }, { timestamps: true });

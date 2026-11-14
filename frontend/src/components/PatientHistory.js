@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
+import Hint from './Hint';
 import './PatientHistory.css';
 
 const STAGE_LABELS = {
   waiting_for_file: 'Finding file',
   with_doctor: 'With doctor',
-  needs_recording: 'File back - needs recording',
-  filed: 'Done - file back in cabinet'
+  needs_recording: 'File back, needs recording',
+  filed: 'Filed'
 };
 
 const PatientHistory = () => {
@@ -28,7 +29,11 @@ const PatientHistory = () => {
       setError('');
       const response = await axios.get(`/api/visits/patient/${patientId}`);
       setPatient(response.data.patient);
-      setVisits(response.data.visits);
+      // Sort newest first
+      const sortedVisits = (response.data.visits || []).sort(
+        (a, b) => new Date(b.startedAt) - new Date(a.startedAt)
+      );
+      setVisits(sortedVisits);
     } catch (err) {
       console.error('Failed to fetch patient history:', err);
       setError(err.response?.data?.message || err.response?.data?.error || 'Failed to load patient history');
@@ -41,15 +46,34 @@ const PatientHistory = () => {
     if (!dateString) return '';
     const date = new Date(dateString);
     const lagosOptions = { 
-      timeZone: 'Africa/Lagos', 
-      month: 'long', 
-      day: 'numeric', 
-      year: 'numeric',
+      timeZone: 'Africa/Lagos',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    };
+    return date.toLocaleDateString('en-US', lagosOptions);
+  };
+
+  const formatTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const lagosOptions = { 
+      timeZone: 'Africa/Lagos',
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
     };
-    return date.toLocaleString('en-US', lagosOptions);
+    return date.toLocaleTimeString('en-US', lagosOptions);
+  };
+
+  const formatVitals = (visit) => {
+    if (visit.vitalsNotTaken) {
+      return 'Check-in not taken';
+    }
+    if (visit.vitals?.systolic !== undefined && visit.vitals?.diastolic !== undefined && visit.vitals?.heartRate !== undefined) {
+      return `BP ${visit.vitals.systolic}/${visit.vitals.diastolic} • HR ${visit.vitals.heartRate}`;
+    }
+    return '—';
   };
 
   if (loading) {
@@ -74,11 +98,11 @@ const PatientHistory = () => {
 
   return (
     <div className="patient-history">
-      <div className="patient-history-header">
+      <div className="history-header">
         <div>
-          <h2 className="patient-history-title">Visit History</h2>
+          <h2 className="history-title">Visit History</h2>
           {patient && (
-            <div className="patient-info">
+            <div className="patient-header-info">
               <p className="patient-name">{patient.fullName}</p>
               <p className="patient-id">Patient {patient.patientId}</p>
             </div>
@@ -89,107 +113,67 @@ const PatientHistory = () => {
         </Link>
       </div>
 
+      <Hint
+        hintId="patient-history-view"
+        message="View all visits for this patient. Click any row to see details or continue an open visit."
+      />
+
       {visits.length === 0 ? (
         <div className="empty-state">
-          <p>No visits recorded yet</p>
+          <p>No visits yet. <Link to="/file-desk" className="link">Start one from File Desk.</Link></p>
         </div>
       ) : (
-        <div className="visits-list">
-          {visits.map((visit) => {
-            const isFiled = visit.stage === 'filed';
-
-            return (
-              <div key={visit._id} className="visit-card">
-                <div className="visit-card-header">
-                  <span className="visit-card-date">{formatDate(visit.startedAt)}</span>
-                  {!isFiled && (
-                    <span className="visit-status-badge pending">
-                      Not filed yet - {STAGE_LABELS[visit.stage]}
-                    </span>
-                  )}
-                </div>
-
-                {!isFiled ? (
-                  <div className="visit-card-body">
-                    <p className="visit-pending-text">
-                      This visit has not been filed yet. Current stage: {STAGE_LABELS[visit.stage]}
-                    </p>
-                    <Link to={`/visits/${visit._id}`} className="btn btn-primary btn-small">
-                      Open visit
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="visit-card-body">
-                    {/* Vitals */}
-                    <div className="visit-detail-section">
-                      <h4>Check-in</h4>
-                      {visit.vitalsNotTaken ? (
-                        <p><strong>Not taken:</strong> {visit.vitalsNotTakenReason}</p>
-                      ) : visit.vitals && visit.vitals.systolic ? (
-                        <>
-                          <p><strong>BP:</strong> {visit.vitals.systolic}/{visit.vitals.diastolic} mmHg</p>
-                          <p><strong>Heart rate:</strong> {visit.vitals.heartRate} bpm</p>
-                        </>
-                      ) : null}
-                    </div>
-
-                    {/* Tests */}
-                    {visit.testsNone ? (
-                      <div className="visit-detail-section">
-                        <h4>Tests</h4>
-                        <p>None</p>
+        <div className="history-card">
+          <table className="visits-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Check-in</th>
+                <th>Notes</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {visits.map((visit) => {
+                const isOpen = visit.isOpen;
+                const destination = isOpen 
+                  ? `/visits/${visit._id}`
+                  : `/patients/${patientId}/visit/${visit._id}`;
+                
+                return (
+                  <tr key={visit._id}>
+                    <td className="col-date">
+                      <div className="date-block">
+                        <div className="date-value">{formatDate(visit.startedAt)}</div>
+                        <div className="time-value">{formatTime(visit.startedAt)}</div>
                       </div>
-                    ) : visit.tests && visit.tests.length > 0 ? (
-                      <div className="visit-detail-section">
-                        <h4>Tests</h4>
-                        <ul className="visit-list">
-                          {visit.tests.map((test, index) => (
-                            <li key={index}>{test}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-
-                    {/* Medications */}
-                    {visit.medicationsNone ? (
-                      <div className="visit-detail-section">
-                        <h4>Medicines</h4>
-                        <p>None</p>
-                      </div>
-                    ) : visit.medications && visit.medications.length > 0 ? (
-                      <div className="visit-detail-section">
-                        <h4>Medicines</h4>
-                        <ul className="visit-list">
-                          {visit.medications.map((med, index) => (
-                            <li key={index}>{med}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-
-                    {/* Notes */}
-                    {visit.notes && (
-                      <div className="visit-detail-section">
-                        <h4>Notes</h4>
-                        <p className="visit-notes">{visit.notes}</p>
-                      </div>
-                    )}
-
-                    <div className="visit-card-footer">
-                      <p className="visit-documented-by">
-                        Filed by {visit.filedBy?.fullName || 'Unknown'}
-                      </p>
-                      {visit.lastEditedBy && (
-                        <p className="visit-edited-note">
-                          Last edited by {visit.lastEditedBy.fullName} on {formatDate(visit.lastEditedAt)}
-                        </p>
+                    </td>
+                    <td className="col-status">
+                      <span className={`status-pill status-pill-${visit.stage}`}>
+                        {STAGE_LABELS[visit.stage] || visit.stage}
+                      </span>
+                    </td>
+                    <td className="col-vitals">
+                      {formatVitals(visit)}
+                    </td>
+                    <td className="col-notes">
+                      {visit.stage === 'filed' && visit.filedBy ? (
+                        <span className="note-text">Filed by {visit.filedBy.fullName}</span>
+                      ) : (
+                        <span className="note-text" style={{ color: 'var(--gray-500)' }}>—</span>
                       )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                    </td>
+                    <td className="col-action">
+                      <Link to={destination} className="btn btn-outline btn-small">
+                        {isOpen ? 'Continue' : 'View'}
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

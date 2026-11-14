@@ -11,6 +11,14 @@ const STAGE_LABELS = {
   filed: 'Done - file back in cabinet'
 };
 
+const STAGE_ORDER = ['waiting_for_file', 'with_doctor', 'needs_recording', 'filed'];
+const STAGE_STEP_NAMES = {
+  waiting_for_file: 'Check-in',
+  with_doctor: 'With doctor',
+  needs_recording: 'Record',
+  filed: 'Complete'
+};
+
 const VisitDetails = () => {
   const { id } = useParams();
   const { user } = useAuth();
@@ -31,13 +39,21 @@ const VisitDetails = () => {
   const [reason, setReason] = useState('');
 
   // Recording form
+  const [chiefComplaint, setChiefComplaint] = useState('');
+  const [diagnosis, setDiagnosis] = useState('');
+  const [treatmentPlan, setTreatmentPlan] = useState('');
   const [tests, setTests] = useState(['']);
   const [testsNone, setTestsNone] = useState(false);
   const [medications, setMedications] = useState(['']);
   const [medicationsNone, setMedicationsNone] = useState(false);
   const [notes, setNotes] = useState('');
+  const [payment, setPayment] = useState('');
+  const [recordedBy, setRecordedBy] = useState('');
 
   const [validationErrors, setValidationErrors] = useState({});
+  const [cancelling, setCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [steppingBack, setSteppingBack] = useState(false);
 
   const isAdmin = user?.accessLevel === 'ADMINISTRATOR';
 
@@ -76,6 +92,12 @@ const VisitDetails = () => {
       setMedicationsNone(visitData.medicationsNone || false);
       
       setNotes(visitData.notes || '');
+      setChiefComplaint(visitData.chiefComplaint || '');
+      setDiagnosis(visitData.diagnosis || '');
+      setTreatmentPlan(visitData.treatmentPlan || '');
+      setPayment(visitData.payment || '');
+      setRecordedBy(visitData.recordedBy || user?.fullName || '');
+
 
     } catch (err) {
       console.error('Failed to fetch visit:', err);
@@ -139,6 +161,11 @@ const VisitDetails = () => {
       const cleanedMeds = medications.map(m => m.trim()).filter(m => m.length > 0);
 
       const payload = {
+        chiefComplaint,
+        diagnosis,
+        treatmentPlan,
+        payment,
+        recordedBy,
         tests: cleanedTests,
         testsNone,
         medications: cleanedMeds,
@@ -158,43 +185,38 @@ const VisitDetails = () => {
     }
   };
 
-  const handleCorrect = async () => {
-    if (!window.confirm('This will change a finished record. The change will be logged.')) return;
-
+  const handleCancel = async () => {
     try {
-      setSaving(true);
+      setCancelling(true);
       setError('');
-      setValidationErrors({});
+      await axios.post(`/api/visits/${id}/cancel`);
+      setSaveSuccess('Visit cancelled.');
+      setShowCancelConfirm(false);
+      setTimeout(() => {
+        window.location.href = '/file-desk';
+      }, 1500);
+    } catch (err) {
+      console.error('Cancel visit error:', err);
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to cancel visit');
+      setShowCancelConfirm(false);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
-      const cleanedTests = tests.map(t => t.trim()).filter(t => t.length > 0);
-      const cleanedMeds = medications.map(m => m.trim()).filter(m => m.length > 0);
-
-      const payload = {
-        tests: cleanedTests,
-        testsNone,
-        medications: cleanedMeds,
-        medicationsNone,
-        notes: notes.trim()
-      };
-
-      // Include vitals if changed
-      if (notTaken) {
-        payload.notTaken = true;
-        payload.reason = reason;
-      } else if (systolic && diastolic && heartRate) {
-        payload.vitals = { systolic, diastolic, heartRate };
-      }
-
-      await axios.put(`/api/visits/${id}/correct`, payload);
-      setSaveSuccess('Visit corrected.');
+  const handleStepBack = async () => {
+    try {
+      setSteppingBack(true);
+      setError('');
+      await axios.post(`/api/visits/${id}/step-back`);
+      setSaveSuccess('Visit moved back one step.');
       await fetchVisit();
       setTimeout(() => setSaveSuccess(''), 3000);
     } catch (err) {
-      console.error('Correct error:', err);
-      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to correct visit';
-      setValidationErrors({ general: errorMsg });
+      console.error('Step back error:', err);
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to step back');
     } finally {
-      setSaving(false);
+      setSteppingBack(false);
     }
   };
 
@@ -211,6 +233,14 @@ const VisitDetails = () => {
       hour12: true
     };
     return date.toLocaleString('en-US', lagosOptions);
+  };
+
+  const getCurrentStageIndex = () => {
+    return STAGE_ORDER.indexOf(visit.stage);
+  };
+
+  const isStageComplete = (stageKey) => {
+    return STAGE_ORDER.indexOf(stageKey) < getCurrentStageIndex();
   };
 
   if (loading) {
@@ -239,21 +269,33 @@ const VisitDetails = () => {
 
   return (
     <div className="visit-details">
+      {/* Header with back button */}
       <div className="visit-header">
         <div>
-          <h2 className="visit-title">Visit Details</h2>
-          <div className="visit-meta">
-            <p><strong>{visit.patientName}</strong> • Patient {visit.patientId}</p>
-            <p className="visit-location">{visit.currentLocation}</p>
-            <p className="stage-chip">{STAGE_LABELS[visit.stage]}</p>
-            <p className="visit-date">Started {formatDate(visit.startedAt)}</p>
-          </div>
+          <h2 className="visit-title">{visit.patientName}</h2>
+          <p className="visit-id">Patient {visit.patientId}</p>
+          <p className="visit-date">Started {formatDate(visit.startedAt)}</p>
         </div>
         <Link to="/file-desk" className="btn btn-outline">
           Back to File Desk
         </Link>
       </div>
 
+      {/* 4-Step Progress Strip */}
+      <div className="progress-strip">
+        {STAGE_ORDER.map((stageKey, index) => (
+          <div
+            key={stageKey}
+            className={`progress-step ${visit.stage === stageKey ? 'progress-step-active' : ''} ${isStageComplete(stageKey) ? 'progress-step-complete' : ''}`}
+          >
+            <div className="progress-step-marker">{index + 1}</div>
+            <div className="progress-step-label">{STAGE_STEP_NAMES[stageKey]}</div>
+            {index < STAGE_ORDER.length - 1 && <div className="progress-step-line"></div>}
+          </div>
+        ))}
+      </div>
+
+      {/* Alert messages */}
       {error && (
         <div className="alert alert-error">{error}</div>
       )}
@@ -273,137 +315,242 @@ const VisitDetails = () => {
         <div className="alert alert-error">{validationErrors.general}</div>
       )}
 
-      <div className="visit-form">
-        {/* Section 1: Check-in */}
-        <div className="form-section">
-          <h3>Check-in</h3>
-          
-          {validationErrors.checkin && (
-            <div className="alert alert-error">{validationErrors.checkin}</div>
-          )}
-
-          <div className="form-row">
-            <div className="form-field">
-              <label htmlFor="systolic">Top number (mmHg)</label>
-              <input
-                id="systolic"
-                type="number"
-                value={systolic}
-                onChange={(e) => setSystolic(e.target.value)}
-                disabled={!canEdit || notTaken}
-                placeholder="120"
-              />
+      {/* Single Card for Current Stage */}
+      <div className="stage-card">
+        {/* CHECK-IN STAGE */}
+        {visit.stage === 'waiting_for_file' && (
+          <>
+            <div className="card-header">
+              <h3>Step 1: Check-in</h3>
+              <p className="card-help-text">Take the patient's vitals and confirm the file name matches.</p>
             </div>
-            <div className="form-field">
-              <label htmlFor="diastolic">Bottom number (mmHg)</label>
-              <input
-                id="diastolic"
-                type="number"
-                value={diastolic}
-                onChange={(e) => setDiastolic(e.target.value)}
-                disabled={!canEdit || notTaken}
-                placeholder="80"
-              />
-            </div>
-          </div>
 
-          <div className="form-field">
-            <label htmlFor="heartRate">Heart rate (bpm)</label>
-            <input
-              id="heartRate"
-              type="number"
-              value={heartRate}
-              onChange={(e) => setHeartRate(e.target.value)}
-              disabled={!canEdit || notTaken}
-              placeholder="72"
-              style={{ maxWidth: '200px' }}
-            />
-          </div>
+            <div className="card-body">
+              {validationErrors.checkin && (
+                <div className="alert alert-error">{validationErrors.checkin}</div>
+              )}
 
-          <div className="form-field" style={{ marginTop: 'var(--space-3)' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: canEdit ? 'pointer' : 'not-allowed' }}>
-              <input
-                type="checkbox"
-                checked={notTaken}
-                onChange={(e) => {
-                  setNotTaken(e.target.checked);
-                  if (e.target.checked) {
-                    setSystolic('');
-                    setDiastolic('');
-                    setHeartRate('');
-                  } else {
-                    setReason('');
-                  }
-                }}
-                disabled={!canEdit}
-              />
-              <span>Couldn't be taken</span>
-            </label>
-            {notTaken && (
-              <textarea
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="Why couldn't the vitals be taken?"
-                rows={2}
-                maxLength={200}
-                disabled={!canEdit}
-                style={{ marginTop: 'var(--space-2)' }}
-              />
-            )}
-          </div>
+              <div className="form-row">
+                <div className="form-field">
+                  <label htmlFor="systolic">Top number (mmHg)</label>
+                  <input
+                    id="systolic"
+                    type="number"
+                    value={systolic}
+                    onChange={(e) => setSystolic(e.target.value)}
+                    disabled={notTaken}
+                    placeholder="120"
+                  />
+                </div>
+                <div className="form-field">
+                  <label htmlFor="diastolic">Bottom number (mmHg)</label>
+                  <input
+                    id="diastolic"
+                    type="number"
+                    value={diastolic}
+                    onChange={(e) => setDiastolic(e.target.value)}
+                    disabled={notTaken}
+                    placeholder="80"
+                  />
+                </div>
+              </div>
 
-          {!isFiled && (
-            <button onClick={handleSaveCheckin} className="btn btn-primary" disabled={saving}>
-              {saving ? 'Saving...' : 'Save check-in'}
-            </button>
-          )}
+              <div className="form-field">
+                <label htmlFor="heartRate">Heart rate (bpm)</label>
+                <input
+                  id="heartRate"
+                  type="number"
+                  value={heartRate}
+                  onChange={(e) => setHeartRate(e.target.value)}
+                  disabled={notTaken}
+                  placeholder="72"
+                  style={{ maxWidth: '200px' }}
+                />
+              </div>
 
-          {/* Send to doctor - only when waiting_for_file and checkin done */}
-          {visit.stage === 'waiting_for_file' && hasCheckin && !showConfirmPanel && (
-            <button onClick={() => setShowConfirmPanel(true)} className="btn btn-primary" style={{ marginTop: 'var(--space-3)' }}>
-              File found - send to doctor
-            </button>
-          )}
+              <div className="form-field" style={{ marginTop: 'var(--space-3)' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={notTaken}
+                    onChange={(e) => {
+                      setNotTaken(e.target.checked);
+                      if (e.target.checked) {
+                        setSystolic('');
+                        setDiastolic('');
+                        setHeartRate('');
+                      } else {
+                        setReason('');
+                      }
+                    }}
+                  />
+                  <span>Couldn't be taken</span>
+                </label>
+                {notTaken && (
+                  <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Why couldn't the vitals be taken?"
+                    rows={2}
+                    maxLength={200}
+                    style={{ marginTop: 'var(--space-2)' }}
+                  />
+                )}
+              </div>
 
-          {visit.stage === 'waiting_for_file' && !hasCheckin && (
-            <p style={{ marginTop: 'var(--space-3)', fontSize: '0.875rem', color: 'var(--gray-600)', fontStyle: 'italic' }}>
-              Save check-in first, then you can send the patient to the doctor.
-            </p>
-          )}
-
-          {showConfirmPanel && (
-            <div className="confirm-panel">
-              <p className="confirm-panel-text">
-                <strong>Name on the paper file:</strong><br />
-                <span style={{ fontSize: '1.5rem' }}>{visit.patientName}</span>
-              </p>
-              <p className="confirm-panel-question">Does it match?</p>
-              <div className="confirm-panel-actions">
-                <button onClick={() => setShowConfirmPanel(false)} className="btn btn-outline">
-                  Cancel
+              <div className="card-actions">
+                <button onClick={handleSaveCheckin} className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Saving...' : 'Save check-in'}
                 </button>
-                <button onClick={handleSendToDoctor} className="btn btn-primary" disabled={saving}>
-                  {saving ? 'Sending...' : 'Yes, it matches - send to doctor'}
+              </div>
+
+              {!hasCheckin && (
+                <div style={{ marginTop: 'var(--space-3)' }}>
+                  <button onClick={() => setShowCancelConfirm(true)} className="btn btn-outline" disabled={cancelling}>
+                    {cancelling ? 'Cancelling...' : 'Started by mistake? Cancel'}
+                  </button>
+                </div>
+              )}
+
+              {showCancelConfirm && (
+                <div className="confirm-panel" style={{ marginTop: 'var(--space-3)' }}>
+                  <p className="confirm-panel-text">
+                    <strong>Cancel this visit?</strong>
+                  </p>
+                  <p className="confirm-panel-question">This will mark the visit as cancelled.</p>
+                  <div className="confirm-panel-actions">
+                    <button onClick={() => setShowCancelConfirm(false)} className="btn btn-outline" disabled={cancelling}>
+                      Keep it
+                    </button>
+                    <button onClick={handleCancel} className="btn btn-primary" disabled={cancelling}>
+                      {cancelling ? 'Cancelling...' : 'Yes, cancel'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Send to doctor section */}
+              {hasCheckin && !showConfirmPanel && (
+                <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--gray-200)' }}>
+                  <h4 style={{ marginBottom: 'var(--space-3)' }}>Ready? Confirm file and send to doctor</h4>
+                  <p className="card-info-text">
+                    <strong>Name on paper file:</strong><br />
+                    <span style={{ fontSize: '1.125rem', fontWeight: 600 }}>{visit.patientName}</span><br />
+                    <span style={{ fontSize: '0.875rem', color: 'var(--gray-600)' }}>Located in: <strong>{visit.currentLocation}</strong></span>
+                  </p>
+                  <button onClick={() => setShowConfirmPanel(true)} className="btn btn-primary">
+                    ✓ Name matches - send to doctor
+                  </button>
+                </div>
+              )}
+
+              {showConfirmPanel && (
+                <div className="confirm-panel">
+                  <p className="confirm-panel-text">
+                    <strong>Confirming:</strong><br />
+                    <span style={{ fontSize: '1.5rem', fontWeight: 600 }}>{visit.patientName}</span>
+                  </p>
+                  <p className="confirm-panel-question">Name on paper file matches?</p>
+                  <div className="confirm-panel-actions">
+                    <button onClick={() => setShowConfirmPanel(false)} className="btn btn-outline">
+                      Cancel
+                    </button>
+                    <button onClick={handleSendToDoctor} className="btn btn-primary" disabled={saving}>
+                      {saving ? 'Sending...' : 'Yes, send to doctor'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!hasCheckin && (
+                <p style={{ marginTop: 'var(--space-3)', fontSize: '0.875rem', color: 'var(--gray-600)', fontStyle: 'italic' }}>
+                  💡 Save check-in first, then you can send the patient to the doctor.
+                </p>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* WITH DOCTOR STAGE */}
+        {visit.stage === 'with_doctor' && (
+          <>
+            <div className="card-header">
+              <h3>Step 2: With Doctor</h3>
+              <p className="card-help-text">Patient is being consulted. Mark the file as back when they return.</p>
+            </div>
+
+            <div className="card-body">
+              <p style={{ fontSize: '0.95rem', color: 'var(--gray-700)', lineHeight: 1.6 }}>
+                Patient vitals recorded on {formatDate(visit.startedAt)}.<br />
+                <br />
+                Waiting for doctor to complete consultation.
+              </p>
+
+              <div className="card-info-box">
+                <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--gray-600)' }}>
+                  When the doctor is done, tell them to return the paper file.
+                </p>
+              </div>
+
+              <div className="card-actions">
+                <button
+                  onClick={async () => {
+                    try {
+                      setSaving(true);
+                      await axios.post(`/api/visits/${id}/file-back`);
+                      setSaveSuccess('File marked as back. Ready to record.');
+                      await fetchVisit();
+                      setTimeout(() => setSaveSuccess(''), 3000);
+                    } catch (err) {
+                      setError(err.response?.data?.message || 'Failed to mark file back');
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  className="btn btn-primary"
+                  disabled={saving}
+                >
+                  {saving ? 'Updating...' : 'File is back'}
+                </button>
+                <button
+                  onClick={handleStepBack}
+                  className="btn btn-outline"
+                  disabled={steppingBack}
+                >
+                  {steppingBack ? 'Going back...' : 'Go back'}
                 </button>
               </div>
             </div>
-          )}
+          </>
+        )}
 
-          {visit.stage === 'with_doctor' && (
-            <p style={{ marginTop: 'var(--space-3)', fontSize: '0.875rem', color: 'var(--gray-600)', fontStyle: 'italic' }}>
-              Patient is with the doctor. Mark the file as back when they return.
-            </p>
-          )}
-        </div>
+        {/* NEEDS RECORDING STAGE */}
+        {visit.stage === 'needs_recording' && (
+          <>
+            <div className="card-header">
+              <h3>Step 3: Record Consultation</h3>
+              <p className="card-help-text">Write down what the doctor prescribed or noted.</p>
+            </div>
 
-        {/* Section 2: After consultation */}
-        <div className="form-section">
-          <h3>After consultation</h3>
+            <div className="card-body">
+              {validationErrors.general && (
+                <div className="alert alert-error">{validationErrors.general}</div>
+              )}
 
-          {visit.stage !== 'needs_recording' && visit.stage !== 'filed' ? (
-            <p className="section-disabled-message">Available once the file is back</p>
-          ) : (
-            <>
+              <div className="form-field">
+                <label htmlFor="chiefComplaint">Chief complaint</label>
+                <p style={{ fontSize: '0.75rem', color: 'var(--gray-600)', margin: '0 0 var(--space-1) 0' }}>Why the patient came.</p>
+                <textarea
+                  id="chiefComplaint"
+                  value={chiefComplaint}
+                  onChange={(e) => setChiefComplaint(e.target.value)}
+                  placeholder="Enter chief complaint"
+                  rows={3}
+                  maxLength={2000}
+                />
+                <span className="char-count">{chiefComplaint.length}/2000</span>
+              </div>
+
               <div className="form-field">
                 <label>Tests</label>
                 {tests.map((test, index) => (
@@ -416,12 +563,11 @@ const VisitDetails = () => {
                         newTests[index] = e.target.value;
                         setTests(newTests);
                       }}
-                      disabled={!canEdit}
                       placeholder="Test name and result"
                       maxLength={200}
                       style={{ flex: 1 }}
                     />
-                    {canEdit && tests.length > 1 && (
+                    {tests.length > 1 && (
                       <button
                         type="button"
                         onClick={() => setTests(tests.filter((_, i) => i !== index))}
@@ -432,25 +578,35 @@ const VisitDetails = () => {
                     )}
                   </div>
                 ))}
-                {canEdit && (
-                  <button
-                    type="button"
-                    onClick={() => setTests([...tests, ''])}
-                    className="btn btn-outline btn-small"
-                    style={{ marginTop: 'var(--space-2)' }}
-                  >
-                    + Add another
-                  </button>
-                )}
-                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-2)', cursor: canEdit ? 'pointer' : 'not-allowed' }}>
+                <button
+                  type="button"
+                  onClick={() => setTests([...tests, ''])}
+                  className="btn btn-outline btn-small"
+                  style={{ marginTop: 'var(--space-2)' }}
+                >
+                  + Add test
+                </button>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-2)', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={testsNone}
                     onChange={(e) => setTestsNone(e.target.checked)}
-                    disabled={!canEdit}
                   />
                   <span>No tests</span>
                 </label>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="diagnosis">Diagnosis</label>
+                <textarea
+                  id="diagnosis"
+                  value={diagnosis}
+                  onChange={(e) => setDiagnosis(e.target.value)}
+                  placeholder="Enter diagnosis"
+                  rows={3}
+                  maxLength={2000}
+                />
+                <span className="char-count">{diagnosis.length}/2000</span>
               </div>
 
               <div className="form-field">
@@ -465,12 +621,11 @@ const VisitDetails = () => {
                         newMeds[index] = e.target.value;
                         setMedications(newMeds);
                       }}
-                      disabled={!canEdit}
                       placeholder="Medicine, dose, frequency, duration"
                       maxLength={200}
                       style={{ flex: 1 }}
                     />
-                    {canEdit && medications.length > 1 && (
+                    {medications.length > 1 && (
                       <button
                         type="button"
                         onClick={() => setMedications(medications.filter((_, i) => i !== index))}
@@ -481,25 +636,35 @@ const VisitDetails = () => {
                     )}
                   </div>
                 ))}
-                {canEdit && (
-                  <button
-                    type="button"
-                    onClick={() => setMedications([...medications, ''])}
-                    className="btn btn-outline btn-small"
-                    style={{ marginTop: 'var(--space-2)' }}
-                  >
-                    + Add another
-                  </button>
-                )}
-                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-2)', cursor: canEdit ? 'pointer' : 'not-allowed' }}>
+                <button
+                  type="button"
+                  onClick={() => setMedications([...medications, ''])}
+                  className="btn btn-outline btn-small"
+                  style={{ marginTop: 'var(--space-2)' }}
+                >
+                  + Add medicine
+                </button>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginTop: 'var(--space-2)', cursor: 'pointer' }}>
                   <input
                     type="checkbox"
                     checked={medicationsNone}
                     onChange={(e) => setMedicationsNone(e.target.checked)}
-                    disabled={!canEdit}
                   />
                   <span>No medicines</span>
                 </label>
+              </div>
+
+              <div className="form-field">
+                <label htmlFor="treatmentPlan">Treatment plan (optional)</label>
+                <textarea
+                  id="treatmentPlan"
+                  value={treatmentPlan}
+                  onChange={(e) => setTreatmentPlan(e.target.value)}
+                  placeholder="Enter treatment plan"
+                  rows={3}
+                  maxLength={2000}
+                />
+                <span className="char-count">{treatmentPlan.length}/2000</span>
               </div>
 
               <div className="form-field">
@@ -508,42 +673,128 @@ const VisitDetails = () => {
                   id="notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  disabled={!canEdit}
                   placeholder="Any additional notes..."
                   rows={4}
                   maxLength={1000}
                 />
-                {canEdit && (
-                  <span className="char-count">{notes.length}/1000</span>
-                )}
+                <span className="char-count">{notes.length}/1000</span>
               </div>
 
-              {visit.stage === 'needs_recording' && (
-                <button onClick={handleSaveAndFile} className="btn btn-primary" disabled={saving}>
-                  {saving ? 'Saving...' : 'Save and file'}
-                </button>
-              )}
+              <div className="form-field">
+                <label htmlFor="payment">Payment (optional)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
+                  <span>₦</span>
+                  <input
+                    id="payment"
+                    type="text"
+                    inputMode="decimal"
+                    value={payment}
+                    onChange={(e) => setPayment(e.target.value)}
+                    placeholder="0"
+                    maxLength={20}
+                    style={{ flex: 1 }}
+                  />
+                </div>
+              </div>
 
-              {isFiled && (
-                <div className="filed-notice">
-                  <p>
-                    Filed by {visit.filedBy?.fullName || 'Unknown'} on {formatDate(visit.filedAt)}
-                  </p>
-                  {visit.lastEditedBy && (
-                    <p style={{ marginTop: 'var(--space-1)', fontSize: '0.875rem', color: 'var(--warning-600)', fontStyle: 'italic' }}>
-                      Last edited by {visit.lastEditedBy.fullName} on {formatDate(visit.lastEditedAt)}
+              <div className="form-field">
+                <label htmlFor="recordedBy">Recorded by</label>
+                <input
+                  id="recordedBy"
+                  type="text"
+                  value={recordedBy}
+                  onChange={(e) => setRecordedBy(e.target.value)}
+                  maxLength={200}
+                />
+              </div>
+
+              <div className="card-actions">
+                <button onClick={handleSaveAndFile} className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Filing...' : 'Save and file'}
+                </button>
+                <button
+                  onClick={handleStepBack}
+                  className="btn btn-outline"
+                  disabled={steppingBack}
+                >
+                  {steppingBack ? 'Going back...' : 'Go back'}
+                </button>
+              </div>
+
+              <div className="card-info-box" style={{ marginTop: 'var(--space-4)' }}>
+                <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--gray-700)' }}>
+                  When you save, the file will be placed back in {visit.currentLocation}.
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* FILED STAGE */}
+        {visit.stage === 'filed' && (
+          <>
+            <div className="card-header">
+              <h3>✓ Complete</h3>
+              <p className="card-help-text">This visit is filed and complete.</p>
+            </div>
+
+            <div className="card-body">
+              <div className="filed-summary">
+                <p><strong>Filed by:</strong> {visit.filedBy?.fullName || 'Unknown'}</p>
+                <p><strong>Filed at:</strong> {formatDate(visit.filedAt)}</p>
+                {visit.lastEditedBy && (
+                  <>
+                    <p style={{ marginTop: 'var(--space-2)', color: 'var(--warning-600)' }}>
+                      <strong>Last edited by:</strong> {visit.lastEditedBy.fullName} on {formatDate(visit.lastEditedAt)}
                     </p>
-                  )}
-                  {isAdmin && (
-                    <button onClick={handleCorrect} className="btn btn-outline" style={{ marginTop: 'var(--space-3)' }}>
-                      Correct
-                    </button>
+                  </>
+                )}
+                <p style={{ marginTop: 'var(--space-2)', fontSize: '0.875rem', color: 'var(--gray-600)' }}>
+                  File stored in: <strong>{visit.currentLocation}</strong>
+                </p>
+              </div>
+
+              <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--gray-200)' }}>
+                <h4 style={{ marginBottom: 'var(--space-3)' }}>Recorded Information</h4>
+                <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
+                  <div>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--gray-600)', margin: '0 0 var(--space-1) 0' }}>Tests</p>
+                    <p style={{ margin: 0 }}>
+                      {tests.length > 0 && tests.some(t => t.trim()) ? tests.filter(t => t.trim()).join(' • ') : 'No tests recorded'}
+                    </p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--gray-600)', margin: '0 0 var(--space-1) 0' }}>Medicines</p>
+                    <p style={{ margin: 0 }}>
+                      {medications.length > 0 && medications.some(m => m.trim()) ? medications.filter(m => m.trim()).join(' • ') : 'No medicines recorded'}
+                    </p>
+                  </div>
+                  {notes && (
+                    <div>
+                      <p style={{ fontSize: '0.875rem', color: 'var(--gray-600)', margin: '0 0 var(--space-1) 0' }}>Notes</p>
+                      <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{notes}</p>
+                    </div>
                   )}
                 </div>
+              </div>
+
+              {isAdmin && (
+                <div className="card-actions" style={{ marginTop: 'var(--space-4)' }}>
+                  <Link to={`/patients/${visit.patient}/visit/${id}?edit=1`} className="btn btn-primary">
+                    Edit report
+                  </Link>
+                </div>
               )}
-            </>
-          )}
-        </div>
+              {!isAdmin && (
+                <div className="card-actions" style={{ marginTop: 'var(--space-4)' }}>
+                  <Link to={`/patients/${visit.patient}/visit/${id}`} className="btn btn-outline">
+                    View report
+                  </Link>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

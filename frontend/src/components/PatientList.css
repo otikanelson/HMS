@@ -70,7 +70,7 @@
 }
 
 .patients-table th {
-  padding: 12px 16px;
+  padding: 8px 16px;
   text-align: left;
   font-weight: 600;
   font-size: 0.875rem;
@@ -86,10 +86,14 @@
 
 .patients-table tbody tr {
   border-bottom: 1px solid #e5e7eb;
+  cursor: pointer;
+  transition: all 150ms ease;
 }
 
 .patients-table tbody tr:hover {
-  background: #f8fafc;
+  background: #e0f2fe !important;
+  transform: translateX(2px);
+  box-shadow: -3px 0 0 0 #0369a1 inset;
 }
 
 .patients-table tbody tr:nth-child(even) {
@@ -97,11 +101,11 @@
 }
 
 .patients-table tbody tr:nth-child(even):hover {
-  background: #f1f5f9;
+  background: #e0f2fe !important;
 }
 
 .patients-table td {
-  padding: 10px 16px;
+  padding: 6px 16px;
   border-right: 1px solid #e5e7eb;
   vertical-align: middle;
   color: #1f2937;

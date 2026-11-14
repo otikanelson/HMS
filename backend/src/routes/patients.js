@@ -429,6 +429,117 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
   }
 });
 
+// PUT /api/patients/:id - Update patient details (ADMINISTRATOR only)
+router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
+  try {
+    const { fullName, phoneNumber, customFields } = req.body;
+    
+    const patient = await PatientFile.findOne({ patientId: req.params.id });
+    
+    if (!patient) {
+      return res.status(404).json({
+        error: 'Patient not found',
+        message: `No patient found with ID: ${req.params.id}`
+      });
+    }
+
+    const changedFields = [];
+
+    // Validate and update fullName
+    if (fullName !== undefined) {
+      if (typeof fullName !== 'string' || fullName.length < 2 || fullName.length > 100) {
+        return res.status(400).json({
+          error: 'Invalid value',
+          message: 'Full name must be 2-100 characters'
+        });
+      }
+      // Check if name contains only letters, spaces, apostrophes, and hyphens
+      if (!/^[a-zA-Z\s'-]+$/.test(fullName)) {
+        return res.status(400).json({
+          error: 'Invalid value',
+          message: 'Full name can only contain letters, spaces, apostrophes, and hyphens'
+        });
+      }
+      if (patient.fullName !== fullName) {
+        patient.fullName = fullName;
+        changedFields.push('fullName');
+      }
+    }
+
+    // Validate and update phoneNumber
+    if (phoneNumber !== undefined) {
+      if (typeof phoneNumber !== 'string' || !/^\+234\d{10}$/.test(phoneNumber)) {
+        return res.status(400).json({
+          error: 'Invalid value',
+          message: 'Phone number must match +234 followed by 10 digits'
+        });
+      }
+      if (patient.phoneNumber !== phoneNumber) {
+        patient.phoneNumber = phoneNumber;
+        changedFields.push('phoneNumber');
+      }
+    }
+
+    // Validate and update customFields
+    if (customFields !== undefined) {
+      if (!Array.isArray(customFields) || customFields.length > 20) {
+        return res.status(400).json({
+          error: 'Invalid value',
+          message: 'Custom fields must be an array of at most 20 items'
+        });
+      }
+      for (const field of customFields) {
+        if (!field.fieldName || typeof field.fieldName !== 'string' || field.fieldName.length === 0 || field.fieldName.length > 60) {
+          return res.status(400).json({
+            error: 'Invalid value',
+            message: 'Field name must be a non-empty string up to 60 characters'
+          });
+        }
+        if (typeof field.fieldValue !== 'string' || field.fieldValue.length > 200) {
+          return res.status(400).json({
+            error: 'Invalid value',
+            message: 'Field value must be a string up to 200 characters'
+          });
+        }
+      }
+      if (JSON.stringify(patient.customFields) !== JSON.stringify(customFields)) {
+        patient.customFields = customFields;
+        changedFields.push('customFields');
+      }
+    }
+
+    // Only save and log if something actually changed
+    if (changedFields.length > 0) {
+      await patient.save();
+
+      // Log activity
+      await logActivity({
+        req,
+        action: 'PATIENT_DETAILS_UPDATED',
+        targetType: 'PatientFile',
+        targetId: patient._id,
+        targetLabel: patient.fullName,
+        details: { fields: changedFields }
+      });
+    }
+
+    res.json({
+      message: 'Patient updated successfully',
+      patient: {
+        ...patient.toObject(),
+        locationDisplay: patient.locationDisplay
+      }
+    });
+
+  } catch (error) {
+    console.error('Update patient error:', error);
+    res.status(500).json({
+      error: 'Failed to update patient',
+      message: 'Internal server error'
+    });
+  }
+});
+
 // DELETE /api/patients/:id - Delete patient file (ADMINISTRATOR only)
 router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
   try {
@@ -441,15 +552,18 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
       });
     }
 
-    // Guard: prevent deletion if visit records exist
+    // Guard: prevent deletion if non-cancelled visit records exist
     const Visit = require('../models/Visit');
-    const visitCount = await Visit.countDocuments({ patient: patient._id });
+    const visitCount = await Visit.countDocuments({ patient: patient._id, stage: { $ne: 'cancelled' } });
     if (visitCount > 0) {
       return res.status(409).json({
         error: 'Patient has visit records',
         message: "This patient has visit records and can't be deleted. Archive the file instead."
       });
     }
+
+    // Delete any cancelled visits for this patient
+    await Visit.deleteMany({ patient: patient._id, stage: 'cancelled' });
 
     await PatientFile.findOneAndDelete({ patientId: req.params.id });
 

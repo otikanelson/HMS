@@ -15,8 +15,9 @@ import Reports from './components/Reports';
 import PayrollRunsList from './components/PayrollRunsList';
 import PayrollRunDetail from './components/PayrollRunDetail';
 import FileDesk from './components/FileDesk';
-import VisitDetails from './components/VisitDetails';
 import PatientHistory from './components/PatientHistory';
+import PatientDetails from './components/PatientDetails';
+import VisitDetails from './components/VisitDetails';
 import Login from './components/Login';
 import './App.css';
 
@@ -30,7 +31,7 @@ function AppLayout() {
 
   return (
     <div className="app">
-      <TopBar onToggleSidebar={toggleSidebar} />
+      <TopBar onToggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
       <Sidebar isOpen={sidebarOpen} />
       <main className="main-content">
         <Routes>
@@ -38,8 +39,9 @@ function AppLayout() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/patients" element={<PatientList />} />
           <Route path="/patients/:patientId/history" element={<PatientHistory />} />
-          <Route path="/file-desk" element={<FileDesk />} />
+          <Route path="/patients/:patientId/visit/:visitId" element={<PatientDetails />} />
           <Route path="/visits/:id" element={<VisitDetails />} />
+          <Route path="/file-desk" element={<FileDesk />} />
           <Route path="/staff" element={
             <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR', 'RECORDS_OPERATOR']}>
               <StaffList />

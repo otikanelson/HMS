@@ -24,6 +24,7 @@ const FileDesk = () => {
   const [visitsError, setVisitsError] = useState('');
 
   const [fileBackingId, setFileBackingId] = useState(null);
+  const [cancellingId, setCancellingId] = useState(null);
 
   const numberInputRef = useRef(null);
 
@@ -130,6 +131,40 @@ const FileDesk = () => {
       setTimeout(() => setVisitsError(''), 5000);
     } finally {
       setFileBackingId(null);
+    }
+  };
+
+  const handleCancelVisit = async (visitId) => {
+    if (!window.confirm('Cancel this visit? It will be marked as started by mistake.')) return;
+
+    try {
+      setCancellingId(visitId);
+      await axios.post(`/api/visits/${visitId}/cancel`);
+      await fetchOpenVisits();
+    } catch (err) {
+      console.error('Cancel visit error:', err);
+      setVisitsError(err.response?.data?.message || err.response?.data?.error || 'Failed to cancel visit');
+      setTimeout(() => setVisitsError(''), 5000);
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const [steppingBackId, setSteppingBackId] = useState(null);
+
+  const handleStepBackVisit = async (visitId) => {
+    if (!window.confirm('Move this visit back one step?')) return;
+
+    try {
+      setSteppingBackId(visitId);
+      await axios.post(`/api/visits/${visitId}/step-back`);
+      await fetchOpenVisits();
+    } catch (err) {
+      console.error('Step back error:', err);
+      setVisitsError(err.response?.data?.message || err.response?.data?.error || 'Failed to step back');
+      setTimeout(() => setVisitsError(''), 5000);
+    } finally {
+      setSteppingBackId(null);
     }
   };
 
@@ -283,42 +318,74 @@ const FileDesk = () => {
                     </span>
                   )}
                   <div className="file-item-main">
-                    <div className="file-item-info">
-                      <h4 className="file-item-name">{visit.patientName}</h4>
-                      <p className="file-item-number">Patient {visit.patientId}</p>
-                      <p className="file-item-location">{visit.currentLocation}</p>
-                    </div>
-                    <div className="file-item-meta">
-                      <span className="stage-chip stage-chip-{visit.stage}">
+                    <div className="file-item-header">
+                      <div>
+                        <h4 className="file-item-name">{visit.patientName}</h4>
+                        <p className="file-item-number">Patient {visit.patientId}</p>
+                      </div>
+                      <span className={`stage-chip stage-chip-${visit.stage}`}>
                         {STAGE_LABELS[visit.stage]}
                       </span>
-                      <p className="file-item-time">
-                        since {formatTime(visit.startedAt)}
-                      </p>
-                      <p className="file-item-user">
-                        {visit.startedBy?.fullName || 'Unknown'}
-                      </p>
                     </div>
-                  </div>
-                  <div className="file-item-actions">
                     {visit.stage === 'waiting_for_file' && (
-                      <Link to={`/visits/${visit._id}`} className="btn btn-primary">
-                        Check-in
-                      </Link>
+                      <p className="file-item-location">Located: {visit.currentLocation}</p>
+                    )}
+                    <p className="file-item-meta">
+                      Since {formatTime(visit.startedAt)} by {visit.startedBy?.fullName || 'Unknown'}
+                    </p>
+                  </div>
+                  <div className="file-item-action">
+                    {visit.stage === 'waiting_for_file' && (
+                      <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                        <Link 
+                          to={`/visits/${visit._id}`} 
+                          className="btn btn-primary"
+                        >
+                          Check-in
+                        </Link>
+                        <button
+                          onClick={() => handleCancelVisit(visit._id)}
+                          className="btn btn-outline"
+                          disabled={cancellingId === visit._id}
+                        >
+                          {cancellingId === visit._id ? 'Cancelling...' : 'Cancel'}
+                        </button>
+                      </div>
                     )}
                     {visit.stage === 'with_doctor' && (
-                      <button
-                        onClick={() => handleFileBack(visit._id)}
-                        className="btn btn-primary"
-                        disabled={fileBackingId === visit._id}
-                      >
-                        {fileBackingId === visit._id ? 'Marking...' : 'File is back'}
-                      </button>
+                      <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                        <button
+                          onClick={() => handleFileBack(visit._id)}
+                          className="btn btn-primary"
+                          disabled={fileBackingId === visit._id}
+                        >
+                          {fileBackingId === visit._id ? 'Marking...' : 'File is back'}
+                        </button>
+                        <button
+                          onClick={() => handleStepBackVisit(visit._id)}
+                          className="btn btn-outline"
+                          disabled={steppingBackId === visit._id}
+                        >
+                          {steppingBackId === visit._id ? 'Going back...' : 'Go back'}
+                        </button>
+                      </div>
                     )}
                     {visit.stage === 'needs_recording' && (
-                      <Link to={`/visits/${visit._id}`} className="btn btn-primary">
-                        Record and file
-                      </Link>
+                      <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                        <Link 
+                          to={`/visits/${visit._id}`} 
+                          className="btn btn-primary"
+                        >
+                          Record & file
+                        </Link>
+                        <button
+                          onClick={() => handleStepBackVisit(visit._id)}
+                          className="btn btn-outline"
+                          disabled={steppingBackId === visit._id}
+                        >
+                          {steppingBackId === visit._id ? 'Going back...' : 'Go back'}
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

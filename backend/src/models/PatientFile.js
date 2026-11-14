@@ -55,6 +55,23 @@ const patientFileSchema = new mongoose.Schema({
     enum: ['admitted', 'discharged', 'archived'],
     default: 'discharged'
   },
+  // Custom fields added by admins
+  customFields: [{
+    fieldName: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    fieldValue: {
+      type: String,
+      default: ''
+    },
+    addedBy: String,
+    addedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   // Audit trail fields
   createdAt: {
     type: Date,

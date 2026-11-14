@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { PatientStatusBadge } from './PatientStatusControl';
@@ -9,6 +9,7 @@ import './PatientList.css';
 
 const PatientList = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -216,7 +217,7 @@ const PatientList = () => {
         <div className="list-actions">
           {isSearching && (
             <button 
-              onClick={() => window.location.href = '/patients'}
+              onClick={() => navigate('/patients')}
               className="btn btn-secondary"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -306,14 +307,22 @@ const PatientList = () => {
                 
                 return (
                   <React.Fragment key={patient._id || patient.id}>
-                    <tr className={isExpanded ? 'row-expanded' : ''}>
+                    <tr 
+                      className={isExpanded ? 'row-expanded' : ''}
+                      onClick={() => navigate(`/patients/${patient.patientId}/history`)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <td>{patient.patientId}</td>
-                      <td>{patient.fullName}</td>
+                      <td>
+                        <Link to={`/patients/${patient.patientId}/history`} style={{ color: '#0369a1', textDecoration: 'underline' }}>
+                          {patient.fullName}
+                        </Link>
+                      </td>
                       <td>{patient.phoneNumber}</td>
                       <td>
                         <PatientStatusBadge status={patient.status || 'discharged'} />
                       </td>
-                      <td>
+                      <td onClick={(e) => e.stopPropagation()}>
                         <div className="action-cell">
                           <select
                             className="status-picker"
@@ -350,16 +359,9 @@ const PatientList = () => {
                               </>
                             )}
                           </select>
-                          <a
-                            href={`/patients/${patient.patientId}/history`}
-                            className="history-link"
-                            title="View visit history"
-                          >
-                            History
-                          </a>
                         </div>
                       </td>
-                      <td>
+                      <td onClick={(e) => e.stopPropagation()}>
                     {isEditMode ? (
                       <input
                         type="number"
@@ -373,7 +375,7 @@ const PatientList = () => {
                       patient.cabinetNumber
                     )}
                   </td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     {isEditMode ? (
                       <input
                         type="number"
@@ -387,7 +389,7 @@ const PatientList = () => {
                       patient.shelfNumber
                     )}
                   </td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     {isEditMode ? (
                       <input
                         type="number"
