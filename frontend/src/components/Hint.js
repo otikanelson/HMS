@@ -33,6 +33,7 @@ const Hint = ({ hintId, title, message, action }) => {
         clearTimeout(timerRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hintId, user]);
 
   const startDismissTimer = () => {

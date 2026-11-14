@@ -1,21 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { toPlainText } from '../lib/plainText';
 import './PatientDetails.css';
 
-const STAGE_LABELS = {
-  waiting_for_file: 'Finding file',
-  with_doctor: 'With doctor',
-  needs_recording: 'File back, needs recording',
-  filed: 'Filed'
-};
-
 const PatientDetails = () => {
   const { patientId, visitId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const printRef = useRef();
   
