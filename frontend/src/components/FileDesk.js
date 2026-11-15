@@ -3,13 +3,6 @@ import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import './FileDesk.css';
 
-const STAGE_LABELS = {
-  waiting_for_file: 'Finding file',
-  with_doctor: 'With doctor',
-  needs_recording: 'On the desk',
-  filed: 'Put away'
-};
-
 const FileDesk = () => {
   const [searchParams] = useSearchParams();
   const [patientNumber, setPatientNumber] = useState('');
@@ -38,7 +31,7 @@ const FileDesk = () => {
     if (patientIdParam) {
       setPatientNumber(patientIdParam);
     }
-  }, []);
+  }, [searchParams]);
 
   // Auto-search when patient number is populated from query parameter
   useEffect(() => {
