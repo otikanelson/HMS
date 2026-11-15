@@ -126,23 +126,23 @@
 }
 
 .status-pill-waiting_for_file {
-  background: var(--warning-100);
-  color: var(--warning-700);
+  background: var(--stage-finding-light);
+  color: var(--stage-finding-dark);
 }
 
 .status-pill-with_doctor {
-  background: var(--primary-100);
-  color: var(--primary-700);
+  background: var(--stage-doctor-light);
+  color: var(--stage-doctor-dark);
 }
 
 .status-pill-needs_recording {
-  background: var(--primary-100);
-  color: var(--primary-700);
+  background: var(--stage-desk-light);
+  color: var(--stage-desk-dark);
 }
 
 .status-pill-filed {
-  background: var(--success-100);
-  color: var(--success-700);
+  background: var(--stage-done-light);
+  color: var(--stage-done-dark);
 }
 
 .col-vitals {

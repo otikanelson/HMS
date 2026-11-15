@@ -7,7 +7,7 @@ const patientFileSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     index: true,
-    minlength: [4, 'Patient ID must be at least 4 digits'],
+    minlength: [1, 'Patient ID must be at least 1 digit'],
     maxlength: [8, 'Patient ID cannot exceed 8 digits']
   },
   fullName: {
@@ -16,37 +16,45 @@ const patientFileSchema = new mongoose.Schema({
     trim: true,
     index: true,
     minlength: [2, 'Full name must be at least 2 characters'],
-    maxlength: [100, 'Full name cannot exceed 100 characters']
+    maxlength: [100, 'Full name cannot exceed 100 characters'],
+    validate: [
+      {
+        validator: function(v) {
+          // Allow letters in any language, accents, spaces, apostrophes, hyphens, periods and commas
+          return /^[\p{L}\p{M}\s''.,-]+$/u.test(v);
+        },
+        message: 'Full name can only contain letters (any language), spaces, apostrophes, hyphens, periods and commas'
+      }
+    ]
   },
   phoneNumber: {
     type: String,
-    required: true,
     trim: true,
     index: true,
     validate: [
       {
         validator: function(v) {
+          // Optional, but if present must match format
+          if (!v || v === '') return true;
           return /^\+234\d{10}$/.test(v);
         },
-        message: 'Phone number must be in format +234XXXXXXXXXX'
+        message: 'Phone number must be in format +234XXXXXXXXXX or left empty'
       }
-    ]
+    ],
+    default: ''
   },
   cabinetNumber: {
     type: Number,
-    required: true,
     min: [1, 'Cabinet number must be at least 1'],
     max: [50, 'Cabinet number cannot exceed 50']
   },
   shelfNumber: {
     type: Number,
-    required: true,
     min: [1, 'Shelf number must be at least 1'],
     max: [20, 'Shelf number cannot exceed 20']
   },
   folderNumber: {
     type: Number,
-    required: true,
     min: [1, 'Folder number must be at least 1'],
     max: [100, 'Folder number cannot exceed 100']
   },
@@ -117,46 +125,10 @@ patientFileSchema.index({
   phoneNumber: 'text'
 });
 
-// Virtual for full location display
-patientFileSchema.virtual('locationDisplay').get(function() {
-  return `Cabinet ${this.cabinetNumber} → Shelf ${this.shelfNumber} → Folder ${this.folderNumber}`;
-});
-
 // Pre-save middleware to update updatedAt
 patientFileSchema.pre('save', function() {
   this.updatedAt = Date.now();
 });
-
-// Instance method to update location with history
-patientFileSchema.methods.updateLocation = function(newCabinet, newShelf, newFolder, reason = '', changedBy = '') {
-  const oldLocation = {
-    cabinet: this.cabinetNumber,
-    shelf: this.shelfNumber,
-    folder: this.folderNumber
-  };
-  
-  // Add to history if location actually changed
-  if (oldLocation.cabinet !== newCabinet || 
-      oldLocation.shelf !== newShelf || 
-      oldLocation.folder !== newFolder) {
-    
-    this.locationHistory.push({
-      oldLocation,
-      newLocation: {
-        cabinet: newCabinet,
-        shelf: newShelf,
-        folder: newFolder
-      },
-      reason,
-      changedBy
-    });
-  }
-  
-  // Update current location
-  this.cabinetNumber = newCabinet;
-  this.shelfNumber = newShelf;
-  this.folderNumber = newFolder;
-};
 
 // Static method for search with improved partial matching
 patientFileSchema.statics.searchFiles = function(query) {

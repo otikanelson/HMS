@@ -387,6 +387,12 @@
   outline-offset: 2px;
 }
 
+.modal-close svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
 .modal-header {
   margin-bottom: 1.5rem;
   text-align: center;

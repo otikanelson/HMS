@@ -3,6 +3,7 @@ const Visit = require('../models/Visit');
 const PatientFile = require('../models/PatientFile');
 const { requireAccessLevel } = require('../middleware/auth');
 const { logActivity } = require('../utils/activityLogger');
+const { normalizePatientNumber, loadRanges, locationText } = require('../utils/storageMap');
 const router = express.Router();
 
 // Role constants
@@ -22,10 +23,10 @@ function isValidObjectId(id) {
   return /^[0-9a-fA-F]{24}$/.test(id);
 }
 
-// Helper: Format location from patient document
-function formatLocation(patientDoc) {
-  if (!patientDoc) return '';
-  return `Cabinet ${patientDoc.cabinetNumber} → Shelf ${patientDoc.shelfNumber} → Folder ${patientDoc.folderNumber}`;
+// Helper: Get location text from storage map
+async function getLocationText(patientId) {
+  const ranges = await loadRanges();
+  return locationText(patientId, ranges);
 }
 
 // POST /api/visits/start - Start a new visit
@@ -40,12 +41,20 @@ router.post('/start', requireAccessLevel(...ALL_ROLES), async (req, res) => {
       });
     }
 
+    const normalized = normalizePatientNumber(patientId);
+    if (!normalized) {
+      return res.status(404).json({
+        error: 'Patient not found',
+        message: 'Please enter a valid patient number (1 to 8 digits).'
+      });
+    }
+
     // Look up patient
-    const patient = await PatientFile.findOne({ patientId: patientId.trim() });
+    const patient = await PatientFile.findOne({ patientId: normalized });
     if (!patient) {
       return res.status(404).json({
         error: 'Patient not found',
-        message: 'No patient with that number.'
+        message: `No file numbered ${normalized} in the system yet.`
       });
     }
 
@@ -65,8 +74,8 @@ router.post('/start', requireAccessLevel(...ALL_ROLES), async (req, res) => {
       const stageLabels = {
         waiting_for_file: 'Finding file',
         with_doctor: 'With doctor',
-        needs_recording: 'File back - needs recording',
-        filed: 'Done - file back in cabinet'
+        needs_recording: 'On the desk',
+        filed: 'Put away'
       };
       const startedBy = existingVisit.startedBy?.fullName || 'Unknown';
       const startedAt = existingVisit.startedAt.toLocaleString('en-US', {
@@ -85,12 +94,15 @@ router.post('/start', requireAccessLevel(...ALL_ROLES), async (req, res) => {
       });
     }
 
+    // Get location from storage map
+    const locationStr = await getLocationText(normalized);
+
     // Create new visit
     const visit = new Visit({
       patient: patient._id,
       patientId: patient.patientId,
       patientName: patient.fullName,
-      fileLocation: formatLocation(patient),
+      fileLocation: locationStr,
       startedBy: req.user.userId,
       startedAt: new Date()
     });
@@ -107,8 +119,8 @@ router.post('/start', requireAccessLevel(...ALL_ROLES), async (req, res) => {
           const stageLabels = {
             waiting_for_file: 'Finding file',
             with_doctor: 'With doctor',
-            needs_recording: 'File back - needs recording',
-            filed: 'Done - file back in cabinet'
+            needs_recording: 'On the desk',
+            filed: 'Put away'
           };
           const startedBy = conflictVisit.startedBy?.fullName || 'Unknown';
           const startedAt = conflictVisit.startedAt.toLocaleString('en-US', {
@@ -422,7 +434,7 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
       });
     }
 
-    const visit = await Visit.findById(id).populate('patient', 'patientId fullName cabinetNumber shelfNumber folderNumber');
+    const visit = await Visit.findById(id).populate('patient', 'patientId fullName');
 
     if (!visit) {
       return res.status(404).json({
@@ -453,40 +465,28 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
       });
     }
 
-    // PART 1: Validate report fields (chiefComplaint, diagnosis, treatmentPlan, payment, recordedBy)
+    // ALL fields now optional - validate only if provided
     
-    // Chief complaint: required, 1-2000 characters
-    if (!chiefComplaint || !chiefComplaint.trim()) {
+    // Chief complaint: optional, max 2000 characters
+    const trimmedChiefComplaint = chiefComplaint && chiefComplaint.trim() ? chiefComplaint.trim() : '';
+    if (trimmedChiefComplaint && trimmedChiefComplaint.length > 2000) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'Please write the patient\'s complaint.'
-      });
-    }
-    const trimmedChiefComplaint = chiefComplaint.trim();
-    if (trimmedChiefComplaint.length > 2000) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Please write the patient\'s complaint.'
+        message: 'Chief complaint cannot exceed 2000 characters.'
       });
     }
 
-    // Diagnosis: required, 1-2000 characters
-    if (!diagnosis || !diagnosis.trim()) {
+    // Diagnosis: optional, max 2000 characters
+    const trimmedDiagnosis = diagnosis && diagnosis.trim() ? diagnosis.trim() : '';
+    if (trimmedDiagnosis && trimmedDiagnosis.length > 2000) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'Please write the diagnosis.'
-      });
-    }
-    const trimmedDiagnosis = diagnosis.trim();
-    if (trimmedDiagnosis.length > 2000) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Please write the diagnosis.'
+        message: 'Diagnosis cannot exceed 2000 characters.'
       });
     }
 
-    // Treatment plan: optional, up to 2000 characters
-    const trimmedTreatmentPlan = treatmentPlan ? treatmentPlan.trim() : '';
+    // Treatment plan: optional, max 2000 characters
+    const trimmedTreatmentPlan = treatmentPlan && treatmentPlan.trim() ? treatmentPlan.trim() : '';
     if (trimmedTreatmentPlan && trimmedTreatmentPlan.length > 2000) {
       return res.status(400).json({
         error: 'Validation error',
@@ -494,11 +494,10 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
       });
     }
 
-    // Payment: optional, must be number 0 or more, up to 2 decimal places
+    // Payment: optional, must be number if provided
     let trimmedPayment = '';
     if (payment && payment.trim()) {
       trimmedPayment = payment.trim();
-      // Check pattern: digits and optional decimal point with 1-2 decimal places
       if (!/^(\d+(\.\d{1,2})?)$/.test(trimmedPayment)) {
         return res.status(400).json({
           error: 'Validation error',
@@ -514,22 +513,16 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
       }
     }
 
-    // Recorded by: required, 1-200 characters
-    if (!recordedBy || !recordedBy.trim()) {
+    // Recorded by: optional, max 200 characters
+    const trimmedRecordedBy = recordedBy && recordedBy.trim() ? recordedBy.trim() : '';
+    if (trimmedRecordedBy && trimmedRecordedBy.length > 200) {
       return res.status(400).json({
         error: 'Validation error',
-        message: 'Please say who recorded this visit.'
-      });
-    }
-    const trimmedRecordedBy = recordedBy.trim();
-    if (trimmedRecordedBy.length > 200) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Please say who recorded this visit.'
+        message: 'Recorded by cannot exceed 200 characters.'
       });
     }
 
-    // Validate tests
+    // Validate tests (optional, optional list, no required-choice logic)
     let cleanedTests = [];
     if (tests && Array.isArray(tests)) {
       cleanedTests = tests
@@ -553,15 +546,7 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
       }
     }
 
-    // Tests: either at least one OR testsNone, not both, not neither
-    if ((cleanedTests.length > 0) === testsNone) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: "Say whether any tests were done: add them, or tick 'No tests'."
-      });
-    }
-
-    // Validate medications
+    // Validate medications (optional, optional list, no required-choice logic)
     let cleanedMeds = [];
     if (medications && Array.isArray(medications)) {
       cleanedMeds = medications
@@ -585,24 +570,17 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
       }
     }
 
-    // Medications: either at least one OR medicationsNone, not both, not neither
-    if ((cleanedMeds.length > 0) === medicationsNone) {
+    // Notes: optional, max 1000 characters
+    const cleanedNotes = notes && notes.trim() ? notes.trim() : '';
+    if (cleanedNotes && cleanedNotes.length > 1000) {
       return res.status(400).json({
         error: 'Validation error',
-        message: "Say whether any medicines were given: add them, or tick 'No medicines'."
-      });
-    }
-
-    // Notes optional but validate length
-    const cleanedNotes = notes ? notes.trim() : '';
-    if (cleanedNotes.length > 1000) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Notes cannot be longer than 1000 characters.'
+        message: 'Notes cannot exceed 1000 characters.'
       });
     }
 
     // Atomic update from needs_recording to filed
+    const ranges = await loadRanges();
     const updated = await Visit.findOneAndUpdate(
       { _id: id, stage: 'needs_recording' },
       {
@@ -622,7 +600,7 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
         filedAt: new Date()
       },
       { new: true, runValidators: true }
-    ).populate('patient', 'patientId fullName cabinetNumber shelfNumber folderNumber');
+    ).populate('patient', 'patientId fullName');
 
     if (!updated) {
       return res.status(409).json({
@@ -641,10 +619,10 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
     });
 
     res.json({
-      message: 'Visit recorded and filed',
+      message: 'Visit filed',
       visit: {
         ...updated.toObject(),
-        currentLocation: formatLocation(updated.patient)
+        currentLocation: locationText(updated.patientId, ranges)
       }
     });
 
@@ -652,6 +630,72 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
     console.error('Record error:', error);
     res.status(500).json({
       error: 'Failed to file visit',
+      message: 'Internal server error'
+    });
+  }
+});
+
+// POST /api/visits/put-away - Put away multiple files at once (all roles)
+router.post('/put-away', requireAccessLevel(...ALL_ROLES), async (req, res) => {
+  try {
+    const { visitIds } = req.body;
+
+    if (!Array.isArray(visitIds)) {
+      return res.status(400).json({
+        error: 'Invalid request',
+        message: 'visitIds must be an array'
+      });
+    }
+
+    if (visitIds.length > 100) {
+      return res.status(400).json({
+        error: 'Invalid request',
+        message: 'Maximum 100 visits per request'
+      });
+    }
+
+    const ranges = await loadRanges();
+    let putAway = 0;
+    let skipped = 0;
+
+    for (const visitId of visitIds) {
+      if (!isValidObjectId(visitId)) continue;
+
+      const updated = await Visit.findOneAndUpdate(
+        { _id: visitId, stage: 'needs_recording' },
+        {
+          stage: 'filed',
+          isOpen: false,
+          filedBy: req.user.userId,
+          filedAt: new Date()
+        },
+        { new: true }
+      ).populate('patient', 'patientId fullName');
+
+      if (updated) {
+        putAway++;
+        await logActivity({
+          req,
+          action: 'VISIT_FILED',
+          targetType: 'PatientFile',
+          targetId: updated.patient._id,
+          targetLabel: updated.patientName
+        });
+      } else {
+        skipped++;
+      }
+    }
+
+    res.json({
+      message: `Put away ${putAway} file${putAway !== 1 ? 's' : ''}`,
+      putAway,
+      skipped
+    });
+
+  } catch (error) {
+    console.error('Put-away error:', error);
+    res.status(500).json({
+      error: 'Failed to put away files',
       message: 'Internal server error'
     });
   }
@@ -1023,6 +1067,7 @@ router.put('/:id/correct', requireAccessLevel(...CAN_CORRECT), async (req, res) 
 // GET /api/visits/open - Get all open visits
 router.get('/open', requireAccessLevel(...ALL_ROLES), async (req, res) => {
   try {
+    const ranges = await loadRanges();
     const visits = await Visit.find({ isOpen: true })
       .populate('startedBy', 'fullName')
       .populate('patient', 'patientId fullName cabinetNumber shelfNumber folderNumber')
@@ -1033,7 +1078,7 @@ router.get('/open', requireAccessLevel(...ALL_ROLES), async (req, res) => {
     const visitsWithDetails = visits.map(visit => ({
       ...visit,
       carriedOver: visit.startedAt < startToday,
-      currentLocation: formatLocation(visit.patient)
+      currentLocation: locationText(visit.patient.patientId, ranges)
     }));
 
     // Sort: carriedOver first, then by stage order (needs_recording, with_doctor, waiting_for_file), then oldest first
@@ -1250,16 +1295,14 @@ router.post('/:id/step-back', requireAccessLevel(...ALL_ROLES), async (req, res)
     if (fromStage === 'with_doctor') {
       toStage = 'waiting_for_file';
       updateData = {
-        stage: toStage,
-        sentToDoctorBy: undefined,
-        sentToDoctorAt: undefined
+        $set: { stage: toStage },
+        $unset: { sentToDoctorBy: '', sentToDoctorAt: '' }
       };
     } else if (fromStage === 'needs_recording') {
       toStage = 'with_doctor';
       updateData = {
-        stage: toStage,
-        fileBackBy: undefined,
-        fileBackAt: undefined
+        $set: { stage: toStage },
+        $unset: { fileBackBy: '', fileBackAt: '' }
       };
     } else {
       return res.status(409).json({
@@ -1293,7 +1336,7 @@ router.post('/:id/step-back', requireAccessLevel(...ALL_ROLES), async (req, res)
     });
 
     res.json({
-      message: `Moved visit back to ${toStage === 'waiting_for_file' ? 'finding file' : 'with doctor'}`,
+      message: `Moved visit back to ${toStage === 'waiting_for_file' ? 'Finding file' : 'With doctor'}`,
       visit: updated.toObject()
     });
 

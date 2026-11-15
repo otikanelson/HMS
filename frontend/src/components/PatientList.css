@@ -7,6 +7,10 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: var(--space-8);
+  background: white;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .page-title {
@@ -62,19 +66,20 @@
   width: 100%;
   border-collapse: collapse;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
 }
 
 .patients-table thead {
-  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
 }
 
 .patients-table th {
-  padding: 8px 16px;
+  padding: 10px 12px;
   text-align: left;
-  font-weight: 600;
-  font-size: 0.875rem;
-  color: white;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #ffffff !important;
+  background: #1e40af !important;
   border-right: 1px solid #3b82f6;
   border-bottom: 2px solid #1d4ed8;
   white-space: nowrap;
@@ -105,7 +110,7 @@
 }
 
 .patients-table td {
-  padding: 6px 16px;
+  padding: 4px 10px;
   border-right: 1px solid #e5e7eb;
   vertical-align: middle;
   color: #1f2937;
@@ -116,11 +121,11 @@
 }
 
 .patients-table input[type="number"] {
-  width: 70px;
-  padding: 6px 10px;
+  width: 50px;
+  padding: 4px 8px;
   border: 2px solid #3b82f6;
   background: #eff6ff;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   text-align: center;
   border-radius: 4px;
   color: #1e40af;
@@ -347,11 +352,11 @@
 /* Excel-style Status Picker Dropdown */
 .status-picker {
   width: 100%;
-  max-width: 180px;
-  padding: 6px 10px;
+  max-width: 140px;
+  padding: 4px 8px;
   border: 2px solid #3b82f6;
   background: white;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   border-radius: 4px;
   color: #1e40af;
   font-weight: 500;
@@ -361,8 +366,8 @@
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%231e40af' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 10px center;
-  padding-right: 35px;
+  background-position: right 8px center;
+  padding-right: 28px;
 }
 
 .status-picker:hover:not(:disabled) {

@@ -7,8 +7,8 @@ import './PatientHistory.css';
 const STAGE_LABELS = {
   waiting_for_file: 'Finding file',
   with_doctor: 'With doctor',
-  needs_recording: 'File back, needs recording',
-  filed: 'Filed'
+  needs_recording: 'On the desk',
+  filed: 'Put away'
 };
 
 const PatientHistory = () => {
@@ -120,7 +120,7 @@ const PatientHistory = () => {
 
       {visits.length === 0 ? (
         <div className="empty-state">
-          <p>No visits yet. <Link to="/file-desk" className="link">Start one from File Desk.</Link></p>
+          <p>No visits yet. <Link to={`/file-desk?patientId=${patientId}`} className="link">Start one from File Desk.</Link></p>
         </div>
       ) : (
         <div className="history-card">

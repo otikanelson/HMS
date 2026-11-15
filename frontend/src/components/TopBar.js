@@ -97,11 +97,16 @@ const TopBar = ({ onToggleSidebar, onHelp, sidebarOpen }) => {
                                    user.accessLevel === 'RECORDS_OPERATOR' ? 'Records Operator' : 
                                    'Clinical Staff'}
               </span>
-              <button onClick={handleHelpClick} className="help-btn">
-                Help
+              <button onClick={handleHelpClick} className="help-btn" title="Help guide">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 15A7 7 0 108 1a7 7 0 000 14zm0 1A8 8 0 108 0a8 8 0 000 16z"/>
+                  <path d="M5.893 6.5c.129-.697.662-1.283 1.38-1.53.72-.248 1.548-.17 2.163.287.617.456.92 1.188.92 1.993 0 .667-.337 1.252-.914 1.586-.577.335-1.287.335-1.865 0"/>
+                  <path d="M8 11a1 1 0 110 2 1 1 0 010-2z"/>
+                </svg>
+                <span className="btn-label">Help</span>
               </button>
-              <button onClick={handleLogout} className="signout-btn">
-                Sign out
+              <button onClick={handleLogout} className="signout-btn" title="Sign out">
+                <span className="btn-label">Sign out</span>
               </button>
             </>
           )}

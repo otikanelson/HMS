@@ -23,9 +23,11 @@ const ACTION_LABELS = {
   PATIENT_RECORD_VIEWED: "opened a patient's visit history",
   VISIT_STARTED: 'started a visit',
   SENT_TO_DOCTOR: 'sent a patient to the doctor',
-  VISIT_FILED: 'recorded and filed a visit',
+  VISIT_FILED: 'put a file away',
   VISIT_REPORT_EDITED: 'edited a visit report',
   PATIENT_DETAILS_UPDATED: "updated a patient's details",
+  STORAGE_MAP_CHANGED: 'changed the storage map',
+  PATIENT_FILE_CREATED: 'created a new patient file'
 };
 
 const ROLE_LABELS = {

@@ -31,6 +31,7 @@
   /* Status Colors */
   --success-50: #f0fdf4;
   --success-200: #bbf7d0;
+  --success-300: #86efac;
   --success-500: #22c55e;
   --success-600: #16a34a;
   --success-700: #15803d;
@@ -44,9 +45,46 @@
   
   --error-50: #fef2f2;
   --error-200: #fecaca;
+  --error-300: #fca5a5;
   --error-500: #ef4444;
   --error-600: #dc2626;
+  --error-700: #b91c1c;
   --error-800: #991b1b;
+
+  /* Stage Colors - File Workflow */
+  --stage-finding-light: #fef3c7;
+  --stage-finding-dark: #d97706;
+  --stage-doctor-light: #e0e7ff;
+  --stage-doctor-dark: #4f46e5;
+  --stage-desk-light: #ccfbf1;
+  --stage-desk-dark: #0d9488;
+  --stage-done-light: #dcfce7;
+  --stage-done-dark: #16a34a;
+  --stage-cancelled-light: #f3f4f6;
+  --stage-cancelled-dark: #6b7280;
+
+  /* Simplified Stage Colors for AddPatient & UI */
+  --stage-amber: #d97706;
+  --stage-amber-50: #fef3c7;
+  --stage-amber-200: #fde68a;
+  --stage-amber-700: #b45309;
+  --stage-indigo: #4f46e5;
+  --stage-indigo-50: #e0e7ff;
+  --stage-indigo-700: #3730a3;
+  --stage-teal: #0d9488;
+  --stage-teal-50: #f0fdfa;
+  --stage-teal-700: #0f766e;
+  --stage-green: #16a34a;
+  --stage-green-50: #dcfce7;
+  --stage-green-200: #bbf7d0;
+  --stage-green-900: #15803d;
+
+  /* Typography Sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-body: 1rem;
+  --text-strong: 1.125rem;
+  --text-title: 1.5rem;
 
   /* Typography */
   --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
@@ -81,15 +119,22 @@
 
 /* Scales every rem-based size in the app (spacing, radius, font-size)
    down proportionally, since the whole design system is rem-based.
-   16px browser default -> 14px effective root. */
+   Target: smallest text (0.75rem) should be at least 13px.
+   13px / 0.75rem = 17.33px per rem. Browser default is 16px, so 108.3%.
+   We use 106% to keep most sizes comfortable while ensuring 13px minimum. */
 html {
-  font-size: 87.5%;
+  font-size: 106%;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--primary-500);
+  outline-offset: 2px;
 }
 
 body {
@@ -129,6 +174,7 @@ body {
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-6);
+  min-height: 44px;
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1;
@@ -178,6 +224,46 @@ body {
 .btn-success:hover:not(:disabled) {
   background-color: var(--success-700);
   box-shadow: var(--shadow-md);
+}
+
+.btn-danger {
+  background-color: var(--error-600);
+  color: white;
+  border-color: var(--error-600);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: var(--error-700);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-link {
+  background-color: transparent;
+  color: var(--primary-600);
+  border-color: transparent;
+  text-decoration: underline;
+}
+
+.btn-link:hover:not(:disabled) {
+  color: var(--primary-700);
+  background-color: transparent;
+}
+
+.btn-outline {
+  background-color: white;
+  color: var(--gray-700);
+  border-color: var(--gray-300);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: var(--gray-50);
+  border-color: var(--gray-400);
+}
+
+.btn-small {
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.75rem;
+  min-height: auto;
 }
 
 /* Professional Card System */
@@ -306,7 +392,52 @@ body {
   color: var(--error-600);
 }
 
-/* Alert System */
+/* Alert/Message System - Consistent pattern across app */
+.message {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  animation: slideDown 300ms ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-success {
+  background-color: var(--success-50);
+  color: var(--success-800);
+  border: 1px solid var(--success-200);
+}
+
+.message-warning {
+  background-color: var(--warning-50);
+  color: var(--warning-800);
+  border: 1px solid var(--warning-200);
+}
+
+.message-error {
+  background-color: var(--error-50);
+  color: var(--error-800);
+  border: 1px solid var(--error-200);
+}
+
+.message-info {
+  background-color: var(--primary-50);
+  color: var(--primary-800);
+  border: 1px solid var(--primary-200);
+}
+
+/* Legacy alert classes for compatibility */
 .alert {
   padding: var(--space-4);
   border-radius: var(--radius-md);
@@ -409,9 +540,4 @@ body {
   border-top: 3px solid #3b82f6;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }

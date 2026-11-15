@@ -1,5 +1,6 @@
 const express = require('express');
 const PatientFile = require('../models/PatientFile');
+const { loadRanges, attachLocation } = require('../utils/storageMap');
 const router = express.Router();
 
 // GET /api/dashboard/stats - Dashboard statistics
@@ -10,19 +11,6 @@ router.get('/stats', async (req, res) => {
     const patientsWithPhone = await PatientFile.countDocuments({ 
       phoneNumber: { $ne: null, $ne: '' } 
     });
-
-    // Get cabinet count (distinct cabinets in use)
-    const cabinetStats = await PatientFile.aggregate([
-      {
-        $group: {
-          _id: '$cabinetNumber',
-          patientCount: { $sum: 1 }
-        }
-      },
-      {
-        $sort: { _id: 1 }
-      }
-    ]);
 
     // Get staff count (active users with staff accounts)
     const Staff = require('../models/Staff');
@@ -35,45 +23,18 @@ router.get('/stats', async (req, res) => {
     // Get recent patients (last 5 added)
     const recentPatients = await PatientFile.find()
       .sort({ createdAt: -1 })
-      .limit(5)
-      .select('patientId fullName cabinetNumber shelfNumber folderNumber createdAt');
+      .limit(5);
 
-    // Add locationDisplay to recent patients
-    const recentPatientsWithLocation = recentPatients.map(patient => ({
-      ...patient.toObject(),
-      locationDisplay: patient.locationDisplay
-    }));
-
-    // Storage distribution stats
-    const storageStats = await PatientFile.aggregate([
-      {
-        $group: {
-          _id: null,
-          maxCabinet: { $max: '$cabinetNumber' },
-          maxShelf: { $max: '$shelfNumber' },
-          maxFolder: { $max: '$folderNumber' },
-          minCabinet: { $min: '$cabinetNumber' },
-          minShelf: { $min: '$shelfNumber' },
-          minFolder: { $min: '$folderNumber' }
-        }
-      }
-    ]);
-
-    const storage = storageStats[0] || {};
+    // Add locationDisplay to recent patients using storage map
+    const ranges = await loadRanges();
+    const recentPatientsWithLocation = attachLocation(recentPatients, ranges);
 
     res.json({
       totalPatients,
       patientsWithPhone,
       staffCount,
       filesOut,
-      cabinetCount: cabinetStats.length,
       recentPatients: recentPatientsWithLocation,
-      cabinetDistribution: cabinetStats,
-      storage: {
-        cabinetRange: `${storage.minCabinet || 1}-${storage.maxCabinet || 1}`,
-        shelfRange: `${storage.minShelf || 1}-${storage.maxShelf || 1}`,
-        folderRange: `${storage.minFolder || 1}-${storage.maxFolder || 1}`
-      },
       lastUpdated: new Date()
     });
 

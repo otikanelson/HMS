@@ -117,6 +117,57 @@
   gap: var(--space-4);
 }
 
+.file-desk-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+.file-column {
+  background: white;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.file-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.file-column-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0;
+}
+
+.file-column-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--primary-100);
+  color: var(--primary-700);
+  border-radius: 50%;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.file-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
 .list-banner {
   padding: var(--space-3);
   border-radius: var(--radius-md);
@@ -167,11 +218,11 @@
 .file-item {
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
-  padding: var(--space-4);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--space-4);
-  align-items: start;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: white;
 }
 
 .file-item.carried-over {
@@ -234,7 +285,6 @@
   font-size: 0.875rem;
   color: var(--gray-700);
   margin: 0;
-  font-style: italic;
 }
 
 .file-item-meta {
@@ -253,9 +303,30 @@
   white-space: nowrap;
 }
 
+.stage-chip-waiting_for_file {
+  background: var(--stage-finding-light);
+  color: var(--stage-finding-dark);
+}
+
+.stage-chip-with_doctor {
+  background: var(--stage-doctor-light);
+  color: var(--stage-doctor-dark);
+}
+
+.stage-chip-needs_recording {
+  background: var(--stage-desk-light);
+  color: var(--stage-desk-dark);
+}
+
+.stage-chip-filed {
+  background: var(--stage-done-light);
+  color: var(--stage-done-dark);
+}
+
 .file-item-action {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  margin-top: var(--space-2);
 }
 
 .loading-state,
@@ -308,5 +379,9 @@
 
   .btn {
     width: 100%;
+  }
+
+  .file-desk-columns {
+    grid-template-columns: 1fr;
   }
 }

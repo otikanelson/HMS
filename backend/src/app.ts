@@ -15,6 +15,7 @@ const activityLogRoutes = require('./routes/activityLog');
 const adminNotesRoutes = require('./routes/adminNotes');
 const payrollRoutes = require('./routes/payroll');
 const visitRoutes = require('./routes/visits');
+const storageMapRoutes = require('./routes/storageMap');
 const database = require('./config/database');
 const { authenticateToken } = require('./middleware/auth');
 
@@ -101,6 +102,7 @@ app.use('/api/activity-log', authenticateToken, activityLogRoutes);
 app.use('/api/admin-notes', authenticateToken, adminNotesRoutes);
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/visits', authenticateToken, visitRoutes);
+app.use('/api/storage-map', authenticateToken, storageMapRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

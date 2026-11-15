@@ -2,6 +2,7 @@ const express = require('express');
 const PatientFile = require('../models/PatientFile');
 const { authenticateToken, requireAccessLevel } = require('../middleware/auth');
 const { logActivity } = require('../utils/activityLogger');
+const { normalizePatientNumber, loadRanges, attachLocation } = require('../utils/storageMap');
 const router = express.Router();
 
 // GET /api/patients/search - Search patient files (all authenticated users)
@@ -18,20 +19,36 @@ router.get('/search', authenticateToken, async (req, res) => {
     }
 
     const startTime = Date.now();
-    let patients = await PatientFile.searchFiles(q.trim());
+    const ranges = await loadRanges();
     
-    // Filter out archived patients unless explicitly requested
-    if (includeArchived !== 'true') {
-      patients = patients.filter(p => p.status !== 'archived');
+    // Check if query is all digits - prioritize exact patient number match
+    const normalized = normalizePatientNumber(q.trim());
+    let patients = [];
+    
+    if (normalized) {
+      // Try exact patient number match first
+      const exactMatch = await PatientFile.findOne({ patientId: normalized });
+      if (exactMatch && (includeArchived === 'true' || exactMatch.status !== 'archived')) {
+        patients.push(exactMatch);
+      }
+      
+      // Then add other matches
+      const otherMatches = await PatientFile.searchFiles(q.trim());
+      const otherFiltered = otherMatches
+        .filter(p => p.patientId !== normalized && (includeArchived === 'true' || p.status !== 'archived'));
+      patients = [...patients, ...otherFiltered];
+    } else {
+      // Non-digit search
+      patients = await PatientFile.searchFiles(q.trim());
+      if (includeArchived !== 'true') {
+        patients = patients.filter(p => p.status !== 'archived');
+      }
     }
     
     const searchTime = Date.now() - startTime;
 
-    // Add locationDisplay virtual to each result
-    const patientsWithLocation = patients.map(patient => ({
-      ...patient.toObject(),
-      locationDisplay: patient.locationDisplay
-    }));
+    // Attach location display
+    const patientsWithLocation = attachLocation(patients, ranges);
 
     res.json({
       patients: patientsWithLocation,
@@ -66,11 +83,10 @@ router.get('/', authenticateToken, async (req, res) => {
       .limit(limit);
 
     const total = await PatientFile.countDocuments(query);
+    const ranges = await loadRanges();
 
-    const patientsWithLocation = patients.map(patient => ({
-      ...patient.toObject(),
-      locationDisplay: patient.locationDisplay
-    }));
+    // Attach location display
+    const patientsWithLocation = attachLocation(patients, ranges);
 
     res.json({
       patients: patientsWithLocation,
@@ -94,19 +110,27 @@ router.get('/', authenticateToken, async (req, res) => {
 // GET /api/patients/:id - Get specific patient (all authenticated users)
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
-    const patient = await PatientFile.findOne({ patientId: req.params.id });
+    const normalized = normalizePatientNumber(req.params.id);
+    if (!normalized) {
+      return res.status(404).json({
+        error: 'Patient not found',
+        message: 'Invalid patient number'
+      });
+    }
+
+    const patient = await PatientFile.findOne({ patientId: normalized });
     
     if (!patient) {
       return res.status(404).json({
         error: 'Patient not found',
-        message: `No patient found with ID: ${req.params.id}`
+        message: `No patient found with ID: ${normalized}`
       });
     }
 
-    res.json({
-      ...patient.toObject(),
-      locationDisplay: patient.locationDisplay
-    });
+    const ranges = await loadRanges();
+    const patientWithLocation = attachLocation(patient, ranges);
+
+    res.json(patientWithLocation);
 
   } catch (error) {
     console.error('Get patient error:', error);
@@ -117,33 +141,30 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/patients - Add new patient file (ADMINISTRATOR or RECORDS_OPERATOR)
-router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS_OPERATOR'), async (req, res) => {
+// POST /api/patients - Add new patient file (all roles - determines on first visit)
+router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS_OPERATOR', 'CLINICAL_STAFF'), async (req, res) => {
   try {
-    const { patientId, fullName, phoneNumber, cabinetNumber, shelfNumber, folderNumber } = req.body;
+    const { patientId, fullName, phoneNumber } = req.body;
 
     // Basic required field validation
-    if (!patientId || !fullName || !phoneNumber || !cabinetNumber || !shelfNumber || !folderNumber) {
+    if (!patientId || !fullName) {
       return res.status(400).json({
         error: 'Validation failed',
-        message: 'Patient ID, full name, phone number, cabinet, shelf, and folder numbers are required'
+        message: 'Patient number and full name are required'
       });
     }
 
-    // Detailed validation
-    const trimmedPatientId = patientId.trim();
+    // Normalize and validate patient ID
+    const normalized = normalizePatientNumber(patientId);
+    if (!normalized) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Patient number must be 1 to 8 digits'
+      });
+    }
+
+    // Validate full name
     const trimmedFullName = fullName.trim();
-    const trimmedPhoneNumber = phoneNumber.trim();
-
-    // Patient ID validation
-    if (!/^\d{4,8}$/.test(trimmedPatientId)) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: 'Patient ID must be 4-8 digits'
-      });
-    }
-
-    // Full Name validation
     if (trimmedFullName.length < 2 || trimmedFullName.length > 100) {
       return res.status(400).json({
         error: 'Validation failed',
@@ -151,74 +172,53 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS
       });
     }
 
-    if (!/^[a-zA-Z\s'\-]+$/.test(trimmedFullName)) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: 'Full name can only contain letters, spaces, apostrophes, and hyphens'
-      });
-    }
-
-    // Phone Number validation - must be +234XXXXXXXXXX format
-    if (!/^\+234\d{10}$/.test(trimmedPhoneNumber)) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: 'Phone number must be in format +234XXXXXXXXXX (exactly 10 digits after +234)'
-      });
-    }
-
-    // Location validation
-    const cabinet = parseInt(cabinetNumber);
-    const shelf = parseInt(shelfNumber);
-    const folder = parseInt(folderNumber);
-
-    if (cabinet < 1 || cabinet > 50) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: 'Cabinet number must be between 1 and 50'
-      });
-    }
-
-    if (shelf < 1 || shelf > 20) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: 'Shelf number must be between 1 and 20'
-      });
-    }
-
-    if (folder < 1 || folder > 100) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: 'Folder number must be between 1 and 100'
-      });
+    // Validate phone number if provided (optional)
+    let trimmedPhoneNumber = '';
+    if (phoneNumber && phoneNumber.trim()) {
+      trimmedPhoneNumber = phoneNumber.trim();
+      if (!/^\+234\d{10}$/.test(trimmedPhoneNumber)) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          message: 'Phone number must be in format +234XXXXXXXXXX'
+        });
+      }
     }
 
     // Check if patient ID already exists
-    const existingPatient = await PatientFile.findOne({ patientId: trimmedPatientId });
+    const existingPatient = await PatientFile.findOne({ patientId: normalized });
     if (existingPatient) {
       return res.status(409).json({
         error: 'Patient ID already exists',
-        message: `A patient with ID ${trimmedPatientId} already exists`
+        message: `A patient with ID ${normalized} already exists`
       });
     }
 
     // Create new patient file
     const newPatient = new PatientFile({
-      patientId: trimmedPatientId,
+      patientId: normalized,
       fullName: trimmedFullName,
-      phoneNumber: trimmedPhoneNumber,
-      cabinetNumber: cabinet,
-      shelfNumber: shelf,
-      folderNumber: folder
+      phoneNumber: trimmedPhoneNumber
     });
 
     await newPatient.save();
 
+    // Load ranges and attach location
+    const ranges = await loadRanges();
+    const patientWithLocation = attachLocation(newPatient, ranges);
+
+    // Log activity
+    await logActivity({
+      req,
+      action: 'PATIENT_FILE_CREATED',
+      targetType: 'PatientFile',
+      targetId: newPatient._id,
+      targetLabel: newPatient.fullName,
+      details: { patientId: normalized }
+    });
+
     res.status(201).json({
       message: 'Patient file created successfully',
-      patient: {
-        ...newPatient.toObject(),
-        locationDisplay: `Cabinet ${newPatient.cabinetNumber} → Shelf ${newPatient.shelfNumber} → Folder ${newPatient.folderNumber}`
-      }
+      patient: patientWithLocation
     });
 
   } catch (error) {
@@ -246,69 +246,17 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS
   }
 });
 
-// PUT /api/patients/:id/location - Update patient file location (ADMINISTRATOR or RECORDS_OPERATOR)
-router.put('/:id/location', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS_OPERATOR'), async (req, res) => {
-  try {
-    const { cabinetNumber, shelfNumber, folderNumber, reason } = req.body;
-
-    if (!cabinetNumber || !shelfNumber || !folderNumber) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: 'Cabinet, shelf, and folder numbers are required'
-      });
-    }
-
-    const patient = await PatientFile.findOne({ patientId: req.params.id });
-    if (!patient) {
-      return res.status(404).json({
-        error: 'Patient not found',
-        message: `No patient found with ID: ${req.params.id}`
-      });
-    }
-
-    // Store old location for activity log
-    const oldLocation = patient.locationDisplay;
-
-    // Update location with history tracking
-    patient.updateLocation(
-      parseInt(cabinetNumber),
-      parseInt(shelfNumber),
-      parseInt(folderNumber),
-      reason || 'Location updated via API'
-    );
-
-    await patient.save();
-
-    // Log activity
-    await logActivity({
-      req,
-      action: 'PATIENT_FILE_LOCATION_UPDATED',
-      targetType: 'PatientFile',
-      targetId: patient._id,
-      targetLabel: patient.fullName,
-      details: { from: oldLocation, to: patient.locationDisplay }
-    });
-
-    res.json({
-      message: 'Patient file location updated successfully',
-      patient: {
-        ...patient.toObject(),
-        locationDisplay: patient.locationDisplay
-      }
-    });
-
-  } catch (error) {
-    console.error('Update location error:', error);
-    res.status(500).json({
-      error: 'Failed to update location',
-      message: 'Internal server error'
-    });
-  }
-});
-
 // PUT /api/patients/:id/status - Update patient status with role-specific transition rules
 router.put('/:id/status', authenticateToken, async (req, res) => {
   try {
+    const normalized = normalizePatientNumber(req.params.id);
+    if (!normalized) {
+      return res.status(404).json({
+        error: 'Patient not found',
+        message: 'Invalid patient number'
+      });
+    }
+
     const { status } = req.body;
 
     // Validate status value
@@ -321,11 +269,11 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
     }
 
     // Find patient
-    const patient = await PatientFile.findOne({ patientId: req.params.id });
+    const patient = await PatientFile.findOne({ patientId: normalized });
     if (!patient) {
       return res.status(404).json({
         error: 'Patient not found',
-        message: `No patient found with ID: ${req.params.id}`
+        message: `No patient found with ID: ${normalized}`
       });
     }
 
@@ -335,12 +283,11 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
 
     // If no change, return success immediately
     if (currentStatus === requestedStatus) {
+      const ranges = await loadRanges();
+      const patientWithLocation = attachLocation(patient, ranges);
       return res.json({
         message: 'Patient status unchanged',
-        patient: {
-          ...patient.toObject(),
-          locationDisplay: patient.locationDisplay
-        }
+        patient: patientWithLocation
       });
     }
 
@@ -412,12 +359,12 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
       details: { from: currentStatus, to: requestedStatus }
     });
 
+    const ranges = await loadRanges();
+    const patientWithLocation = attachLocation(patient, ranges);
+
     res.json({
       message: `Patient status updated to '${requestedStatus}' successfully`,
-      patient: {
-        ...patient.toObject(),
-        locationDisplay: patient.locationDisplay
-      }
+      patient: patientWithLocation
     });
 
   } catch (error) {
@@ -432,14 +379,22 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
 // PUT /api/patients/:id - Update patient details (ADMINISTRATOR only)
 router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
   try {
+    const normalized = normalizePatientNumber(req.params.id);
+    if (!normalized) {
+      return res.status(404).json({
+        error: 'Patient not found',
+        message: 'Invalid patient number'
+      });
+    }
+
     const { fullName, phoneNumber, customFields } = req.body;
     
-    const patient = await PatientFile.findOne({ patientId: req.params.id });
+    const patient = await PatientFile.findOne({ patientId: normalized });
     
     if (!patient) {
       return res.status(404).json({
         error: 'Patient not found',
-        message: `No patient found with ID: ${req.params.id}`
+        message: `No patient found with ID: ${normalized}`
       });
     }
 
@@ -453,13 +408,6 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
           message: 'Full name must be 2-100 characters'
         });
       }
-      // Check if name contains only letters, spaces, apostrophes, and hyphens
-      if (!/^[a-zA-Z\s'-]+$/.test(fullName)) {
-        return res.status(400).json({
-          error: 'Invalid value',
-          message: 'Full name can only contain letters, spaces, apostrophes, and hyphens'
-        });
-      }
       if (patient.fullName !== fullName) {
         patient.fullName = fullName;
         changedFields.push('fullName');
@@ -468,14 +416,15 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
 
     // Validate and update phoneNumber
     if (phoneNumber !== undefined) {
-      if (typeof phoneNumber !== 'string' || !/^\+234\d{10}$/.test(phoneNumber)) {
+      const trimmed = phoneNumber.trim();
+      if (trimmed && !/^\+234\d{10}$/.test(trimmed)) {
         return res.status(400).json({
           error: 'Invalid value',
-          message: 'Phone number must match +234 followed by 10 digits'
+          message: 'Phone number must be in format +234XXXXXXXXXX or empty'
         });
       }
-      if (patient.phoneNumber !== phoneNumber) {
-        patient.phoneNumber = phoneNumber;
+      if (patient.phoneNumber !== trimmed) {
+        patient.phoneNumber = trimmed;
         changedFields.push('phoneNumber');
       }
     }
@@ -523,12 +472,12 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
       });
     }
 
+    const ranges = await loadRanges();
+    const patientWithLocation = attachLocation(patient, ranges);
+
     res.json({
       message: 'Patient updated successfully',
-      patient: {
-        ...patient.toObject(),
-        locationDisplay: patient.locationDisplay
-      }
+      patient: patientWithLocation
     });
 
   } catch (error) {
@@ -543,12 +492,20 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
 // DELETE /api/patients/:id - Delete patient file (ADMINISTRATOR only)
 router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
   try {
-    const patient = await PatientFile.findOne({ patientId: req.params.id });
+    const normalized = normalizePatientNumber(req.params.id);
+    if (!normalized) {
+      return res.status(404).json({
+        error: 'Patient not found',
+        message: 'Invalid patient number'
+      });
+    }
+
+    const patient = await PatientFile.findOne({ patientId: normalized });
     
     if (!patient) {
       return res.status(404).json({
         error: 'Patient not found',
-        message: `No patient found with ID: ${req.params.id}`
+        message: `No patient found with ID: ${normalized}`
       });
     }
 
@@ -565,7 +522,7 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
     // Delete any cancelled visits for this patient
     await Visit.deleteMany({ patient: patient._id, stage: 'cancelled' });
 
-    await PatientFile.findOneAndDelete({ patientId: req.params.id });
+    await PatientFile.findOneAndDelete({ patientId: normalized });
 
     res.json({
       message: 'Patient file deleted successfully',
@@ -582,7 +539,7 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
       targetType: 'PatientFile',
       targetId: patient._id,
       targetLabel: patient.fullName,
-      details: { patientId: patient.patientId, location: patient.locationDisplay }
+      details: { patientId: patient.patientId }
     });
 
   } catch (error) {

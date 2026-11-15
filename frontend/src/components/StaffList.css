@@ -1,6 +1,8 @@
 /* Staff List Styles */
 .staff-list {
   padding: 24px;
+  background: var(--gray-50);
+  min-height: 100vh;
 }
 
 .staff-list-header {
@@ -8,19 +10,23 @@
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 32px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
-.page-title {
+.staff-list-header .page-title {
   font-size: 1.75rem;
   font-weight: 700;
-  color: #1f2937;
+  color: white !important;
   margin: 0;
 }
 
-.page-subtitle {
+.staff-list-header .page-subtitle {
   font-size: 1rem;
-  color: #6b7280;
-  margin: 4px 0 0 0;
+  color: rgba(255, 255, 255, 0.9) !important;
+  margin: var(--space-1) 0 0 0;
 }
 
 .list-actions {
@@ -48,21 +54,26 @@
 }
 
 .btn-primary {
-  background: #1e40af;
-  color: white;
+  background: white;
+  color: #1e40af;
+  border: 2px solid white;
+  font-weight: 600;
 }
 
 .btn-primary:hover {
-  background: #1d4ed8;
+  background: #f0f9ff;
+  color: #1e40af;
 }
 
 .btn-secondary {
-  background: #6b7280;
+  background: rgba(255, 255, 255, 0.2);
   color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .btn-secondary:hover {
-  background: #4b5563;
+  background: rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .btn-outline {
@@ -127,11 +138,12 @@
 }
 
 .staff-table th {
-  padding: 8px 12px;
+  padding: 10px 12px;
   text-align: left;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.75rem;
-  color: white;
+  color: #ffffff !important;
+  background: #1e40af !important;
   border-right: 1px solid #3b82f6;
   border-bottom: 2px solid #1d4ed8;
   white-space: nowrap;

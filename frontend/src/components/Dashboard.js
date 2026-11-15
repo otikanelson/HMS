@@ -393,14 +393,14 @@ const Dashboard = () => {
             >
               {showNoticeForm ? (
                 <>
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                     <path fillRule="evenodd" d="M2.5 7.5a.5.5 0 01.5-.5h10a.5.5 0 010 1H3a.5.5 0 01-.5-.5z" />
                   </svg>
                   {' Cancel'}
                 </>
               ) : (
                 <>
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                     <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z" />
                   </svg>
                   {'Post Notice'}
@@ -595,7 +595,7 @@ const Dashboard = () => {
                       e.currentTarget.style.color = 'var(--gray-400)';
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                       <path d="M4.646 4.646a.5.5 0 01.708 0L8 7.293l2.646-2.647a.5.5 0 01.708.708L8.707 8l2.647 2.646a.5.5 0 01-.708.708L8 8.707l-2.646 2.647a.5.5 0 01-.708-.708L7.293 8 4.646 5.354a.5.5 0 010-.708z" />
                     </svg>
                   </button>
@@ -647,14 +647,14 @@ const Dashboard = () => {
               >
                 {showAdminNoteForm ? (
                   <>
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                       <path fillRule="evenodd" d="M2.5 7.5a.5.5 0 01.5-.5h10a.5.5 0 010 1H3a.5.5 0 01-.5-.5z" />
                     </svg>
                     {' Cancel'}
                   </>
                 ) : (
                   <>
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                       <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z" />
                     </svg>
                     {' Add Note'}
@@ -838,7 +838,7 @@ const Dashboard = () => {
                                 e.currentTarget.style.color = 'var(--gray-400)';
                               }}
                             >
-                              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                                 <path d="M12.146.146a.5.5 0 01.708 0l3 3a.5.5 0 010 .708l-10 10a.5.5 0 01-.168.11l-5 2a.5.5 0 01-.65-.65l2-5a.5.5 0 01.11-.168l10-10zM11.207 2.5L13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 01.5.5v.5h.5a.5.5 0 01.5.5v.5h.293l6.5-6.5zm-9.761 5.175l-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 015 12.5V12h-.5a.5.5 0 01-.5-.5V11h-.5a.5.5 0 01-.468-.325z" />
                               </svg>
                             </button>
@@ -866,7 +866,7 @@ const Dashboard = () => {
                                 e.currentTarget.style.color = 'var(--gray-400)';
                               }}
                             >
-                              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                                 <path d="M5.5 5.5A.5.5 0 016 6v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm2.5 0a.5.5 0 01.5.5v6a.5.5 0 01-1 0V6a.5.5 0 01.5-.5zm3 .5a.5.5 0 00-1 0v6a.5.5 0 001 0V6z" />
                                 <path fillRule="evenodd" d="M14.5 3a1 1 0 01-1 1H13v9a2 2 0 01-2 2H5a2 2 0 01-2-2V4h-.5a1 1 0 01-1-1V2a1 1 0 011-1H6a1 1 0 011-1h2a1 1 0 011 1h3.5a1 1 0 011 1v1zM4.118 4L4 4.059V13a1 1 0 001 1h6a1 1 0 001-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" />
                               </svg>
@@ -1064,7 +1064,7 @@ const Dashboard = () => {
                     No patient files yet
                   </p>
                   <Link to="/add-patient" className="btn btn-primary" style={{ fontSize: '0.875rem' }}>
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                       <path fillRule="evenodd" d="M8 2a.5.5 0 01.5.5v5h5a.5.5 0 010 1h-5v5a.5.5 0 01-1 0v-5h-5a.5.5 0 010-1h5v-5A.5.5 0 018 2z" />
                     </svg>
                     New Patient
@@ -1103,27 +1103,7 @@ const Dashboard = () => {
             )}
           </div>
 
-          <div className="info-panel">
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title">Tender Care File System</h2>
-              </div>
-              <div className="info-grid">
-                <div className="info-item">
-                  <strong>Purpose:</strong> Digital patient file indexing and location tracking for Tender Care Hospital
-                </div>
-                <div className="info-item">
-                  <strong>Data Policy:</strong> Visit details (BP, heart rate, tests, medications) are stored. Paper files remain the main record.
-                </div>
-                <div className="info-item">
-                  <strong>Search Methods:</strong> Patient ID, full name, or phone number
-                </div>
-                <div className="info-item">
-                  <strong>File Format:</strong> Cabinet → Shelf → Folder numbering system
-                </div>
-              </div>
-            </div>
-          </div>
+
         </>
       )}
     </div>

@@ -12,6 +12,8 @@ import AddPatient from './components/AddPatient';
 import AddStaff from './components/AddStaff';
 import ChangePassword from './components/ChangePassword';
 import Reports from './components/Reports';
+import StorageMap from './components/StorageMap';
+import PutBack from './components/PutBack';
 import PayrollRunsList from './components/PayrollRunsList';
 import PayrollRunDetail from './components/PayrollRunDetail';
 import FileDesk from './components/FileDesk';
@@ -42,6 +44,7 @@ function AppLayout() {
           <Route path="/patients/:patientId/visit/:visitId" element={<PatientDetails />} />
           <Route path="/visits/:id" element={<VisitDetails />} />
           <Route path="/file-desk" element={<FileDesk />} />
+          <Route path="/put-back" element={<PutBack />} />
           <Route path="/staff" element={
             <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR', 'RECORDS_OPERATOR']}>
               <StaffList />
@@ -57,6 +60,11 @@ function AppLayout() {
           <Route path="/reports" element={
             <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR']}>
               <Reports />
+            </ProtectedRoute>
+          } />
+          <Route path="/storage-map" element={
+            <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR']}>
+              <StorageMap />
             </ProtectedRoute>
           } />
           <Route path="/payroll" element={

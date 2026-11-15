@@ -6,10 +6,10 @@ import './VisitDetails.css';
 
 const STAGE_ORDER = ['waiting_for_file', 'with_doctor', 'needs_recording', 'filed'];
 const STAGE_STEP_NAMES = {
-  waiting_for_file: 'Check-in',
+  waiting_for_file: 'BP and heart rate',
   with_doctor: 'With doctor',
-  needs_recording: 'Record',
-  filed: 'Complete'
+  needs_recording: 'On the desk',
+  filed: 'Put away'
 };
 
 const VisitDetails = () => {

@@ -42,18 +42,7 @@ const Sidebar = ({ isOpen = true }) => {
       {isOpen && (
         <nav className="sidebar-nav">
           <ul className="nav-list">
-            {/* Group 1: Daily work */}
-            <li>
-              <NavLink 
-                to="/dashboard" 
-                className={({ isActive }) => `nav-link ${(isActive || isDashboard) ? 'nav-link-active' : ''}`}
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
-                </svg>
-                <span>Home</span>
-              </NavLink>
-            </li>
+            {/* Group 1: Daily work - ordered by frequency */}
             <li>
               <NavLink 
                 to="/file-desk" 
@@ -64,6 +53,17 @@ const Sidebar = ({ isOpen = true }) => {
                 </svg>
                 <span>File Desk</span>
                 {openVisitsCount > 0 && <span className="badge">{openVisitsCount}</span>}
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/put-back" 
+                className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm3 5a1 1 0 110-2h6a1 1 0 110 2H7z"/>
+                </svg>
+                <span>Put back</span>
               </NavLink>
             </li>
             <li>
@@ -92,7 +92,7 @@ const Sidebar = ({ isOpen = true }) => {
               </li>
             )}
 
-            {/* Group 2: Planning */}
+            {/* Group 2: Planning & Management */}
             <li className="nav-divider"></li>
             <li>
               <NavLink 
@@ -119,10 +119,21 @@ const Sidebar = ({ isOpen = true }) => {
               </li>
             )}
 
-            {/* Group 3: Admin only */}
+            {/* Group 3: System Admin only */}
             {isAdministrator && (
               <>
                 <li className="nav-divider"></li>
+                <li>
+                  <NavLink 
+                    to="/storage-map" 
+                    className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h1a1 1 0 001-1v-6a1 1 0 00-1-1h-1z"/>
+                    </svg>
+                    <span>Storage map</span>
+                  </NavLink>
+                </li>
                 <li>
                   <NavLink 
                     to="/payroll" 
@@ -148,6 +159,20 @@ const Sidebar = ({ isOpen = true }) => {
                 </li>
               </>
             )}
+
+            {/* Group 4: Quick access to home */}
+            <li className="nav-divider"></li>
+            <li>
+              <NavLink 
+                to="/dashboard" 
+                className={({ isActive }) => `nav-link ${(isActive || isDashboard) ? 'nav-link-active' : ''}`}
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+                </svg>
+                <span>Home</span>
+              </NavLink>
+            </li>
           </ul>
         </nav>
       )}

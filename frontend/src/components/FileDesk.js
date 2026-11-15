@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import './FileDesk.css';
 
 const STAGE_LABELS = {
   waiting_for_file: 'Finding file',
   with_doctor: 'With doctor',
-  needs_recording: 'File back - needs recording',
-  filed: 'Done - file back in cabinet'
+  needs_recording: 'On the desk',
+  filed: 'Put away'
 };
 
 const FileDesk = () => {
+  const [searchParams] = useSearchParams();
   const [patientNumber, setPatientNumber] = useState('');
   const [foundPatient, setFoundPatient] = useState(null);
   const [searchError, setSearchError] = useState('');
@@ -25,12 +26,31 @@ const FileDesk = () => {
 
   const [fileBackingId, setFileBackingId] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
+  const [steppingBackId, setSteppingBackId] = useState(null);
 
   const numberInputRef = useRef(null);
 
   useEffect(() => {
     fetchOpenVisits();
+    
+    // Auto-fill patient ID from query parameter if present
+    const patientIdParam = searchParams.get('patientId');
+    if (patientIdParam) {
+      setPatientNumber(patientIdParam);
+    }
   }, []);
+
+  // Auto-search when patient number is populated from query parameter
+  useEffect(() => {
+    if (patientNumber && !foundPatient && !searching) {
+      const patientIdParam = searchParams.get('patientId');
+      if (patientIdParam && patientIdParam === patientNumber) {
+        // Trigger auto-search
+        performSearch(patientNumber);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patientNumber]);
 
   const fetchOpenVisits = async () => {
     try {
@@ -46,9 +66,8 @@ const FileDesk = () => {
     }
   };
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!patientNumber.trim()) return;
+  const performSearch = async (patientNum) => {
+    if (!patientNum.trim()) return;
 
     try {
       setSearching(true);
@@ -57,7 +76,7 @@ const FileDesk = () => {
       setFoundPatient(null);
       setConflictVisitId(null);
 
-      const response = await axios.get(`/api/patients/${patientNumber.trim()}`);
+      const response = await axios.get(`/api/patients/${patientNum.trim()}`);
       setFoundPatient(response.data);
     } catch (err) {
       console.error('Patient search error:', err);
@@ -69,6 +88,11 @@ const FileDesk = () => {
     } finally {
       setSearching(false);
     }
+  };
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    performSearch(patientNumber);
   };
 
   const handleStart = async () => {
@@ -149,8 +173,6 @@ const FileDesk = () => {
       setCancellingId(null);
     }
   };
-
-  const [steppingBackId, setSteppingBackId] = useState(null);
 
   const handleStepBackVisit = async (visitId) => {
     if (!window.confirm('Move this visit back one step?')) return;
@@ -294,49 +316,49 @@ const FileDesk = () => {
           </div>
         ) : null}
 
-        <div className="file-list-section">
-          <h3 className="file-list-title">Patients not yet filed</h3>
-          {visitsError && (
-            <div className="alert alert-error" style={{ marginBottom: 'var(--space-4)' }}>
-              {visitsError}
-            </div>
-          )}
-          {loadingVisits ? (
-            <div className="loading-state">
-              <div className="spinner"></div>
-              <p>Loading visits...</p>
-            </div>
-          ) : openVisits.length === 0 ? (
-            <p className="empty-state">No visits in progress.</p>
-          ) : (
-            <div className="file-items">
-              {openVisits.map((visit) => (
-                <div key={visit._id} className={`file-item ${visit.carriedOver ? 'carried-over' : ''}`}>
-                  {visit.carriedOver && (
-                    <span className="carried-over-badge">
-                      From {formatDate(visit.startedAt)} - not filed
-                    </span>
-                  )}
-                  <div className="file-item-main">
-                    <div className="file-item-header">
-                      <div>
-                        <h4 className="file-item-name">{visit.patientName}</h4>
-                        <p className="file-item-number">Patient {visit.patientId}</p>
-                      </div>
-                      <span className={`stage-chip stage-chip-${visit.stage}`}>
-                        {STAGE_LABELS[visit.stage]}
+        {visitsError && (
+          <div className="alert alert-error" style={{ marginBottom: 'var(--space-4)' }}>
+            {visitsError}
+          </div>
+        )}
+
+        {loadingVisits ? (
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading visits...</p>
+          </div>
+        ) : openVisits.length === 0 ? (
+          <p className="empty-state">No visits in progress.</p>
+        ) : (
+          <div className="file-desk-columns">
+            {/* Column 1: Finding file stage */}
+            <div className="file-column">
+              <div className="file-column-header">
+                <h3>Finding file</h3>
+                <span className="file-column-count">{openVisits.filter(v => v.stage === 'waiting_for_file').length}</span>
+              </div>
+              <div className="file-items">
+                {openVisits.filter(v => v.stage === 'waiting_for_file').map((visit) => (
+                  <div key={visit._id} className={`file-item ${visit.carriedOver ? 'carried-over' : ''}`}>
+                    {visit.carriedOver && (
+                      <span className="carried-over-badge">
+                        From {formatDate(visit.startedAt)} - not filed
                       </span>
-                    </div>
-                    {visit.stage === 'waiting_for_file' && (
-                      <p className="file-item-location">Located: {visit.currentLocation}</p>
                     )}
-                    <p className="file-item-meta">
-                      Since {formatTime(visit.startedAt)} by {visit.startedBy?.fullName || 'Unknown'}
-                    </p>
-                  </div>
-                  <div className="file-item-action">
-                    {visit.stage === 'waiting_for_file' && (
-                      <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                    <div className="file-item-main">
+                      <div className="file-item-header">
+                        <div>
+                          <h4 className="file-item-name">{visit.patientName}</h4>
+                          <p className="file-item-number">Patient {visit.patientId}</p>
+                        </div>
+                      </div>
+                      <p className="file-item-location">Located: {visit.currentLocation}</p>
+                      <p className="file-item-meta">
+                        Since {formatTime(visit.startedAt)} by {visit.startedBy?.fullName || 'Unknown'}
+                      </p>
+                    </div>
+                    <div className="file-item-action">
+                      <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                         <Link 
                           to={`/visits/${visit._id}`} 
                           className="btn btn-primary"
@@ -351,9 +373,42 @@ const FileDesk = () => {
                           {cancellingId === visit._id ? 'Cancelling...' : 'Cancel'}
                         </button>
                       </div>
+                    </div>
+                  </div>
+                ))}
+                {openVisits.filter(v => v.stage === 'waiting_for_file').length === 0 && (
+                  <p className="empty-state">None</p>
+                )}
+              </div>
+            </div>
+
+            {/* Column 2: With doctor stage */}
+            <div className="file-column">
+              <div className="file-column-header">
+                <h3>With doctor</h3>
+                <span className="file-column-count">{openVisits.filter(v => v.stage === 'with_doctor').length}</span>
+              </div>
+              <div className="file-items">
+                {openVisits.filter(v => v.stage === 'with_doctor').map((visit) => (
+                  <div key={visit._id} className={`file-item ${visit.carriedOver ? 'carried-over' : ''}`}>
+                    {visit.carriedOver && (
+                      <span className="carried-over-badge">
+                        From {formatDate(visit.startedAt)} - not filed
+                      </span>
                     )}
-                    {visit.stage === 'with_doctor' && (
-                      <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                    <div className="file-item-main">
+                      <div className="file-item-header">
+                        <div>
+                          <h4 className="file-item-name">{visit.patientName}</h4>
+                          <p className="file-item-number">Patient {visit.patientId}</p>
+                        </div>
+                      </div>
+                      <p className="file-item-meta">
+                        Since {formatTime(visit.startedAt)} by {visit.startedBy?.fullName || 'Unknown'}
+                      </p>
+                    </div>
+                    <div className="file-item-action">
+                      <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => handleFileBack(visit._id)}
                           className="btn btn-primary"
@@ -369,9 +424,42 @@ const FileDesk = () => {
                           {steppingBackId === visit._id ? 'Going back...' : 'Go back'}
                         </button>
                       </div>
+                    </div>
+                  </div>
+                ))}
+                {openVisits.filter(v => v.stage === 'with_doctor').length === 0 && (
+                  <p className="empty-state">None</p>
+                )}
+              </div>
+            </div>
+
+            {/* Column 3: On the desk stage */}
+            <div className="file-column">
+              <div className="file-column-header">
+                <h3>On the desk</h3>
+                <span className="file-column-count">{openVisits.filter(v => v.stage === 'needs_recording').length}</span>
+              </div>
+              <div className="file-items">
+                {openVisits.filter(v => v.stage === 'needs_recording').map((visit) => (
+                  <div key={visit._id} className={`file-item ${visit.carriedOver ? 'carried-over' : ''}`}>
+                    {visit.carriedOver && (
+                      <span className="carried-over-badge">
+                        From {formatDate(visit.startedAt)} - not filed
+                      </span>
                     )}
-                    {visit.stage === 'needs_recording' && (
-                      <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                    <div className="file-item-main">
+                      <div className="file-item-header">
+                        <div>
+                          <h4 className="file-item-name">{visit.patientName}</h4>
+                          <p className="file-item-number">Patient {visit.patientId}</p>
+                        </div>
+                      </div>
+                      <p className="file-item-meta">
+                        Since {formatTime(visit.startedAt)} by {visit.startedBy?.fullName || 'Unknown'}
+                      </p>
+                    </div>
+                    <div className="file-item-action">
+                      <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                         <Link 
                           to={`/visits/${visit._id}`} 
                           className="btn btn-primary"
@@ -386,13 +474,16 @@ const FileDesk = () => {
                           {steppingBackId === visit._id ? 'Going back...' : 'Go back'}
                         </button>
                       </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+                {openVisits.filter(v => v.stage === 'needs_recording').length === 0 && (
+                  <p className="empty-state">None</p>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

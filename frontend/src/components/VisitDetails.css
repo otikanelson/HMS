@@ -46,8 +46,8 @@
 }
 
 .progress-step-marker {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--gray-200);
   color: var(--gray-600);
@@ -60,14 +60,34 @@
 }
 
 .progress-step-complete .progress-step-marker {
-  background: var(--primary-600);
-  color: white;
+  background: var(--success-200);
+  color: var(--success-700);
 }
 
 .progress-step-active .progress-step-marker {
   background: var(--primary-600);
   color: white;
   box-shadow: 0 0 0 4px var(--primary-100);
+}
+
+.progress-step:nth-child(1).progress-step-active .progress-step-marker {
+  background: var(--stage-finding-dark);
+  box-shadow: 0 0 0 4px var(--stage-finding-light);
+}
+
+.progress-step:nth-child(2).progress-step-active .progress-step-marker {
+  background: var(--stage-doctor-dark);
+  box-shadow: 0 0 0 4px var(--stage-doctor-light);
+}
+
+.progress-step:nth-child(3).progress-step-active .progress-step-marker {
+  background: var(--stage-desk-dark);
+  box-shadow: 0 0 0 4px var(--stage-desk-light);
+}
+
+.progress-step:nth-child(4).progress-step-active .progress-step-marker {
+  background: var(--stage-done-dark);
+  box-shadow: 0 0 0 4px var(--stage-done-light);
 }
 
 .progress-step-label {
@@ -79,11 +99,11 @@
 }
 
 .progress-step-complete .progress-step-label {
-  color: var(--primary-600);
+  color: var(--success-700);
 }
 
 .progress-step-active .progress-step-label {
-  color: var(--primary-600);
+  color: var(--gray-900);
   font-weight: 700;
 }
 
