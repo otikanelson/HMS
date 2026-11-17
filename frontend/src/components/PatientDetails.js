@@ -75,6 +75,11 @@ const PatientDetails = () => {
     try {
       setLoading(true);
       setError('');
+      if (!patientId || typeof patientId !== 'string') {
+        setError('Invalid patient ID');
+        setLoading(false);
+        return;
+      }
       const response = await axios.get(`/api/visits/patient/${patientId}`);
       setPatient(response.data.patient);
       setVisits(response.data.visits || []);

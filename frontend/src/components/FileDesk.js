@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useOpenVisits } from '../context/OpenVisitsContext';
 import './FileDesk.css';
 
 const FileDesk = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { visits: contextVisits, lastUpdated, refresh } = useOpenVisits();
   
   const [patientNumber, setPatientNumber] = useState('');
@@ -125,6 +126,8 @@ const FileDesk = () => {
       setFileBackingId(visitId);
       await axios.post(`/api/visits/${visitId}/file-back`);
       await refresh();
+      // Navigate to the visit details page to record the doctor's report
+      navigate(`/visits/${visitId}`);
     } catch (err) {
       console.error('File back error:', err);
     } finally {
@@ -362,9 +365,6 @@ const FileDesk = () => {
                           <p className="file-item-number">Patient {visit.patientId}</p>
                         </div>
                       </div>
-                      <p className="file-item-meta">
-                        Since {formatTime(visit.startedAt)} by {visit.startedBy?.fullName || 'Unknown'}
-                      </p>
                     </div>
                     <div className="file-item-action">
                       <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>

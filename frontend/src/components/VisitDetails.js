@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import './VisitDetails.css';
@@ -14,6 +14,7 @@ const STAGE_STEP_NAMES = {
 
 const VisitDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   
   const [visit, setVisit] = useState(null);
@@ -87,8 +88,8 @@ const VisitDetails = () => {
       setDiagnosis(visitData.diagnosis || '');
       setTreatmentPlan(visitData.treatmentPlan || '');
       setPayment(visitData.payment || '');
-      // Set recordedBy: use existing value, or default to "Dr Otika Charles" unless admin
-      const defaultRecordedBy = isAdmin ? (user?.fullName || '') : 'Dr Otika Charles';
+      // Set recordedBy: always use current user's username, or their full name if username not available
+      const defaultRecordedBy = user?.username || user?.fullName || '';
       setRecordedBy(visitData.recordedBy || defaultRecordedBy);
 
 
@@ -168,6 +169,10 @@ const VisitDetails = () => {
       await axios.put(`/api/visits/${id}/record`, payload);
       setSaveSuccess(`Saved. Put the paper file back in ${visit.currentLocation}.`);
       await fetchVisit();
+      // Redirect to report view after a brief delay
+      setTimeout(() => {
+        navigate(`/patients/${visit.patientId}/visit/${id}`);
+      }, 1500);
     } catch (err) {
       console.error('Save and file error:', err);
       const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to file visit';
@@ -328,7 +333,7 @@ const VisitDetails = () => {
                     value={systolic}
                     onChange={(e) => setSystolic(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === '/') {
+                      if (e.key === '/' || e.key === 'Enter') {
                         e.preventDefault();
                         document.getElementById('diastolic').focus();
                       }
@@ -363,6 +368,12 @@ const VisitDetails = () => {
                   type="number"
                   value={heartRate}
                   onChange={(e) => setHeartRate(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveCheckin();
+                    }
+                  }}
                   disabled={notTaken}
                   placeholder="72"
                   style={{ maxWidth: '200px' }}
@@ -502,12 +513,6 @@ const VisitDetails = () => {
                 >
                   {steppingBack ? 'Going back...' : 'Go back'}
                 </button>
-              </div>
-
-              <div className="card-actions" style={{ marginTop: 'var(--space-3)' }}>
-                <Link to="/file-desk" className="btn btn-outline" style={{ flex: 1 }}>
-                  Go to file desk
-                </Link>
               </div>
             </div>
           </>
@@ -692,8 +697,9 @@ const VisitDetails = () => {
                   id="recordedBy"
                   type="text"
                   value={recordedBy}
-                  onChange={(e) => setRecordedBy(e.target.value)}
+                  onChange={(e) => isAdmin && setRecordedBy(e.target.value)}
                   maxLength={200}
+                  readOnly={!isAdmin}
                 />
               </div>
 
