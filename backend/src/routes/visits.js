@@ -1184,10 +1184,11 @@ router.get('/:id', requireAccessLevel(...ALL_ROLES), async (req, res) => {
       });
     }
 
+    const ranges = await loadRanges();
     res.json({ 
       visit: {
         ...visit,
-        currentLocation: formatLocation(visit.patient)
+        currentLocation: locationText(visit.patient.patientId, ranges)
       }
     });
 

@@ -82,9 +82,10 @@
   /* Typography Sizes */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
-  --text-body: 1rem;
-  --text-strong: 1.125rem;
-  --text-title: 1.5rem;
+  --text-body: 1.0625rem;
+  --text-small: 1rem;
+  --text-strong: 1.1875rem;
+  --text-title: 1.5625rem;
 
   /* Typography */
   --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
@@ -120,10 +121,9 @@
 /* Scales every rem-based size in the app (spacing, radius, font-size)
    down proportionally, since the whole design system is rem-based.
    Target: smallest text (0.75rem) should be at least 13px.
-   13px / 0.75rem = 17.33px per rem. Browser default is 16px, so 108.3%.
-   We use 106% to keep most sizes comfortable while ensuring 13px minimum. */
+   With root at 81.25% (13px per rem), minimum text is exactly 13px. */
 html {
-  font-size: 106%;
+  font-size: 81.25%;
 }
 
 * {
@@ -154,9 +154,20 @@ body {
 .main-content {
   margin-left: var(--sidebar-width);
   margin-top: var(--topbar-height);
-  padding: var(--space-6);
+  margin-right: 0;
+  padding: var(--space-8);
   min-height: calc(100vh - var(--topbar-height));
-  transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1), margin-right 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* When put back panel is open */
+.app:has(.put-back-panel:not(.put-back-panel-collapsed)) .main-content {
+  margin-right: 300px;
+}
+
+/* When put back panel is collapsed on narrow screens */
+.app:has(.put-back-panel-collapsed) .main-content {
+  margin-right: 44px;
 }
 
 /* Center content when sidebar is hidden */

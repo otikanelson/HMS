@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { OpenVisitsProvider } from './context/OpenVisitsContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
@@ -13,23 +14,32 @@ import AddStaff from './components/AddStaff';
 import ChangePassword from './components/ChangePassword';
 import Reports from './components/Reports';
 import StorageMap from './components/StorageMap';
-import PutBack from './components/PutBack';
 import PayrollRunsList from './components/PayrollRunsList';
 import PayrollRunDetail from './components/PayrollRunDetail';
 import FileDesk from './components/FileDesk';
 import PatientHistory from './components/PatientHistory';
 import PatientDetails from './components/PatientDetails';
 import VisitDetails from './components/VisitDetails';
+import PutBackPanel from './components/PutBackPanel';
 import Login from './components/Login';
 import './App.css';
 
 // Main app layout component (authenticated routes)
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
+  const location = useLocation();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
+
+  // Determine if we should show the PutBackPanel
+  const showPutBackPanel = [
+    '/dashboard',
+    '/file-desk',
+    '/patients',
+    '/visits'
+  ].some(path => location.pathname === path || location.pathname.startsWith(path + '/'));
 
   return (
     <div className="app">
@@ -44,7 +54,7 @@ function AppLayout() {
           <Route path="/patients/:patientId/visit/:visitId" element={<PatientDetails />} />
           <Route path="/visits/:id" element={<VisitDetails />} />
           <Route path="/file-desk" element={<FileDesk />} />
-          <Route path="/put-back" element={<PutBack />} />
+          <Route path="/put-back" element={<Navigate to="/file-desk" replace />} />
           <Route path="/staff" element={
             <ProtectedRoute allowedAccessLevels={['ADMINISTRATOR', 'RECORDS_OPERATOR']}>
               <StaffList />
@@ -79,7 +89,17 @@ function AppLayout() {
           } />
         </Routes>
       </main>
+      {showPutBackPanel && <PutBackPanel />}
     </div>
+  );
+}
+
+// Wrap AppLayout with OpenVisitsProvider
+function AppLayoutWithProvider() {
+  return (
+    <OpenVisitsProvider>
+      <AppLayout />
+    </OpenVisitsProvider>
   );
 }
 
@@ -120,7 +140,7 @@ function App() {
           {/* Protected routes */}
           <Route path="/*" element={
             <ProtectedRoute>
-              <AppLayout />
+              <AppLayoutWithProvider />
             </ProtectedRoute>
           } />
           

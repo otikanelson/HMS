@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import { useOpenVisits } from '../context/OpenVisitsContext';
 import './Sidebar.css';
 
 const Sidebar = ({ isOpen = true }) => {
   const location = useLocation();
   const { user } = useAuth();
-  const [openVisitsCount, setOpenVisitsCount] = useState(0);
+  const { counts } = useOpenVisits();
   
   const isAdministrator = user?.accessLevel === 'ADMINISTRATOR';
   const isRecordsOperator = user?.accessLevel === 'RECORDS_OPERATOR';
@@ -18,24 +18,6 @@ const Sidebar = ({ isOpen = true }) => {
   
   // Check if on any patient page
   const isPatients = location.pathname === '/patients' || location.pathname.startsWith('/patients/');
-
-  // Fetch open visits count
-  useEffect(() => {
-    const fetchOpenVisitsCount = async () => {
-      try {
-        const response = await axios.get('/api/visits/open');
-        setOpenVisitsCount(response.data.total || 0);
-      } catch (err) {
-        console.error('Failed to fetch open visits count:', err);
-      }
-    };
-
-    fetchOpenVisitsCount();
-
-    // Refresh every 60 seconds
-    const interval = setInterval(fetchOpenVisitsCount, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <aside className={`sidebar ${!isOpen ? 'sidebar-hidden' : ''}`}>
@@ -52,18 +34,7 @@ const Sidebar = ({ isOpen = true }) => {
                   <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" />
                 </svg>
                 <span>File Desk</span>
-                {openVisitsCount > 0 && <span className="badge">{openVisitsCount}</span>}
-              </NavLink>
-            </li>
-            <li>
-              <NavLink 
-                to="/put-back" 
-                className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm3 5a1 1 0 110-2h6a1 1 0 110 2H7z"/>
-                </svg>
-                <span>Put back</span>
+                {(counts.finding + counts.doctor) > 0 && <span className="badge">{counts.finding + counts.doctor}</span>}
               </NavLink>
             </li>
             <li>

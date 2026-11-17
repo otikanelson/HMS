@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { useOpenVisits } from '../context/OpenVisitsContext';
 import './FileDesk.css';
 
 const FileDesk = () => {
   const [searchParams] = useSearchParams();
+  const { visits: contextVisits, lastUpdated, refresh } = useOpenVisits();
+  
   const [patientNumber, setPatientNumber] = useState('');
   const [foundPatient, setFoundPatient] = useState(null);
   const [searchError, setSearchError] = useState('');
@@ -13,10 +16,6 @@ const FileDesk = () => {
   const [success, setSuccess] = useState('');
   const [conflictVisitId, setConflictVisitId] = useState(null);
 
-  const [openVisits, setOpenVisits] = useState([]);
-  const [loadingVisits, setLoadingVisits] = useState(true);
-  const [visitsError, setVisitsError] = useState('');
-
   const [fileBackingId, setFileBackingId] = useState(null);
   const [cancellingId, setCancellingId] = useState(null);
   const [steppingBackId, setSteppingBackId] = useState(null);
@@ -24,8 +23,6 @@ const FileDesk = () => {
   const numberInputRef = useRef(null);
 
   useEffect(() => {
-    fetchOpenVisits();
-    
     // Auto-fill patient ID from query parameter if present
     const patientIdParam = searchParams.get('patientId');
     if (patientIdParam) {
@@ -44,20 +41,6 @@ const FileDesk = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patientNumber]);
-
-  const fetchOpenVisits = async () => {
-    try {
-      setLoadingVisits(true);
-      setVisitsError('');
-      const response = await axios.get('/api/visits/open');
-      setOpenVisits(response.data.visits || []);
-    } catch (err) {
-      console.error('Failed to fetch open visits:', err);
-      setVisitsError('Failed to load visits');
-    } finally {
-      setLoadingVisits(false);
-    }
-  };
 
   const performSearch = async (patientNum) => {
     if (!patientNum.trim()) return;
@@ -102,7 +85,7 @@ const FileDesk = () => {
       setSuccess(`Visit started for ${foundPatient.fullName}.`);
       setFoundPatient(null);
       setPatientNumber('');
-      await fetchOpenVisits();
+      await refresh();
       
       setTimeout(() => {
         setSuccess('');
@@ -141,11 +124,9 @@ const FileDesk = () => {
     try {
       setFileBackingId(visitId);
       await axios.post(`/api/visits/${visitId}/file-back`);
-      await fetchOpenVisits();
+      await refresh();
     } catch (err) {
       console.error('File back error:', err);
-      setVisitsError(err.response?.data?.message || err.response?.data?.error || 'Failed to mark file as back');
-      setTimeout(() => setVisitsError(''), 5000);
     } finally {
       setFileBackingId(null);
     }
@@ -157,11 +138,9 @@ const FileDesk = () => {
     try {
       setCancellingId(visitId);
       await axios.post(`/api/visits/${visitId}/cancel`);
-      await fetchOpenVisits();
+      await refresh();
     } catch (err) {
       console.error('Cancel visit error:', err);
-      setVisitsError(err.response?.data?.message || err.response?.data?.error || 'Failed to cancel visit');
-      setTimeout(() => setVisitsError(''), 5000);
     } finally {
       setCancellingId(null);
     }
@@ -173,11 +152,9 @@ const FileDesk = () => {
     try {
       setSteppingBackId(visitId);
       await axios.post(`/api/visits/${visitId}/step-back`);
-      await fetchOpenVisits();
+      await refresh();
     } catch (err) {
       console.error('Step back error:', err);
-      setVisitsError(err.response?.data?.message || err.response?.data?.error || 'Failed to step back');
-      setTimeout(() => setVisitsError(''), 5000);
     } finally {
       setSteppingBackId(null);
     }
@@ -206,7 +183,7 @@ const FileDesk = () => {
     return `ends in ${lastFour}`;
   };
 
-  const carriedOverCount = openVisits.filter(v => v.carriedOver).length;
+  const carriedOverCount = contextVisits.filter(v => v.carriedOver).length;
 
   return (
     <div className="file-desk">
@@ -215,7 +192,7 @@ const FileDesk = () => {
           <h2 className="file-desk-title">File Desk</h2>
           <p className="file-desk-subtitle">Start visits, check in patients, and track files</p>
         </div>
-        <button onClick={fetchOpenVisits} className="btn btn-outline" disabled={loadingVisits}>
+        <button onClick={refresh} className="btn btn-outline">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <path fillRule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z"/>
             <path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z"/>
@@ -295,7 +272,7 @@ const FileDesk = () => {
       </div>
 
       <div className="file-desk-lists">
-        {openVisits.length === 0 && !loadingVisits ? (
+        {contextVisits.length === 0 ? (
           <div className="list-banner list-banner-success">
             All patients are filed. You can close for the day.
           </div>
@@ -303,24 +280,13 @@ const FileDesk = () => {
           <div className="list-banner list-banner-error">
             {carriedOverCount} {carriedOverCount === 1 ? 'visit' : 'visits'} from before today are not filed.
           </div>
-        ) : openVisits.length > 0 ? (
+        ) : contextVisits.length > 0 ? (
           <div className="list-banner list-banner-info">
-            {openVisits.length} not filed yet.
+            {contextVisits.length} not filed yet. <span style={{ fontWeight: 500 }}>Updated {lastUpdated?.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) || 'now'}</span>
           </div>
         ) : null}
 
-        {visitsError && (
-          <div className="alert alert-error" style={{ marginBottom: 'var(--space-4)' }}>
-            {visitsError}
-          </div>
-        )}
-
-        {loadingVisits ? (
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <p>Loading visits...</p>
-          </div>
-        ) : openVisits.length === 0 ? (
+        {contextVisits.length === 0 ? (
           <p className="empty-state">No visits in progress.</p>
         ) : (
           <div className="file-desk-columns">
@@ -328,10 +294,10 @@ const FileDesk = () => {
             <div className="file-column">
               <div className="file-column-header">
                 <h3>Finding file</h3>
-                <span className="file-column-count">{openVisits.filter(v => v.stage === 'waiting_for_file').length}</span>
+                <span className="file-column-count">{contextVisits.filter(v => v.stage === 'waiting_for_file').length}</span>
               </div>
               <div className="file-items">
-                {openVisits.filter(v => v.stage === 'waiting_for_file').map((visit) => (
+                {contextVisits.filter(v => v.stage === 'waiting_for_file').map((visit) => (
                   <div key={visit._id} className={`file-item ${visit.carriedOver ? 'carried-over' : ''}`}>
                     {visit.carriedOver && (
                       <span className="carried-over-badge">
@@ -369,7 +335,7 @@ const FileDesk = () => {
                     </div>
                   </div>
                 ))}
-                {openVisits.filter(v => v.stage === 'waiting_for_file').length === 0 && (
+                {contextVisits.filter(v => v.stage === 'waiting_for_file').length === 0 && (
                   <p className="empty-state">None</p>
                 )}
               </div>
@@ -379,10 +345,10 @@ const FileDesk = () => {
             <div className="file-column">
               <div className="file-column-header">
                 <h3>With doctor</h3>
-                <span className="file-column-count">{openVisits.filter(v => v.stage === 'with_doctor').length}</span>
+                <span className="file-column-count">{contextVisits.filter(v => v.stage === 'with_doctor').length}</span>
               </div>
               <div className="file-items">
-                {openVisits.filter(v => v.stage === 'with_doctor').map((visit) => (
+                {contextVisits.filter(v => v.stage === 'with_doctor').map((visit) => (
                   <div key={visit._id} className={`file-item ${visit.carriedOver ? 'carried-over' : ''}`}>
                     {visit.carriedOver && (
                       <span className="carried-over-badge">
@@ -420,57 +386,7 @@ const FileDesk = () => {
                     </div>
                   </div>
                 ))}
-                {openVisits.filter(v => v.stage === 'with_doctor').length === 0 && (
-                  <p className="empty-state">None</p>
-                )}
-              </div>
-            </div>
-
-            {/* Column 3: On the desk stage */}
-            <div className="file-column">
-              <div className="file-column-header">
-                <h3>On the desk</h3>
-                <span className="file-column-count">{openVisits.filter(v => v.stage === 'needs_recording').length}</span>
-              </div>
-              <div className="file-items">
-                {openVisits.filter(v => v.stage === 'needs_recording').map((visit) => (
-                  <div key={visit._id} className={`file-item ${visit.carriedOver ? 'carried-over' : ''}`}>
-                    {visit.carriedOver && (
-                      <span className="carried-over-badge">
-                        From {formatDate(visit.startedAt)} - not filed
-                      </span>
-                    )}
-                    <div className="file-item-main">
-                      <div className="file-item-header">
-                        <div>
-                          <h4 className="file-item-name">{visit.patientName}</h4>
-                          <p className="file-item-number">Patient {visit.patientId}</p>
-                        </div>
-                      </div>
-                      <p className="file-item-meta">
-                        Since {formatTime(visit.startedAt)} by {visit.startedBy?.fullName || 'Unknown'}
-                      </p>
-                    </div>
-                    <div className="file-item-action">
-                      <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                        <Link 
-                          to={`/visits/${visit._id}`} 
-                          className="btn btn-primary"
-                        >
-                          Record & file
-                        </Link>
-                        <button
-                          onClick={() => handleStepBackVisit(visit._id)}
-                          className="btn btn-outline"
-                          disabled={steppingBackId === visit._id}
-                        >
-                          {steppingBackId === visit._id ? 'Going back...' : 'Go back'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {openVisits.filter(v => v.stage === 'needs_recording').length === 0 && (
+                {contextVisits.filter(v => v.stage === 'with_doctor').length === 0 && (
                   <p className="empty-state">None</p>
                 )}
               </div>
