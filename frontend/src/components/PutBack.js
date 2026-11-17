@@ -108,7 +108,7 @@ const PutBack = () => {
   const stillOutGroups = groupByLocation(stillOutVisits);
 
   return (
-    <div className="put-back">
+    <div className="put-back" data-guide="put-back-panel">
       <div className="put-back-header">
         <h1>Put back</h1>
       </div>

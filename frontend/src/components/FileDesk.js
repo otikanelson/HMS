@@ -207,7 +207,7 @@ const FileDesk = () => {
         </div>
       )}
 
-      <div className="file-desk-search-card">
+      <div className="file-desk-search-card" data-guide="desk-number">
         <form onSubmit={handleSearch}>
           <div className="search-input-row">
             <input
@@ -271,7 +271,7 @@ const FileDesk = () => {
         )}
       </div>
 
-      <div className="file-desk-lists">
+      <div className="file-desk-lists" data-guide="desk-columns">
         {contextVisits.length === 0 ? (
           <div className="list-banner list-banner-success">
             All patients are filed. You can close for the day.
@@ -291,7 +291,7 @@ const FileDesk = () => {
         ) : (
           <div className="file-desk-columns">
             {/* Column 1: Finding file stage */}
-            <div className="file-column">
+            <div className="file-column" data-guide="desk-finding">
               <div className="file-column-header">
                 <h3>Finding file</h3>
                 <span className="file-column-count">{contextVisits.filter(v => v.stage === 'waiting_for_file').length}</span>
@@ -342,7 +342,7 @@ const FileDesk = () => {
             </div>
 
             {/* Column 2: With doctor stage */}
-            <div className="file-column">
+            <div className="file-column" data-guide="desk-doctor">
               <div className="file-column-header">
                 <h3>With doctor</h3>
                 <span className="file-column-count">{contextVisits.filter(v => v.stage === 'with_doctor').length}</span>

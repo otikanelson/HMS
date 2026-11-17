@@ -1,5 +1,6 @@
 .patient-list {
   padding: var(--space-6);
+  max-width: none;
 }
 
 .patient-list-header {

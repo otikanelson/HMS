@@ -1,0 +1,47 @@
+.guide-snapshot {
+  width: 100%;
+  margin-bottom: var(--space-4);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--gray-50, #f9fafb);
+  border: 2px dashed var(--gray-300, #d1d5db);
+}
+
+.guide-snapshot-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 10px;
+}
+
+.guide-snapshot-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  min-height: 200px;
+  background: linear-gradient(135deg, var(--gray-50, #f9fafb) 0%, var(--gray-100, #f3f4f6) 100%);
+  color: var(--gray-400, #9ca3af);
+}
+
+.guide-snapshot-placeholder svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--space-3);
+  opacity: 0.6;
+}
+
+.guide-snapshot-text {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--gray-600, #4b5563);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.guide-snapshot-subtext {
+  font-size: 0.8125rem;
+  color: var(--gray-500, #6b7280);
+  margin: 0;
+  font-style: italic;
+}

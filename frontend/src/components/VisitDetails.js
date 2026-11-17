@@ -22,8 +22,6 @@ const VisitDetails = () => {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState('');
 
-  const [showConfirmPanel, setShowConfirmPanel] = useState(false);
-
   // Check-in form
   const [systolic, setSystolic] = useState('');
   const [diastolic, setDiastolic] = useState('');
@@ -89,7 +87,9 @@ const VisitDetails = () => {
       setDiagnosis(visitData.diagnosis || '');
       setTreatmentPlan(visitData.treatmentPlan || '');
       setPayment(visitData.payment || '');
-      setRecordedBy(visitData.recordedBy || user?.fullName || '');
+      // Set recordedBy: use existing value, or default to "Dr Otika Charles" unless admin
+      const defaultRecordedBy = isAdmin ? (user?.fullName || '') : 'Dr Otika Charles';
+      setRecordedBy(visitData.recordedBy || defaultRecordedBy);
 
 
     } catch (err) {
@@ -130,7 +130,6 @@ const VisitDetails = () => {
       setError('');
       await axios.post(`/api/visits/${id}/send-to-doctor`, { nameMatches: true });
       setSaveSuccess('Patient sent to doctor.');
-      setShowConfirmPanel(false);
       await fetchVisit();
       setTimeout(() => setSaveSuccess(''), 3000);
     } catch (err) {
@@ -184,14 +183,12 @@ const VisitDetails = () => {
       setError('');
       await axios.post(`/api/visits/${id}/cancel`);
       setSaveSuccess('Visit cancelled.');
-      setShowCancelConfirm(false);
       setTimeout(() => {
         window.location.href = '/file-desk';
       }, 1500);
     } catch (err) {
       console.error('Cancel visit error:', err);
       setError(err.response?.data?.message || err.response?.data?.error || 'Failed to cancel visit');
-      setShowCancelConfirm(false);
     } finally {
       setCancelling(false);
     }
@@ -330,6 +327,12 @@ const VisitDetails = () => {
                     type="number"
                     value={systolic}
                     onChange={(e) => setSystolic(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === '/') {
+                        e.preventDefault();
+                        document.getElementById('diastolic').focus();
+                      }
+                    }}
                     disabled={notTaken}
                     placeholder="120"
                   />
@@ -341,6 +344,12 @@ const VisitDetails = () => {
                     type="number"
                     value={diastolic}
                     onChange={(e) => setDiastolic(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        document.getElementById('heartRate').focus();
+                      }
+                    }}
                     disabled={notTaken}
                     placeholder="80"
                   />
@@ -394,15 +403,10 @@ const VisitDetails = () => {
                 <button onClick={handleSaveCheckin} className="btn btn-primary" disabled={saving}>
                   {saving ? 'Saving...' : 'Save check-in'}
                 </button>
+                <button onClick={() => setShowCancelConfirm(true)} className="btn btn-outline" disabled={cancelling}>
+                  {cancelling ? 'Cancelling...' : 'Cancel'}
+                </button>
               </div>
-
-              {!hasCheckin && (
-                <div style={{ marginTop: 'var(--space-3)' }}>
-                  <button onClick={() => setShowCancelConfirm(true)} className="btn btn-outline" disabled={cancelling}>
-                    {cancelling ? 'Cancelling...' : 'Started by mistake? Cancel'}
-                  </button>
-                </div>
-              )}
 
               {showCancelConfirm && (
                 <div className="confirm-panel" style={{ marginTop: 'var(--space-3)' }}>
@@ -421,33 +425,20 @@ const VisitDetails = () => {
                 </div>
               )}
 
-              {/* Send to doctor section */}
-              {hasCheckin && !showConfirmPanel && (
-                <div style={{ marginTop: 'var(--space-4)', paddingTop: 'var(--space-4)', borderTop: '1px solid var(--gray-200)' }}>
-                  <h4 style={{ marginBottom: 'var(--space-3)' }}>Ready? Confirm file and send to doctor</h4>
-                  <p className="card-info-text">
-                    <strong>Name on paper file:</strong><br />
-                    <span style={{ fontSize: '1.125rem', fontWeight: 600 }}>{visit.patientName}</span><br />
+              {/* Confirm and send to doctor - single panel */}
+              {hasCheckin && (
+                <div className="confirm-panel" style={{ marginTop: 'var(--space-4)' }}>
+                  <p className="confirm-panel-text">
+                    <strong>Confirm and send to doctor</strong>
+                  </p>
+                  <p style={{ fontSize: '0.95rem', color: 'var(--gray-700)', margin: '0 0 var(--space-3) 0', textAlign: 'center', lineHeight: 1.6 }}>
+                    <strong>Patient name:</strong><br />
+                    <span style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--gray-900)' }}>{visit.patientName}</span><br />
                     <span style={{ fontSize: '0.875rem', color: 'var(--gray-600)' }}>Located in: <strong>{visit.currentLocation}</strong></span>
                   </p>
-                  <button onClick={() => setShowConfirmPanel(true)} className="btn btn-primary">
-                    ✓ Name matches - send to doctor
-                  </button>
-                </div>
-              )}
-
-              {showConfirmPanel && (
-                <div className="confirm-panel">
-                  <p className="confirm-panel-text">
-                    <strong>Confirming:</strong><br />
-                    <span style={{ fontSize: '1.5rem', fontWeight: 600 }}>{visit.patientName}</span>
-                  </p>
-                  <p className="confirm-panel-question">Name on paper file matches?</p>
+                  <p className="confirm-panel-question">Does this match the paper file?</p>
                   <div className="confirm-panel-actions">
-                    <button onClick={() => setShowConfirmPanel(false)} className="btn btn-outline">
-                      Cancel
-                    </button>
-                    <button onClick={handleSendToDoctor} className="btn btn-primary" disabled={saving}>
+                    <button onClick={handleSendToDoctor} className="btn btn-primary" disabled={saving} style={{ flex: 1 }}>
                       {saving ? 'Sending...' : 'Yes, send to doctor'}
                     </button>
                   </div>
@@ -456,7 +447,7 @@ const VisitDetails = () => {
 
               {!hasCheckin && (
                 <p style={{ marginTop: 'var(--space-3)', fontSize: '0.875rem', color: 'var(--gray-600)', fontStyle: 'italic' }}>
-                  💡 Save check-in first, then you can send the patient to the doctor.
+                    Save check-in first, then you can send the patient to the doctor.
                 </p>
               )}
             </div>
@@ -511,6 +502,12 @@ const VisitDetails = () => {
                 >
                   {steppingBack ? 'Going back...' : 'Go back'}
                 </button>
+              </div>
+
+              <div className="card-actions" style={{ marginTop: 'var(--space-3)' }}>
+                <Link to="/file-desk" className="btn btn-outline" style={{ flex: 1 }}>
+                  Go to file desk
+                </Link>
               </div>
             </div>
           </>

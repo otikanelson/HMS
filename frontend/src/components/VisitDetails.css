@@ -248,32 +248,61 @@
 }
 
 .confirm-panel {
-  margin-top: var(--space-4);
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  width: 320px;
   padding: var(--space-4);
-  background: var(--warning-50);
-  border: 2px solid var(--warning-200);
+  background: white;
+  border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  animation: slideInRight 200ms ease-out;
 }
 
 .confirm-panel-text {
-  font-size: 1.125rem;
-  margin: 0 0 var(--space-3) 0;
-  text-align: center;
-  line-height: 1.5;
+  font-size: 0.95rem;
+  margin: 0 0 var(--space-2) 0;
+  text-align: left;
+  line-height: 1.4;
+  color: var(--gray-900);
+  font-weight: 600;
 }
 
 .confirm-panel-question {
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-align: center;
-  margin: var(--space-3) 0;
-  color: var(--gray-900);
+  font-size: 0.8125rem;
+  font-weight: normal;
+  text-align: left;
+  margin: var(--space-2) 0 var(--space-3) 0;
+  color: var(--gray-600);
+  line-height: 1.4;
 }
 
 .confirm-panel-actions {
   display: flex;
+  flex-direction: column;
   gap: var(--space-2);
-  justify-content: center;
+  justify-content: flex-start;
+}
+
+.confirm-panel-actions .btn {
+  font-size: 0.8125rem;
+  padding: var(--space-2) var(--space-3);
+  min-height: auto;
+  height: 36px;
+  width: 100%;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .filed-summary {
@@ -315,4 +344,19 @@
   .btn {
     width: 100%;
   }
+}
+
+/* Checkbox sizing */
+.form-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.form-field label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
 }

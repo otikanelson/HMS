@@ -381,7 +381,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <section className="notices-board-section" aria-label="Staff notices">
+      <section className="notices-board-section" aria-label="Staff notices" data-guide="home-notices">
         <div className="notices-board-heading">
           <h2>Staff Notices</h2>
           <span className="notices-board-heading-line" aria-hidden="true" />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useOpenVisits } from '../context/OpenVisitsContext';
 import axios from 'axios';
 import Guide from './Guide';
 import './TopBar.css';
@@ -8,8 +9,15 @@ import './TopBar.css';
 const TopBar = ({ onToggleSidebar, onHelp, sidebarOpen }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showGuide, setShowGuide] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showPutBackMenu, setShowPutBackMenu] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { visits, counts, refresh } = useOpenVisits();
+
+  const [putting, setPutting] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -31,6 +39,47 @@ const TopBar = ({ onToggleSidebar, onHelp, sidebarOpen }) => {
 
   const handleHelpClick = () => {
     setShowGuide(true);
+  };
+
+  const handlePutBack = () => {
+    navigate('/file-desk');
+  };
+
+  const handlePutAway = async (visitId) => {
+    try {
+      setPutting(visitId);
+      const visit = visits.find(v => v._id === visitId);
+      await axios.put(`/api/visits/${visitId}/record`, {});
+      setSuccessMessage(`Put away. File ${visit.patientId} goes back to ${visit.currentLocation}.`);
+      await refresh();
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 8000);
+    } catch (err) {
+      console.error('Put away error:', err);
+    } finally {
+      setPutting(null);
+    }
+  };
+
+  const handlePutAwayAll = async () => {
+    try {
+      setPutting('all');
+      setShowConfirm(false);
+      const onDeskVisits = visits.filter(v => v.stage === 'needs_recording');
+      await axios.post('/api/visits/put-away', {
+        visitIds: onDeskVisits.map(v => v._id)
+      });
+      setSuccessMessage(`Put away ${onDeskVisits.length} file${onDeskVisits.length !== 1 ? 's' : ''}`);
+      await refresh();
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 8000);
+    } catch (err) {
+      console.error('Put away all error:', err);
+    } finally {
+      setPutting(null);
+    }
   };
 
   const handleGuideComplete = async () => {
@@ -72,7 +121,7 @@ const TopBar = ({ onToggleSidebar, onHelp, sidebarOpen }) => {
 
         {/* Center: Search */}
         <div className="topbar-center">
-          <form onSubmit={handleSearch} className="search-form">
+          <form onSubmit={handleSearch} className="search-form" data-guide="top-search">
             <input
               type="text"
               placeholder="Search patient ID, name or phone"
@@ -88,25 +137,146 @@ const TopBar = ({ onToggleSidebar, onHelp, sidebarOpen }) => {
           </form>
         </div>
 
-        {/* Right: User info + Help + Sign out */}
+        {/* Right: Put Back + User menu + Help */}
         <div className="topbar-right">
           {user && (
             <>
-              <span className="user-info">
-                {user.fullName} · {user.accessLevel === 'ADMINISTRATOR' ? 'Administrator' : 
-                                   user.accessLevel === 'RECORDS_OPERATOR' ? 'Records Operator' : 
-                                   'Clinical Staff'}
-              </span>
-              <button onClick={handleHelpClick} className="help-btn" title="Help guide">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M8 15A7 7 0 108 1a7 7 0 000 14zm0 1A8 8 0 108 0a8 8 0 000 16z"/>
-                  <path d="M5.893 6.5c.129-.697.662-1.283 1.38-1.53.72-.248 1.548-.17 2.163.287.617.456.92 1.188.92 1.993 0 .667-.337 1.252-.914 1.586-.577.335-1.287.335-1.865 0"/>
-                  <path d="M8 11a1 1 0 110 2 1 1 0 010-2z"/>
+              <div className="put-back-menu-container">
+                <button 
+                  onClick={() => setShowPutBackMenu(!showPutBackMenu)}
+                  className="put-back-menu-btn"
+                  title="Put back files"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path fill="#000" d="M2 0h8l4 4v12H2V0zm7 1.5V5h3.5L9 1.5z"/>
+                  </svg>
+                  <span>Put back</span>
+                  {counts.desk > 0 && <span className="put-back-badge">{counts.desk}</span>}
+                  <svg className="put-back-dropdown-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path fillRule="evenodd" d="M12.146 6.354l-.847-.847a.5.5 0 00-.708 0L8 9.172 4.409 5.507a.5.5 0 00-.708.708l3.5 3.5a.5.5 0 00.708 0l3.5-3.5a.5.5 0 000-.708zM8 12a.5.5 0 100-1 .5.5 0 000 1z" />
+                  </svg>
+                </button>
+                
+                {showPutBackMenu && (
+                  <div className="put-back-menu-dropdown" data-guide="put-back-dropdown">
+                    {successMessage && (
+                      <div className="message message-success" style={{ margin: 'var(--space-2)' }}>
+                        {successMessage}
+                      </div>
+                    )}
+                    <div className="put-back-menu-content">
+                      {counts.desk === 0 ? (
+                        <p className="put-back-empty">Nothing to put back.</p>
+                      ) : (
+                        <>
+                          {visits.filter(v => v.stage === 'needs_recording').map(visit => (
+                            <div key={visit._id} className="put-back-menu-item">
+                              <div className="put-back-item-info">
+                                <span className="put-back-item-number">{visit.patientId}</span>
+                                <span className="put-back-item-name">{visit.patientName}</span>
+                              </div>
+                              <button
+                                onClick={() => handlePutAway(visit._id)}
+                                disabled={putting !== null}
+                                className="btn btn-primary btn-small"
+                              >
+                                Put away
+                              </button>
+                            </div>
+                          ))}
+                          
+                          {(counts.finding + counts.doctor) > 0 && (
+                            <p className="put-back-still-out">
+                              {counts.finding + counts.doctor} file{counts.finding + counts.doctor === 1 ? ' is' : 's are'} still out
+                            </p>
+                          )}
+                          
+                          <button
+                            onClick={() => setShowConfirm(true)}
+                            disabled={counts.desk === 0 || putting !== null}
+                            className="btn btn-secondary"
+                            style={{ width: '100%', marginTop: 'var(--space-2)' }}
+                          >
+                            Everything is back
+                          </button>
+                          
+                          {showConfirm && (
+                            <div className="put-back-confirm">
+                              <p><strong>Mark all as put away?</strong></p>
+                              <p>Only do this after you have put them all on the shelves.</p>
+                              <div style={{ display: 'flex', gap: 'var(--space-2)', marginTop: 'var(--space-2)' }}>
+                                <button
+                                  onClick={() => setShowConfirm(false)}
+                                  disabled={putting !== null}
+                                  className="btn btn-outline"
+                                  style={{ flex: 1 }}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  onClick={handlePutAwayAll}
+                                  disabled={putting !== null}
+                                  className="btn btn-primary"
+                                  style={{ flex: 1 }}
+                                >
+                                  {putting === 'all' ? 'Putting...' : 'Put them away'}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="user-menu-container">
+                <button 
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="user-menu-btn"
+                  title="User menu"
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+                  </svg>
+                </button>
+                
+                {showUserMenu && (
+                  <div className="user-menu-dropdown">
+                    <div className="user-menu-header">
+                      <div className="user-name">{user.fullName}</div>
+                      <div className="user-role">
+                        {user.accessLevel === 'ADMINISTRATOR' ? 'Administrator' : 
+                         user.accessLevel === 'RECORDS_OPERATOR' ? 'Records Operator' : 
+                         'Clinical Staff'}
+                      </div>
+                    </div>
+                    <hr className="user-menu-divider" />
+                    <button
+                      onClick={handleLogout}
+                      className="user-menu-signout"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path fillRule="evenodd" d="M3 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H3zm10 12a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                      </svg>
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <button 
+                onClick={handleHelpClick} 
+                className="help-btn"
+                aria-label="Open the help guide"
+                data-guide="help-button"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="10" cy="10" r="8" />
+                  <text x="10" y="14" textAnchor="middle" fontSize="11" fontWeight="bold" fill="currentColor">i</text>
                 </svg>
                 <span className="btn-label">Help</span>
-              </button>
-              <button onClick={handleLogout} className="signout-btn" title="Sign out">
-                <span className="btn-label">Sign out</span>
               </button>
             </>
           )}

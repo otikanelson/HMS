@@ -29,6 +29,7 @@ const Sidebar = ({ isOpen = true }) => {
               <NavLink 
                 to="/file-desk" 
                 className={({ isActive }) => `nav-link nav-link-file-desk ${isActive ? 'nav-link-active' : ''}`}
+                data-guide="side-file-desk"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" />
@@ -41,6 +42,7 @@ const Sidebar = ({ isOpen = true }) => {
               <NavLink 
                 to="/patients" 
                 className={() => `nav-link ${isPatients ? 'nav-link-active' : ''}`}
+                data-guide="side-patients"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
@@ -53,6 +55,7 @@ const Sidebar = ({ isOpen = true }) => {
                 <NavLink 
                   to="/add-patient" 
                   className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+                  data-guide="side-new-patient"
                 >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/>
@@ -65,22 +68,11 @@ const Sidebar = ({ isOpen = true }) => {
 
             {/* Group 2: Planning & Management */}
             <li className="nav-divider"></li>
-            <li>
-              <NavLink 
-                to="/schedule" 
-                className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"/>
-                </svg>
-                <span>Schedule</span>
-              </NavLink>
-            </li>
-            {canManageFiles && (
               <li>
                 <NavLink 
                   to="/staff" 
                   className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+                  data-guide="side-staff"
                 >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
@@ -88,6 +80,19 @@ const Sidebar = ({ isOpen = true }) => {
                   <span>Staff</span>
                 </NavLink>
               </li>
+            {canManageFiles && (
+            <li>
+              <NavLink 
+                to="/schedule" 
+                className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+                data-guide="side-schedule"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"/>
+                </svg>
+                <span>Schedule</span>
+              </NavLink>
+            </li>
             )}
 
             {/* Group 3: System Admin only */}
@@ -98,6 +103,7 @@ const Sidebar = ({ isOpen = true }) => {
                   <NavLink 
                     to="/storage-map" 
                     className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+                    data-guide="side-storage-map"
                   >
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h1a1 1 0 001-1v-6a1 1 0 00-1-1h-1z"/>
@@ -109,6 +115,7 @@ const Sidebar = ({ isOpen = true }) => {
                   <NavLink 
                     to="/payroll" 
                     className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+                    data-guide="side-payroll"
                   >
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/>
@@ -121,6 +128,7 @@ const Sidebar = ({ isOpen = true }) => {
                   <NavLink 
                     to="/reports" 
                     className={({ isActive }) => `nav-link ${isActive ? 'nav-link-active' : ''}`}
+                    data-guide="side-reports"
                   >
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
@@ -137,6 +145,7 @@ const Sidebar = ({ isOpen = true }) => {
               <NavLink 
                 to="/dashboard" 
                 className={({ isActive }) => `nav-link ${(isActive || isDashboard) ? 'nav-link-active' : ''}`}
+                data-guide="sidebar-home"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>

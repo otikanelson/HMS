@@ -1,12 +1,8 @@
 .guide-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 61, 94, 0.85);
-  backdrop-filter: blur(8px);
+  background: transparent;
   z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: 1rem;
   animation: guide-fade-in 250ms ease both;
 }
@@ -16,25 +12,70 @@
   to { opacity: 1; }
 }
 
-.guide-card {
-  background: white;
-  border-radius: 20px;
-  width: 100%;
-  max-width: 520px;
-  padding: 2rem;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-  position: relative;
-  animation: guide-slide-up 300ms ease both;
+.guide-spotlight-dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 61, 94, 0.72);
+  pointer-events: none;
+  z-index: 9999;
 }
 
-@keyframes guide-slide-up {
+.guide-spotlight {
+  position: fixed;
+  border: 3px solid white;
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(10, 61, 94, 0.72);
+  pointer-events: auto;
+  z-index: 10001;
+  transition: all 250ms ease;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-spotlight {
+    transition: none;
+  }
+}
+
+.guide-card {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-6);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  position: fixed;
+  animation: guide-fade-in 250ms ease both;
+  z-index: 10002;
+}
+
+@keyframes guide-fade-in {
   from { 
     opacity: 0;
-    transform: translateY(20px) scale(0.96);
   }
   to { 
     opacity: 1;
-    transform: translateY(0) scale(1);
+  }
+}
+
+/* Animated placeholder text in the card */
+.guide-card.guide-with-animation .guide-text::after {
+  content: '';
+  display: block;
+  height: 1em;
+  margin-top: 0.5em;
+  background: linear-gradient(90deg, var(--gray-300) 0%, var(--gray-200) 50%, var(--gray-300) 100%);
+  background-size: 200% 100%;
+  border-radius: 4px;
+  animation: guide-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes guide-shimmer {
+  0%, 100% {
+    background-position: 200% 0;
+  }
+  50% {
+    background-position: -200% 0;
   }
 }
 
@@ -43,11 +84,11 @@
 }
 
 .guide-progress {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: #0369a1;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--primary-600);
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .guide-content {
@@ -55,9 +96,9 @@
 }
 
 .guide-title {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-strong, #111827);
   margin: 0 0 1rem 0;
   line-height: 1.3;
 }
@@ -65,8 +106,12 @@
 .guide-text {
   font-size: 1rem;
   line-height: 1.6;
-  color: #374151;
+  color: var(--text-body, #374151);
   margin: 0;
+}
+
+.guide-text strong {
+  font-weight: 600;
 }
 
 .guide-actions {
@@ -82,7 +127,7 @@
 }
 
 .guide-btn {
-  height: 56px;
+  height: 44px;
   padding: 0 1.5rem;
   border: none;
   border-radius: 12px;
@@ -91,61 +136,70 @@
   cursor: pointer;
   transition: all 150ms ease;
   font-family: inherit;
+  min-height: 44px;
 }
 
 .guide-btn-primary {
-  background: #0369a1;
+  background: var(--primary-600, #0369a1);
   color: white;
-  min-width: 140px;
+  min-width: auto;
 }
 
 .guide-btn-primary:hover {
-  background: #075985;
+  background: var(--primary-700, #075985);
 }
 
 .guide-btn-primary:focus-visible {
-  outline: 2px solid #0ea5e9;
+  outline: 2px solid var(--primary-600, #0ea5e9);
   outline-offset: 2px;
 }
 
 .guide-btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--gray-100, #f3f4f6);
+  color: var(--gray-700, #374151);
+  border: 1px solid var(--gray-300, #d1d5db);
 }
 
 .guide-btn-secondary:hover {
-  background: #e5e7eb;
-  color: #111827;
+  background: var(--gray-200, #e5e7eb);
+  color: var(--gray-800, #111827);
 }
 
 .guide-btn-secondary:focus-visible {
-  outline: 2px solid #0ea5e9;
+  outline: 2px solid var(--primary-600, #0ea5e9);
   outline-offset: 2px;
 }
 
 .guide-btn-skip {
   background: transparent;
-  color: #6b7280;
+  color: var(--gray-600, #6b7280);
+  border: none;
+  padding: 0 var(--space-2);
+  height: auto;
+  min-height: auto;
+  font-weight: 500;
+  font-size: 0.875rem;
 }
 
 .guide-btn-skip:hover {
-  background: #f9fafb;
-  color: #374151;
+  background: transparent;
+  color: var(--gray-700, #374151);
 }
 
 .guide-btn-skip:focus-visible {
-  outline: 2px solid #0ea5e9;
+  outline: 2px solid var(--primary-600, #0ea5e9);
   outline-offset: 2px;
 }
 
 /* Mobile adjustments */
 @media (max-width: 600px) {
   .guide-card {
-    padding: 1.5rem;
+    padding: var(--space-4);
+    max-width: 90vw;
   }
 
   .guide-title {
-    font-size: 1.25rem;
+    font-size: 1.125rem;
   }
 
   .guide-text {
@@ -153,13 +207,9 @@
   }
 
   .guide-btn {
-    height: 48px;
+    height: 40px;
     padding: 0 1rem;
     font-size: 0.9375rem;
-  }
-
-  .guide-btn-primary {
-    min-width: 120px;
   }
 
   .guide-actions {
@@ -169,6 +219,7 @@
 
   .guide-nav-buttons {
     width: 100%;
+    flex-direction: column;
   }
 
   .guide-btn-skip {
@@ -180,6 +231,26 @@
 @media (prefers-reduced-motion: reduce) {
   .guide-overlay,
   .guide-card {
+    animation: none;
+  }
+}
+
+/* Highlight and animation for specific steps */
+.guide-highlight-animated {
+  animation: guide-pulse 2s ease-in-out infinite !important;
+}
+
+@keyframes guide-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(3, 105, 161, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(3, 105, 161, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-highlight-animated {
     animation: none;
   }
 }

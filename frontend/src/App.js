@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { OpenVisitsProvider } from './context/OpenVisitsContext';
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -20,26 +20,16 @@ import FileDesk from './components/FileDesk';
 import PatientHistory from './components/PatientHistory';
 import PatientDetails from './components/PatientDetails';
 import VisitDetails from './components/VisitDetails';
-import PutBackPanel from './components/PutBackPanel';
 import Login from './components/Login';
 import './App.css';
 
 // Main app layout component (authenticated routes)
 function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
-  const location = useLocation();
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
-
-  // Determine if we should show the PutBackPanel
-  const showPutBackPanel = [
-    '/dashboard',
-    '/file-desk',
-    '/patients',
-    '/visits'
-  ].some(path => location.pathname === path || location.pathname.startsWith(path + '/'));
 
   return (
     <div className="app">
@@ -89,7 +79,6 @@ function AppLayout() {
           } />
         </Routes>
       </main>
-      {showPutBackPanel && <PutBackPanel />}
     </div>
   );
 }

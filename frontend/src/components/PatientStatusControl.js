@@ -100,6 +100,7 @@ const PatientStatusControl = ({ patient, onChanged, onDeleted }) => {
                 className="status-btn status-btn-primary"
                 disabled={loading}
                 onClick={() => runStatusChange('admitted')}
+                data-guide="admit-discharge-button"
               >
                 Admit Patient
               </button>
@@ -124,6 +125,7 @@ const PatientStatusControl = ({ patient, onChanged, onDeleted }) => {
             className="status-btn status-btn-secondary"
             disabled={loading}
             onClick={() => runStatusChange('discharged')}
+            data-guide="admit-discharge-button"
           >
             Discharge Patient
           </button>
