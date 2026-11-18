@@ -157,7 +157,7 @@
   cursor: pointer;
   border-radius: var(--radius-md);
   transition: background 150ms;
-  min-height: 40px;
+  min-height: 44px;
 }
 
 .help-btn:hover {

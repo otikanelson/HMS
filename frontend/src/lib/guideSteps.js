@@ -71,7 +71,7 @@ export const guideSteps = {
   },
   payroll: {
     title: 'Payroll and Reports',
-    content: 'Payroll: create a run each month, add any bonus or deduction, approve it, pay by bank transfer, then mark it paid. **Reports** shows who did what in the system.',
+    content: 'Payroll: create a run each month, add any bonus or deduction, approve it, pay by bank transfer, then mark it paid. **Reports** shows who did what in the system. **Password requests** appear there too. Open one, choose a password and tell the staff member.',
     target: 'side-payroll'
   },
   notices: {

@@ -272,9 +272,10 @@ const TopBar = ({ onToggleSidebar, onHelp, sidebarOpen }) => {
                 aria-label="Open the help guide"
                 data-guide="help-button"
               >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="10" cy="10" r="8" />
-                  <text x="10" y="14" textAnchor="middle" fontSize="11" fontWeight="bold" fill="currentColor">i</text>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
                 <span className="btn-label">Help</span>
               </button>

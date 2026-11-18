@@ -16,8 +16,9 @@ const adminNotesRoutes = require('./routes/adminNotes');
 const payrollRoutes = require('./routes/payroll');
 const visitRoutes = require('./routes/visits');
 const storageMapRoutes = require('./routes/storageMap');
+const passwordResetsRoutes = require('./routes/passwordResets');
 const database = require('./config/database');
-const { authenticateToken } = require('./middleware/auth');
+const { authenticateToken, requireAccessLevel } = require('./middleware/auth');
 
 // Create Express app
 const app = express();
@@ -103,6 +104,7 @@ app.use('/api/admin-notes', authenticateToken, adminNotesRoutes);
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/visits', authenticateToken, visitRoutes);
 app.use('/api/storage-map', authenticateToken, storageMapRoutes);
+app.use('/api/password-resets', authenticateToken, requireAccessLevel('ADMINISTRATOR'), passwordResetsRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

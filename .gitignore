@@ -26,6 +26,7 @@ backend/.env
 *.db-wal
 data/*.db*
 backend/data/*.db*
+backups/
 
 # Logs
 logs/

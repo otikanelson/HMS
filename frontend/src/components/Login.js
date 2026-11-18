@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -8,6 +8,8 @@ import './Login.css';
 
 const BACKGROUND_IMAGE =
   'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=1920&q=80';
+
+const AUTO_OPEN_PICKER = false;
 
 function useClock() {
   const [now, setNow] = useState(new Date());
@@ -19,6 +21,9 @@ function useClock() {
 }
 
 const Login = () => {
+  // Stage management
+  const [stage, setStage] = useState('lock');
+
   // Modal and view state
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [useUsernameLogin, setUseUsernameLogin] = useState(false);
@@ -34,8 +39,17 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   
+  // Forgot password state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
+  const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
+  
   // Notices state
   const [notices, setNotices] = useState([]);
+
+  // Drag state
+  const [dragState, setDragState] = useState({ isDragging: false, startY: 0, currentY: 0, pointerId: null });
+  const lockLayerRef = useRef(null);
 
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -43,19 +57,36 @@ const Login = () => {
   const now = useClock();
 
   const from = location.state?.from?.pathname || '/dashboard';
-  const timeString = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  const dateString = now.toLocaleDateString('en-US', {
+
+  // Lagos time formatting
+  const lockTime = now.toLocaleTimeString('en-GB', {
+    timeZone: 'Africa/Lagos',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const lockDate = now.toLocaleDateString('en-US', {
+    timeZone: 'Africa/Lagos',
     weekday: 'long',
-    year: 'numeric',
-    month: 'long',
     day: 'numeric',
+    month: 'long'
+  });
+
+  const timeString = now.toLocaleTimeString('en-GB', {
+    timeZone: 'Africa/Lagos',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const dateString = now.toLocaleDateString('en-US', {
+    timeZone: 'Africa/Lagos',
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric'
   });
 
   const NOTICE_LABELS = { update: 'Update', info: 'Info', urgent: 'Urgent' };
 
-  // State for name picker search
-  const [nameFilter, setNameFilter] = useState('');
-  
   // Hash function for avatar colors
   const hashCode = (str) => {
     let hash = 5381;
@@ -77,6 +108,114 @@ const Login = () => {
     const index = hashCode(name) % colors.length;
     return colors[index];
   };
+
+  // Reveal lock screen and go to sign-in
+  const reveal = () => {
+    setStage('signin');
+    // Focus the sign-in button on sign-in page after transition
+    setTimeout(() => {
+      if (AUTO_OPEN_PICKER) {
+        handleOpenStaffModal();
+      } else {
+        const signInBtn = document.querySelector('.lock-submit');
+        if (signInBtn) signInBtn.focus();
+      }
+    }, 50);
+  };
+
+  // Double-click handler for lock layer
+  const handleLockLayerDoubleClick = (e) => {
+    // Ignore if clicking inside notices list
+    if (e.target.closest('.lock-notices')) return;
+    reveal();
+  };
+
+  // Pointer events for drag-to-unlock
+  const handlePointerDown = (e) => {
+    // Ignore if clicking inside interactive elements or notices
+    if (e.target.closest('button, a, input, .lock-notices')) return;
+    
+    const dy = e.clientY;
+    setDragState({
+      isDragging: true,
+      startY: dy,
+      currentY: 0,
+      pointerId: e.pointerId
+    });
+    lockLayerRef.current?.setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!dragState.isDragging || e.pointerId !== dragState.pointerId) return;
+
+    const movement = e.clientY - dragState.startY;
+    // Only track upward movement
+    const currentY = Math.min(0, movement);
+
+    setDragState(prev => ({
+      ...prev,
+      currentY
+    }));
+  };
+
+  const handlePointerUp = (e) => {
+    if (!dragState.isDragging || e.pointerId !== dragState.pointerId) return;
+
+    const movement = Math.abs(dragState.currentY);
+    const threshold = Math.min(100, window.innerHeight * 0.2);
+
+    if (movement > threshold && movement > 6) {
+      // Reveal if dragged far enough
+      reveal();
+    } else {
+      // Spring back
+      setDragState({
+        isDragging: false,
+        startY: 0,
+        currentY: 0,
+        pointerId: null
+      });
+    }
+  };
+
+  const handlePointerCancel = (e) => {
+    if (e.pointerId === dragState.pointerId) {
+      setDragState({
+        isDragging: false,
+        startY: 0,
+        currentY: 0,
+        pointerId: null
+      });
+    }
+  };
+
+  // State for name picker search
+  const [nameFilter, setNameFilter] = useState('');
+
+  // Global keyboard handlers
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (stage === 'lock') {
+        // Only on lock screen, no modal open
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          reveal();
+        }
+      } else if (stage === 'signin') {
+        // Esc to go back to lock when modal is not open
+        if (e.key === 'Escape' && !showStaffModal) {
+          e.preventDefault();
+          setStage('lock');
+        } else if (e.key === 'Escape' && showStaffModal) {
+          // Let existing modal handler close it
+          handleCloseModal();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [stage, showStaffModal]);
 
   useEffect(() => {
     fetchNotices();
@@ -160,6 +299,41 @@ const Login = () => {
     setPassword('');
     setShowPassword(false);
     setErrors({});
+  };
+
+  const handleForgotPassword = async () => {
+    // If no staff selected, show picker first
+    if (!selectedStaff) {
+      setShowStaffModal(true);
+      setNameFilter('');
+      fetchStaffList();
+      return;
+    }
+
+    // Staff is selected, send request
+    setForgotPasswordLoading(true);
+    setErrors({});
+
+    try {
+      await axios.post('/api/auth/forgot-password', {
+        userId: selectedStaff._id
+      });
+      setForgotPasswordSent(true);
+      // Reset after 4 seconds
+      setTimeout(() => {
+        setForgotPasswordSent(false);
+        setShowForgotPassword(false);
+        setSelectedStaff(null);
+      }, 4000);
+    } catch (err) {
+      if (err.response?.status === 429) {
+        setErrors({ forgotPassword: 'Too many tries. Please wait a few minutes or see the administrator.' });
+      } else {
+        setErrors({ forgotPassword: err.response?.data?.message || 'Failed to send request. Try again.' });
+      }
+    } finally {
+      setForgotPasswordLoading(false);
+    }
   };
 
   const handleStaffPasswordSubmit = async (e) => {
@@ -270,11 +444,70 @@ const Login = () => {
   };
 
   return (
-    <div className="lock-screen">
+    <div className={`lock-screen ${stage === 'signin' ? 'lock-screen-signin' : ''}`}>
       <div className="lock-media" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }} />
       <div className="lock-scrim" />
 
-      <div className="lock-content">
+      {/* LOCK LAYER - Windows Style Lock Screen */}
+      <div
+        className={`lock-layer ${stage === 'signin' ? 'lock-layer-away' : ''}`}
+        ref={lockLayerRef}
+        role="region"
+        aria-label="Lock screen"
+        aria-hidden={stage === 'signin'}
+        onDoubleClick={handleLockLayerDoubleClick}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        style={dragState.isDragging && dragState.currentY !== 0 ? {
+          transform: `translateY(${dragState.currentY}px)`,
+          opacity: 1 - Math.min(1, Math.abs(dragState.currentY) / (window.innerHeight * 0.6)),
+          transition: 'none'
+        } : {}}
+      >
+        {/* Brand bar */}
+        <div className="lock-brandbar">
+          <img src="/Icon.png" alt="" />
+          <span>Tender Care Clinic</span>
+        </div>
+
+        {/* Center: time, date, button */}
+        <div className="lock-stage-center">
+          <div className="lock-big-time">{lockTime}</div>
+          <div className="lock-big-date">{lockDate}</div>
+          <button
+            type="button"
+            className="lock-open-btn"
+            onClick={reveal}
+            autoFocus
+          >
+            Sign in
+          </button>
+        </div>
+
+        {/* Notices on the right */}
+        {notices.length > 0 && (
+          <aside className="lock-notices" aria-label="Staff notices">
+            <h2 className="lock-notices-title">Staff notices</h2>
+            <ul className="lock-notices-list">
+              {notices.map(n => (
+                <li key={n._id} className={`lock-notice lock-notice-${n.type}`}>
+                  <div className="lock-notice-top">
+                    <span>{NOTICE_LABELS[n.type]}</span>
+                    <span>{formatNoticeDate(n.createdAt)}</span>
+                  </div>
+                  <div className="lock-notice-title">{n.title}</div>
+                  <div className="lock-notice-body">{n.body}</div>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        )}
+      </div>
+
+      {/* SIGN-IN PAGE - Original content */}
+      <div className={`lock-content ${stage === 'signin' ? 'visible' : ''}`} aria-hidden={stage === 'lock'}>
         <div className="lock-clock">
           <div className="lock-time">{timeString}</div>
           <div className="lock-date">{dateString}</div>
@@ -293,16 +526,126 @@ const Login = () => {
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleOpenStaffModal}
-              className="lock-submit"
-              disabled={isLoading}
-            >
-              Sign in
-            </button>
+            {!showForgotPassword ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleOpenStaffModal}
+                  className="lock-submit"
+                  disabled={isLoading}
+                >
+                  Sign in
+                </button>
 
-            <p className="lock-footnote">Pick your name, then type your password.</p>
+                <p className="lock-footnote">
+                  Pick your name, then type your password.
+                  <br />
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotPassword(true)}
+                    className="link-button-secondary"
+                    style={{ display: 'block', marginTop: '0.75rem', width: 'auto', marginLeft: 0 }}
+                  >
+                    Forgot password?
+                  </button>
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setStage('lock')}
+                  className="link-button-secondary"
+                  style={{ display: 'block', marginTop: '0.5rem', width: 'auto', marginLeft: 0 }}
+                >
+                  Back to lock screen
+                </button>
+              </>
+            ) : (
+              <>
+                {!forgotPasswordSent ? (
+                  <>
+                    <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                      <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: '0 0 1rem 0' }}>
+                        Pick your name
+                      </p>
+                      {selectedStaff && (
+                        <div style={{
+                          padding: '1rem',
+                          background: '#f3f4f6',
+                          borderRadius: '10px',
+                          marginBottom: '1rem'
+                        }}>
+                          <p style={{ margin: '0.5rem 0', fontWeight: '600' }}>
+                            {selectedStaff.fullName}
+                          </p>
+                          <p style={{ margin: '0', fontSize: '0.875rem', color: '#6b7280' }}>
+                            {selectedStaff.roleDisplay}
+                          </p>
+                        </div>
+                      )}
+                      {errors.forgotPassword && (
+                        <div className="lock-error" style={{ marginBottom: '1rem' }}>
+                          {errors.forgotPassword}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      className="lock-submit"
+                      disabled={forgotPasswordLoading || !selectedStaff}
+                    >
+                      {forgotPasswordLoading ? (
+                        <>
+                          <span className="lock-spinner" />
+                          Sending...
+                        </>
+                      ) : (
+                        'Send request'
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(false);
+                        setSelectedStaff(null);
+                        setErrors({});
+                      }}
+                      className="link-button-secondary"
+                      style={{ display: 'block', marginTop: '0.75rem', width: 'auto', marginLeft: 0 }}
+                    >
+                      Back to sign in
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                        Request sent.
+                      </p>
+                      <p style={{ fontSize: '0.9375rem', color: '#6b7280', margin: '0' }}>
+                        Please see the administrator — they will give you a new password.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(false);
+                        setForgotPasswordSent(false);
+                        setSelectedStaff(null);
+                        setErrors({});
+                      }}
+                      className="lock-submit"
+                      style={{ marginTop: '1.5rem' }}
+                    >
+                      Back to sign in
+                    </button>
+                  </>
+                )}
+              </>
+            )}
           </div>
 
           {/* Notices Section */}

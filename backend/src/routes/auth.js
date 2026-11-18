@@ -2,6 +2,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
 const Session = require('../models/Session');
+const PasswordResetRequest = require('../models/PasswordResetRequest');
 const { authenticateToken, generateTokens } = require('../middleware/auth');
 
 const router = express.Router();
@@ -12,6 +13,18 @@ const authLimiter = rateLimit({
   max: 50, // 50 attempts per window (increased for development)
   message: {
     error: 'Too many authentication attempts. Please try again later.',
+    code: 'RATE_LIMIT_EXCEEDED'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiting for forgot password (5 per 15 minutes per IP)
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per window
+  message: {
+    error: 'Too many password reset requests. Please try again later.',
     code: 'RATE_LIMIT_EXCEEDED'
   },
   standardHeaders: true,
@@ -168,6 +181,67 @@ router.post('/refresh', async (req, res) => {
     res.status(500).json({
       error: 'Token refresh failed',
       code: 'REFRESH_ERROR'
+    });
+  }
+});
+
+// POST /api/auth/forgot-password - Public endpoint to request password reset
+router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
+  try {
+    const { userId, username } = req.body;
+
+    if (!userId && !username) {
+      return res.status(400).json({
+        error: 'User ID or username is required',
+        code: 'MISSING_IDENTIFIER'
+      });
+    }
+
+    let user;
+
+    // Find user by ID or username
+    if (userId) {
+      // If userId provided, treat it as a Staff ID and find the User by staffId
+      user = await User.findOne({ staffId: userId, isActive: true });
+    } else if (username) {
+      // Find by exact lowercase username match
+      user = await User.findOne({
+        username: username.toLowerCase(),
+        isActive: true
+      });
+    }
+
+    // Always return the same message whether user exists or not (for security)
+    // but only create a request if user was found and has no pending request
+    if (user) {
+      // Check for existing pending request
+      const existingRequest = await PasswordResetRequest.findOne({
+        user: user._id,
+        status: 'pending'
+      });
+
+      if (!existingRequest) {
+        // Create new password reset request
+        await PasswordResetRequest.create({
+          user: user._id,
+          staff: user.staffId || null,
+          usernameSnapshot: user.username,
+          fullNameSnapshot: user.fullName,
+          status: 'pending'
+        });
+      }
+    }
+
+    // Always return success message
+    res.status(200).json({
+      message: 'Your request has been sent to the administrator.'
+    });
+
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      error: 'Failed to process password reset request',
+      code: 'RESET_REQUEST_ERROR'
     });
   }
 });

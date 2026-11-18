@@ -169,14 +169,33 @@ const VisitDetails = () => {
       await axios.put(`/api/visits/${id}/record`, payload);
       setSaveSuccess(`Saved. Put the paper file back in ${visit.currentLocation}.`);
       await fetchVisit();
-      // Redirect to report view after a brief delay
-      setTimeout(() => {
-        navigate(`/patients/${visit.patientId}/visit/${id}`);
-      }, 1500);
     } catch (err) {
       console.error('Save and file error:', err);
       const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to file visit';
-      setValidationErrors({ general: errorMsg });
+      
+      // Map error messages to specific fields for better UX
+      const errorMap = {
+        'chief complaint': 'chiefComplaint',
+        'diagnosis': 'diagnosis',
+        'treatment plan': 'treatmentPlan',
+        'payment': 'payment',
+        'recorded by': 'recordedBy',
+        'notes': 'notes'
+      };
+      
+      let fieldError = null;
+      for (const [key, field] of Object.entries(errorMap)) {
+        if (errorMsg.toLowerCase().includes(key)) {
+          fieldError = field;
+          break;
+        }
+      }
+      
+      if (fieldError) {
+        setValidationErrors({ [fieldError]: errorMsg });
+      } else {
+        setValidationErrors({ general: errorMsg });
+      }
     } finally {
       setSaving(false);
     }
@@ -270,9 +289,11 @@ const VisitDetails = () => {
           <p className="visit-id">Patient {visit.patientId}</p>
           <p className="visit-date">Started {formatDate(visit.startedAt)}</p>
         </div>
-        <Link to="/file-desk" className="btn btn-outline">
-          Back to File Desk
-        </Link>
+        {visit.stage !== 'with_doctor' && (
+          <Link to="/file-desk" className="btn btn-outline">
+            Back to File Desk
+          </Link>
+        )}
       </div>
 
       {/* 4-Step Progress Strip */}
@@ -298,15 +319,19 @@ const VisitDetails = () => {
         <div className="alert alert-success">
           {saveSuccess}
           {isFiled && (
-            <div style={{ marginTop: 'var(--space-2)' }}>
-              <Link to="/file-desk" className="link">Return to File Desk</Link>
+            <div style={{ marginTop: 'var(--space-2)', display: 'flex', gap: 'var(--space-2)' }}>
+              <button 
+                onClick={() => navigate(`/patients/${visit.patientId}/visit/${id}`)} 
+                className="btn btn-primary btn-small"
+              >
+                View report
+              </button>
+              <Link to="/file-desk" className="btn btn-outline btn-small">
+                Back to File Desk
+              </Link>
             </div>
           )}
         </div>
-      )}
-
-      {validationErrors.general && (
-        <div className="alert alert-error">{validationErrors.general}</div>
       )}
 
       {/* Single Card for Current Stage */}
@@ -438,7 +463,16 @@ const VisitDetails = () => {
 
               {/* Confirm and send to doctor - single panel */}
               {hasCheckin && (
-                <div className="confirm-panel" style={{ marginTop: 'var(--space-4)' }}>
+                <div 
+                  className="confirm-panel" 
+                  style={{ marginTop: 'var(--space-4)' }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSendToDoctor();
+                    }
+                  }}
+                >
                   <p className="confirm-panel-text">
                     <strong>Confirm and send to doctor</strong>
                   </p>
@@ -513,6 +547,9 @@ const VisitDetails = () => {
                 >
                   {steppingBack ? 'Going back...' : 'Go back'}
                 </button>
+                <Link to="/file-desk" className="btn btn-outline">
+                  Back to File Desk
+                </Link>
               </div>
             </div>
           </>
@@ -527,10 +564,6 @@ const VisitDetails = () => {
             </div>
 
             <div className="card-body">
-              {validationErrors.general && (
-                <div className="alert alert-error">{validationErrors.general}</div>
-              )}
-
               <div className="form-field">
                 <label htmlFor="chiefComplaint">Chief complaint</label>
                 <p style={{ fontSize: '0.75rem', color: 'var(--gray-600)', margin: '0 0 var(--space-1) 0' }}>Why the patient came.</p>
@@ -543,6 +576,9 @@ const VisitDetails = () => {
                   maxLength={2000}
                 />
                 <span className="char-count">{chiefComplaint.length}/2000</span>
+                {validationErrors.chiefComplaint && (
+                  <div className="alert alert-error" style={{ marginTop: 'var(--space-2)' }}>{validationErrors.chiefComplaint}</div>
+                )}
               </div>
 
               <div className="form-field">
@@ -601,6 +637,9 @@ const VisitDetails = () => {
                   maxLength={2000}
                 />
                 <span className="char-count">{diagnosis.length}/2000</span>
+                {validationErrors.diagnosis && (
+                  <div className="alert alert-error" style={{ marginTop: 'var(--space-2)' }}>{validationErrors.diagnosis}</div>
+                )}
               </div>
 
               <div className="form-field">
@@ -659,6 +698,9 @@ const VisitDetails = () => {
                   maxLength={2000}
                 />
                 <span className="char-count">{treatmentPlan.length}/2000</span>
+                {validationErrors.treatmentPlan && (
+                  <div className="alert alert-error" style={{ marginTop: 'var(--space-2)' }}>{validationErrors.treatmentPlan}</div>
+                )}
               </div>
 
               <div className="form-field">
@@ -672,6 +714,9 @@ const VisitDetails = () => {
                   maxLength={1000}
                 />
                 <span className="char-count">{notes.length}/1000</span>
+                {validationErrors.notes && (
+                  <div className="alert alert-error" style={{ marginTop: 'var(--space-2)' }}>{validationErrors.notes}</div>
+                )}
               </div>
 
               <div className="form-field">
@@ -681,14 +726,21 @@ const VisitDetails = () => {
                   <input
                     id="payment"
                     type="text"
-                    inputMode="decimal"
+                    inputMode="numeric"
                     value={payment}
-                    onChange={(e) => setPayment(e.target.value)}
+                    onChange={(e) => {
+                      // Allow digits and commas, remove everything else
+                      const numericValue = e.target.value.replace(/[^\d,]/g, '');
+                      setPayment(numericValue);
+                    }}
                     placeholder="0"
                     maxLength={20}
                     style={{ flex: 1 }}
                   />
                 </div>
+                {validationErrors.payment && (
+                  <div className="alert alert-error" style={{ marginTop: 'var(--space-2)' }}>{validationErrors.payment}</div>
+                )}
               </div>
 
               <div className="form-field">
@@ -701,6 +753,9 @@ const VisitDetails = () => {
                   maxLength={200}
                   readOnly={!isAdmin}
                 />
+                {validationErrors.recordedBy && (
+                  <div className="alert alert-error" style={{ marginTop: 'var(--space-2)' }}>{validationErrors.recordedBy}</div>
+                )}
               </div>
 
               <div className="card-actions">
@@ -773,20 +828,21 @@ const VisitDetails = () => {
                 </div>
               </div>
 
-              {isAdmin && (
-                <div className="card-actions" style={{ marginTop: 'var(--space-4)' }}>
-                  <Link to={`/patients/${visit.patient}/visit/${id}?edit=1`} className="btn btn-primary">
+              <div className="card-actions" style={{ marginTop: 'var(--space-4)' }}>
+                {isAdmin && (
+                  <Link to={`/patients/${visit.patientId}/visit/${id}?edit=1`} className="btn btn-primary">
                     Edit report
                   </Link>
-                </div>
-              )}
-              {!isAdmin && (
-                <div className="card-actions" style={{ marginTop: 'var(--space-4)' }}>
-                  <Link to={`/patients/${visit.patient}/visit/${id}`} className="btn btn-outline">
+                )}
+                {!isAdmin && (
+                  <Link to={`/patients/${visit.patientId}/visit/${id}`} className="btn btn-outline">
                     View report
                   </Link>
-                </div>
-              )}
+                )}
+                <Link to="/file-desk" className="btn btn-outline">
+                  Back to file desk
+                </Link>
+              </div>
             </div>
           </>
         )}
