@@ -174,7 +174,6 @@ const Inventory = () => {
   };
 
   const filteredItems = items;
-  const tabLabel = activeTab === 'drug' ? 'Drugs' : activeTab === 'supply' ? 'Supplies' : 'All';
 
   return (
     <div className="inventory-list">

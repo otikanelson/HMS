@@ -12,8 +12,6 @@ const Guide = ({ user, onClose, onComplete }) => {
   const spotlightRef = useRef(null);
   const cardRef = useRef(null);
   const [startingPage, setStartingPage] = useState(null);
-  const [elementNotFound, setElementNotFound] = useState(false);
-  const retryTimeoutRef = useRef(null);
 
   const steps = getStepsForUser(user?.accessLevel);
   const totalSteps = steps.length;

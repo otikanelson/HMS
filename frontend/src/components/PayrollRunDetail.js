@@ -79,8 +79,7 @@ const PayrollPaymentModal = ({ run, onClose, onPaymentStarted }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [password, setPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [retryingFailed, setRetryingFailed] = useState(false);
+  const [passwordError, setPasswordError] = useState('']);
 
   useEffect(() => {
     const loadCheck = async () => {
@@ -125,29 +124,6 @@ const PayrollPaymentModal = ({ run, onClose, onPaymentStarted }) => {
     } catch (err) {
       setError(err.response?.data?.error || 'Payment failed');
       setStep('check');
-      setPassword('');
-    }
-  };
-
-  const handleRetryFailed = async () => {
-    if (!password) {
-      setPasswordError('Enter your password to confirm');
-      return;
-    }
-    setPasswordError('');
-    setRetryingFailed(true);
-    setError('');
-
-    try {
-      const result = await retryFailedPayments(run._id, password);
-      if (result.entries) {
-        onPaymentStarted(result.entries);
-        onClose();
-      }
-    } catch (err) {
-      setError(err.response?.data?.error || 'Retry failed');
-    } finally {
-      setRetryingFailed(false);
       setPassword('');
     }
   };
@@ -424,7 +400,6 @@ const PayrollRunDetail = () => {
   const isPending = run.status === 'pending';
   const isApproved = run.status === 'approved';
   const failedCount = entries.filter(e => e.payment?.status === 'failed' || e.payment?.status === 'reversed').length;
-  const sendingCount = entries.filter(e => e.payment?.status === 'sending').length;
 
   return (
     <div className="payroll-page">
