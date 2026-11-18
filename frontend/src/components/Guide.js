@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getStepsForUser } from '../lib/guideSteps';
 import GuideSnapshot from './GuideSnapshot';
@@ -34,6 +34,87 @@ const Guide = ({ user, onClose, onComplete }) => {
   };
 
   const role = formatRole(user?.accessLevel);
+
+  // Find and position spotlight on target element
+  const updateSpotlight = useCallback(() => {
+    const currentStepData = steps[currentStep];
+    
+    if (!currentStepData?.target) {
+      setSpotlightRect(null);
+      setElementNotFound(false);
+      return;
+    }
+
+    const targetElement = document.querySelector(`[data-guide="${currentStepData.target}"]`);
+    
+    if (targetElement) {
+      const rect = targetElement.getBoundingClientRect();
+      const padding = 8;
+      
+      // Calculate visible height (for tall elements like columns)
+      const visibleHeight = Math.min(rect.height, window.innerHeight - rect.top);
+      
+      setSpotlightRect({
+        top: rect.top - padding,
+        left: rect.left - padding,
+        width: rect.width + padding * 2,
+        height: visibleHeight + padding * 2
+      });
+      
+      setElementNotFound(false);
+      
+      // Scroll target into view
+      targetElement.scrollIntoView({ behavior: 'auto', block: 'center' });
+    } else {
+      setSpotlightRect(null);
+      setElementNotFound(true);
+    }
+  }, [currentStep, steps]);
+
+  // Position card beside spotlight
+  const computeCardPosition = useCallback(() => {
+    if (!spotlightRect || !cardRef.current) return {};
+
+    const cardHeight = cardRef.current.offsetHeight;
+    const cardWidth = 420;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const gap = 24;
+
+    // Try right first
+    if (spotlightRect.left + spotlightRect.width + gap + cardWidth < viewportWidth) {
+      return {
+        top: Math.max(16, Math.min(spotlightRect.top + spotlightRect.height / 2 - cardHeight / 2, viewportHeight - cardHeight - 16)),
+        left: spotlightRect.left + spotlightRect.width + gap
+      };
+    }
+    // Try left
+    if (spotlightRect.left - gap - cardWidth > 0) {
+      return {
+        top: Math.max(16, Math.min(spotlightRect.top + spotlightRect.height / 2 - cardHeight / 2, viewportHeight - cardHeight - 16)),
+        left: spotlightRect.left - gap - cardWidth
+      };
+    }
+    // Try below
+    if (spotlightRect.top + spotlightRect.height + gap + cardHeight < viewportHeight) {
+      return {
+        top: spotlightRect.top + spotlightRect.height + gap,
+        left: Math.max(16, Math.min(spotlightRect.left + spotlightRect.width / 2 - cardWidth / 2, viewportWidth - cardWidth - 16))
+      };
+    }
+    // Try above
+    if (spotlightRect.top - gap - cardHeight > 0) {
+      return {
+        top: spotlightRect.top - gap - cardHeight,
+        left: Math.max(16, Math.min(spotlightRect.left + spotlightRect.width / 2 - cardWidth / 2, viewportWidth - cardWidth - 16))
+      };
+    }
+    // Fallback: center bottom
+    return { 
+      top: viewportHeight - cardHeight - 16, 
+      left: Math.max(16, Math.min(viewportWidth / 2 - cardWidth / 2, viewportWidth - cardWidth - 16))
+    };
+  }, [spotlightRect]);
 
   // Store starting page on first mount
   useEffect(() => {
@@ -87,102 +168,11 @@ const Guide = ({ user, onClose, onComplete }) => {
   }, [currentStep, steps]);
 
   // Find and position spotlight on target element
-  const updateSpotlight = () => {
-    const currentStepData = steps[currentStep];
-    
-    if (!currentStepData?.target) {
-      setSpotlightRect(null);
-      setElementNotFound(false);
-      return;
-    }
-
-    const targetElement = document.querySelector(`[data-guide="${currentStepData.target}"]`);
-    
-    if (targetElement) {
-      const rect = targetElement.getBoundingClientRect();
-      const padding = 8;
-      
-      // Calculate visible height (for tall elements like columns)
-      const visibleHeight = Math.min(rect.height, window.innerHeight - rect.top);
-      
-      setSpotlightRect({
-        top: rect.top - padding,
-        left: rect.left - padding,
-        width: rect.width + padding * 2,
-        height: visibleHeight + padding * 2
-      });
-      
-      setElementNotFound(false);
-      
-      // Scroll target into view
-      targetElement.scrollIntoView({ behavior: 'auto', block: 'center' });
-    } else {
-      setSpotlightRect(null);
-      setElementNotFound(true);
-    }
-  };
-
-  // Retry finding element if not found
-  useEffect(() => {
-    if (elementNotFound) {
-      retryTimeoutRef.current = setTimeout(() => {
-        updateSpotlight();
-      }, 100);
-    }
-    return () => {
-      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
-    };
-  }, [elementNotFound, currentStep, steps]);
-
-  // Position card beside spotlight
-  const computeCardPosition = () => {
-    if (!spotlightRect || !cardRef.current) return {};
-
-    const cardHeight = cardRef.current.offsetHeight;
-    const cardWidth = 420;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const gap = 24;
-
-    // Try right first
-    if (spotlightRect.left + spotlightRect.width + gap + cardWidth < viewportWidth) {
-      return {
-        top: Math.max(16, Math.min(spotlightRect.top + spotlightRect.height / 2 - cardHeight / 2, viewportHeight - cardHeight - 16)),
-        left: spotlightRect.left + spotlightRect.width + gap
-      };
-    }
-    // Try left
-    if (spotlightRect.left - gap - cardWidth > 0) {
-      return {
-        top: Math.max(16, Math.min(spotlightRect.top + spotlightRect.height / 2 - cardHeight / 2, viewportHeight - cardHeight - 16)),
-        left: spotlightRect.left - gap - cardWidth
-      };
-    }
-    // Try below
-    if (spotlightRect.top + spotlightRect.height + gap + cardHeight < viewportHeight) {
-      return {
-        top: spotlightRect.top + spotlightRect.height + gap,
-        left: Math.max(16, Math.min(spotlightRect.left + spotlightRect.width / 2 - cardWidth / 2, viewportWidth - cardWidth - 16))
-      };
-    }
-    // Try above
-    if (spotlightRect.top - gap - cardHeight > 0) {
-      return {
-        top: spotlightRect.top - gap - cardHeight,
-        left: Math.max(16, Math.min(spotlightRect.left + spotlightRect.width / 2 - cardWidth / 2, viewportWidth - cardWidth - 16))
-      };
-    }
-    // Fallback: center bottom
-    return { 
-      top: viewportHeight - cardHeight - 16, 
-      left: Math.max(16, Math.min(viewportWidth / 2 - cardWidth / 2, viewportWidth - cardWidth - 16))
-    };
-  };
 
   // Update card position when spotlight changes
   useEffect(() => {
     setCardPosition(computeCardPosition());
-  }, [spotlightRect]);
+  }, [spotlightRect, computeCardPosition]);
 
   // Handle Escape key
   useEffect(() => {
@@ -193,12 +183,12 @@ const Guide = ({ user, onClose, onComplete }) => {
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, []);
+  }, [handleSkip]);
 
   // Update spotlight on step change
   useEffect(() => {
     updateSpotlight();
-  }, [currentStep]);
+  }, [currentStep, updateSpotlight]);
 
   // Recompute spotlight on resize/scroll
   useEffect(() => {
@@ -214,7 +204,7 @@ const Guide = ({ user, onClose, onComplete }) => {
       window.removeEventListener('scroll', handleScroll, true);
       clearInterval(interval);
     };
-  }, [currentStep, steps]);
+  }, [updateSpotlight]);
 
   // Trap focus inside the guide
   useEffect(() => {

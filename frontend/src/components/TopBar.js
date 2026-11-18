@@ -41,10 +41,6 @@ const TopBar = ({ onToggleSidebar, onHelp, sidebarOpen }) => {
     setShowGuide(true);
   };
 
-  const handlePutBack = () => {
-    navigate('/file-desk');
-  };
-
   const handlePutAway = async (visitId) => {
     try {
       setPutting(visitId);

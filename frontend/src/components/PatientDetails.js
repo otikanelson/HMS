@@ -249,16 +249,6 @@ const PatientDetails = () => {
     );
   }
 
-  const vitalText = editMode && editValues.vitalsNotTaken
-    ? `Not taken: ${editValues.vitalsNotTakenReason || 'No reason given'}`
-    : editMode && editValues.vitals
-    ? `BP ${editValues.vitals.systolic}/${editValues.vitals.diastolic}, HR ${editValues.vitals.heartRate}`
-    : visit.vitalsNotTaken
-    ? `Not taken: ${visit.vitalsNotTakenReason || 'No reason given'}`
-    : visit.vitals
-    ? `BP ${visit.vitals.systolic}/${visit.vitals.diastolic}, HR ${visit.vitals.heartRate}`
-    : 'Not recorded';
-
   const formatPayment = (value) => {
     if (!value) return '';
     const num = parseFloat(value);
