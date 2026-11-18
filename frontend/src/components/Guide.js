@@ -149,16 +149,15 @@ const Guide = ({ user, onClose, onComplete }) => {
   }, []);
 
   // Navigate to route if specified
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const currentStepData = steps[currentStep];
     if (currentStepData?.route && currentStepData.route !== window.location.pathname) {
       navigate(currentStepData.route);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, steps, navigate]);
 
   // Add highlight and animation styles for steps with highlight/animate props
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const currentStepData = steps[currentStep];
     
@@ -174,6 +173,7 @@ const Guide = ({ user, onClose, onComplete }) => {
         }
       };
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, steps]);
 
   // Handle opening menus for specific steps
@@ -194,16 +194,16 @@ const Guide = ({ user, onClose, onComplete }) => {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, steps]);
 
   // Update card position when spotlight changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setCardPosition(computeCardPosition());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spotlightRect, computeCardPosition]);
 
   // Handle Escape key
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
@@ -212,12 +212,13 @@ const Guide = ({ user, onClose, onComplete }) => {
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handleSkip]);
 
   // Update spotlight on step change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     updateSpotlight();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, updateSpotlight]);
 
   // Recompute spotlight on resize/scroll
