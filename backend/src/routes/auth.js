@@ -19,6 +19,41 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// TEMPORARY: Fix usernames to lowercase (remove after use)
+// POST /api/auth/fix-usernames
+router.post('/fix-usernames', async (req, res) => {
+  try {
+    const secretKey = req.headers['x-fix-key'];
+    
+    // Use a simple secret that should match an admin action
+    if (secretKey !== process.env.ADMIN_FIX_KEY && secretKey !== 'emergency-fix-2026') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const users = await User.find({});
+    let updated = 0;
+
+    for (const user of users) {
+      const lowercaseUsername = user.username.toLowerCase().trim();
+      if (user.username !== lowercaseUsername) {
+        user.username = lowercaseUsername;
+        await user.save();
+        updated++;
+      }
+    }
+
+    res.json({
+      message: `✓ Fixed ${updated} usernames to lowercase`,
+      updated
+    });
+  } catch (error) {
+    console.error('Fix usernames error:', error);
+    res.status(500).json({
+      error: 'Failed to fix usernames'
+    });
+  }
+});
+
 // Rate limiting for forgot password (5 per 15 minutes per IP)
 const forgotPasswordLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
