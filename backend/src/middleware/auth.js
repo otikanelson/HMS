@@ -2,7 +2,13 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Session = require('../models/Session');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+const JWT_SECRET = (() => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET is not set. Please set it in your .env file.');
+  }
+  return secret;
+})();
 const JWT_EXPIRE = '15m'; // Short-lived access tokens
 const REFRESH_TOKEN_EXPIRE = '7d'; // Longer-lived refresh tokens
 

@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const Staff = require('../models/Staff');
 const User = require('../models/User');
 const { authenticateToken, requireAccessLevel } = require('../middleware/auth');
@@ -284,8 +285,7 @@ router.put('/:id/schedule', authenticateToken, requireAccessLevel('ADMINISTRATOR
 
     // Log activity
     await logActivity({
-      actorId: req.user.userId,
-      actorAccessLevel: req.user.accessLevel,
+      req,
       action: 'STAFF_SCHEDULE_UPDATED',
       targetType: 'Staff',
       targetId: staff._id,
@@ -424,7 +424,7 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
       // Generate random temporary password (12 characters, alphanumeric)
       const tempPassword = Array.from({ length: 12 }, () => {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-        return chars.charAt(Math.floor(Math.random() * chars.length));
+        return chars.charAt(crypto.randomInt(0, chars.length));
       }).join('');
       
       // Determine access level (default to CLINICAL_STAFF if not provided)

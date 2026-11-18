@@ -24,11 +24,11 @@ const { authenticateToken, requireAccessLevel } = require('./middleware/auth');
 const app = express();
 const PORT = process.env.PORT || 3002;
 
+// Set trust proxy once
+app.set('trust proxy', 1);
+
 // Production optimizations
 if (process.env.NODE_ENV === 'production') {
-  // Trust first proxy for Railway/Render
-  app.set('trust proxy', 1);
-  
   // Security headers
   app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -38,20 +38,24 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Trust proxy for rate limiting to work correctly
-app.set('trust proxy', 1);
+// Parse CORS origins from environment or use defaults
+const parseCorsOrigins = () => {
+  const corsEnv = process.env.CORS_ORIGINS;
+  if (corsEnv) {
+    return corsEnv.split(',').map(url => url.trim());
+  }
+  // Default fallback
+  return [
+    'https://detendercare.vercel.app',
+    'http://localhost:3001',
+    'http://localhost:3000',
+    'http://localhost:3002'
+  ];
+};
 
 // Middleware
 app.use(cors({
-origin: process.env.NODE_ENV === 'production' 
-  ? [
-      'https://detendercare.vercel.app', 
-      process.env.FRONTEND_URL,
-      'http://localhost:3001',
-      'http://localhost:3000',
-      'http://localhost:3002'
-    ].filter(url => url !== undefined) as string[]
-  : ['http://localhost:3001', 'http://localhost:3000', 'http://localhost:3002'],
+  origin: parseCorsOrigins(),
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -124,7 +128,7 @@ app.get('/', (req, res) => {
     documentation: {
       search: 'GET /api/patients/search?q=<query> - Search patients by ID, name, or phone',
       create: 'POST /api/patients - Create new patient file',
-      update: 'PUT /api/patients/:id/location - Update file location',
+      update: 'PUT /api/patients/:id - Update patient details',
       get: 'GET /api/patients/:id - Get specific patient',
       list: 'GET /api/patients?page=1&limit=20 - List patients with pagination'
     }
