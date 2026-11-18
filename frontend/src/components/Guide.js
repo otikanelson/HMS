@@ -116,6 +116,33 @@ const Guide = ({ user, onClose, onComplete }) => {
     };
   }, [spotlightRect]);
 
+  // Define handlers using useCallback before they're used in useEffects
+  const handleSkip = useCallback(() => {
+    onComplete();
+    // Navigate back to starting page if we navigated away
+    if (startingPage && startingPage !== window.location.pathname) {
+      navigate(startingPage);
+    }
+  }, [onComplete, startingPage, navigate]);
+
+  const handleNext = useCallback(() => {
+    if (isLastStep) {
+      onComplete();
+      // Navigate back to starting page if we navigated away
+      if (startingPage && startingPage !== window.location.pathname) {
+        navigate(startingPage);
+      }
+    } else {
+      setCurrentStep(currentStep + 1);
+    }
+  }, [isLastStep, onComplete, startingPage, navigate, currentStep]);
+
+  const handleBack = useCallback(() => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  }, [currentStep]);
+
   // Store starting page on first mount
   useEffect(() => {
     setStartingPage(window.location.pathname);
@@ -166,8 +193,6 @@ const Guide = ({ user, onClose, onComplete }) => {
       }
     }
   }, [currentStep, steps]);
-
-  // Find and position spotlight on target element
 
   // Update card position when spotlight changes
   useEffect(() => {
@@ -232,32 +257,6 @@ const Guide = ({ user, onClose, onComplete }) => {
       return () => document.removeEventListener('keydown', handleTabKey);
     }
   }, [currentStep]);
-
-  const handleNext = () => {
-    if (isLastStep) {
-      onComplete();
-      // Navigate back to starting page if we navigated away
-      if (startingPage && startingPage !== window.location.pathname) {
-        navigate(startingPage);
-      }
-    } else {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleSkip = () => {
-    onComplete();
-    // Navigate back to starting page if we navigated away
-    if (startingPage && startingPage !== window.location.pathname) {
-      navigate(startingPage);
-    }
-  };
 
   const currentStepData = steps[currentStep];
   const content = typeof currentStepData.content === 'function'
