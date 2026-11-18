@@ -79,7 +79,7 @@ const PayrollPaymentModal = ({ run, onClose, onPaymentStarted }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [password, setPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('']);
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     const loadCheck = async () => {

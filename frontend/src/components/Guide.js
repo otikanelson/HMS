@@ -39,7 +39,6 @@ const Guide = ({ user, onClose, onComplete }) => {
     
     if (!currentStepData?.target) {
       setSpotlightRect(null);
-      setElementNotFound(false);
       return;
     }
 
@@ -59,13 +58,10 @@ const Guide = ({ user, onClose, onComplete }) => {
         height: visibleHeight + padding * 2
       });
       
-      setElementNotFound(false);
-      
       // Scroll target into view
       targetElement.scrollIntoView({ behavior: 'auto', block: 'center' });
     } else {
       setSpotlightRect(null);
-      setElementNotFound(true);
     }
   }, [currentStep, steps]);
 
