@@ -15,6 +15,7 @@
     "test:coverage": "jest --coverage",
     "db:seed": "ts-node scripts/seed-data.ts",
     "db:backup": "node scripts/backup-db.js",
+    "db:seed-inventory": "node scripts/seed-inventory.js",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "clean": "rimraf dist"

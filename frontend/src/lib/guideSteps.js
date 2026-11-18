@@ -98,6 +98,11 @@ export const guideSteps = {
     title: 'That\'s it',
     content: 'Press **Help** any time to see this again. If you forget your password, ask the Administrator. They will reset it with you in person.',
     target: 'help-button'
+  },
+  inventory: {
+    title: 'Drugs & Supplies',
+    content: 'Shows what the clinic should have in stock and the price of each. Anyone can add or correct items.',
+    target: 'inventory-search'
   }
 };
 
@@ -107,17 +112,17 @@ export const getStepsForUser = (accessLevel) => {
   const administratorSteps = [
     'welcome', 'startVisit', 'finding', 'withDoctor', 'putBack', 'mistake',
     'notes', 'findPatient', 'newPatient', 'storageMap', 'schedule', 'staff',
-    'payroll', 'notices', 'thatsIt'
+    'payroll', 'inventory', 'notices', 'thatsIt'
   ];
 
   const recordsOperatorSteps = [
     'welcome', 'startVisit', 'finding', 'withDoctor', 'putBack', 'mistake',
-    'notes', 'findPatient', 'newPatient', 'schedule', 'staff', 'thatsIt'
+    'notes', 'findPatient', 'newPatient', 'schedule', 'staff', 'inventory', 'thatsIt'
   ];
 
   const clinicalStaffSteps = [
     'welcome', 'startVisit', 'finding', 'withDoctor', 'putBack', 'mistake',
-    'findPatient', 'myShift', 'admitDischarge', 'schedule', 'thatsIt'
+    'findPatient', 'myShift', 'admitDischarge', 'schedule', 'inventory', 'thatsIt'
   ];
 
   if (accessLevel === 'ADMINISTRATOR') {

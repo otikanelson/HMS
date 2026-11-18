@@ -1,0 +1,324 @@
+[
+  {
+    "name": "Mycoten Vaginal Cream",
+    "category": "drug",
+    "unit": "1 tube",
+    "price": 2000,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Fluconazole",
+    "category": "drug",
+    "unit": "1 piece",
+    "price": 900,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Diclofenac",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 600,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Artemether",
+    "category": "drug",
+    "unit": "1 ampoule",
+    "price": 600,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Samsef",
+    "category": "drug",
+    "unit": "1 piece",
+    "price": 800,
+    "expectedQuantity": null
+  },
+  {
+    "name": "5 mL Syringe",
+    "category": "supply",
+    "unit": "1 piece",
+    "price": 500,
+    "expectedQuantity": null
+  },
+  {
+    "name": "2 mL Syringe",
+    "category": "supply",
+    "unit": "1 piece",
+    "price": 500,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Paracetamol Injection",
+    "category": "drug",
+    "unit": "1 ampoule",
+    "price": 700,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Paracetamol Tablets",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 500,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Promethazine Injection",
+    "category": "drug",
+    "unit": "1 ampoule",
+    "price": 100,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Metronidazole Injection",
+    "category": "drug",
+    "unit": "1 ampoule",
+    "price": 450,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Gentamicin Injection",
+    "category": "drug",
+    "unit": "½ pack",
+    "price": 350,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Ciprofloxacin Infusion",
+    "category": "drug",
+    "unit": "1 bag",
+    "price": 450,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Yellow Cannula",
+    "category": "supply",
+    "unit": "1 piece",
+    "price": 200,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Folic Acid",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 500,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Calcium Tablets",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 700,
+    "expectedQuantity": null
+  },
+  {
+    "name": "B-Complex Tablets",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 500,
+    "expectedQuantity": null
+  },
+  {
+    "name": "B-Complex Injection",
+    "category": "drug",
+    "unit": "1 ampoule",
+    "price": 250,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Laridox",
+    "category": "drug",
+    "unit": "1 dose pack",
+    "price": 350,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Drug Envelope",
+    "category": "supply",
+    "unit": "1 piece",
+    "price": 300,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Plaster",
+    "category": "supply",
+    "unit": "1 roll",
+    "price": 1500,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Dextrose Saline",
+    "category": "drug",
+    "unit": "1 bag",
+    "price": 600,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Normal Saline",
+    "category": "drug",
+    "unit": "1 bag",
+    "price": 600,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Levofloxacin Injection",
+    "category": "drug",
+    "unit": "1 bag",
+    "price": 1000,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Levofloxacin Tablets",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 1000,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Pitocin (Oxytocin)",
+    "category": "drug",
+    "unit": "½ pack",
+    "price": 750,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Vitamin K Injection",
+    "category": "drug",
+    "unit": "½ pack",
+    "price": 750,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Catheter",
+    "category": "supply",
+    "unit": "1 piece",
+    "price": 600,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Urine Bag",
+    "category": "supply",
+    "unit": "1 piece",
+    "price": null,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Scalp Vein Set",
+    "category": "supply",
+    "unit": "1 piece",
+    "price": 300,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Metronidazole",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 450,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Quinine",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 400,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Misoprostol",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 1000,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Betadrone-N",
+    "category": "drug",
+    "unit": "1 piece",
+    "price": 800,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Gauze",
+    "category": "supply",
+    "unit": "1 pack",
+    "price": 300,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Aldomet",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 800,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Erythromycin Tablets",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 1250,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Plaster M/S",
+    "category": "supply",
+    "unit": "1 roll",
+    "price": 1500,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Soluset",
+    "category": "supply",
+    "unit": "1 piece",
+    "price": null,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Piriton for Children",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 1000,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Piriton Syrup",
+    "category": "drug",
+    "unit": "1 bottle",
+    "price": 1300,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Salbutamol Syrup",
+    "category": "drug",
+    "unit": "1 bottle",
+    "price": 900,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Omeprazole Injection",
+    "category": "drug",
+    "unit": "1 ampoule",
+    "price": 700,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Ranitidine Tablets",
+    "category": "drug",
+    "unit": "1 pack",
+    "price": 1500,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Novalgin",
+    "category": "drug",
+    "unit": "1 ampoule",
+    "price": 300,
+    "expectedQuantity": null
+  },
+  {
+    "name": "Fortwin Injection",
+    "category": "drug",
+    "unit": "1 ampoule",
+    "price": 1000,
+    "expectedQuantity": null
+  }
+]

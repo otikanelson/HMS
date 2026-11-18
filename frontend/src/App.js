@@ -21,6 +21,7 @@ import PatientHistory from './components/PatientHistory';
 import PatientDetails from './components/PatientDetails';
 import VisitDetails from './components/VisitDetails';
 import Login from './components/Login';
+import Inventory from './components/Inventory';
 import './App.css';
 
 // Main app layout component (authenticated routes)
@@ -77,6 +78,7 @@ function AppLayout() {
               <PayrollRunDetail />
             </ProtectedRoute>
           } />
+          <Route path="/inventory" element={<Inventory />} />
         </Routes>
       </main>
     </div>

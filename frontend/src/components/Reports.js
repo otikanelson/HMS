@@ -29,7 +29,10 @@ const ACTION_LABELS = {
   STORAGE_MAP_CHANGED: 'changed the storage map',
   PATIENT_FILE_CREATED: 'created a new patient file',
   PASSWORD_RESET_ASSIGNED: 'assigned a new password',
-  PASSWORD_RESET_DISMISSED: 'dismissed a password request'
+  PASSWORD_RESET_DISMISSED: 'dismissed a password request',
+  INVENTORY_ITEM_ADDED: 'Added a drug or supply',
+  INVENTORY_ITEM_UPDATED: 'Changed a drug or supply',
+  INVENTORY_ITEM_REMOVED: 'Removed a drug or supply'
 };
 
 const ROLE_LABELS = {
