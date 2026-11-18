@@ -22,6 +22,19 @@ const payrollEntrySchema = new mongoose.Schema(
       enum: ['pending', 'approved', 'paid'],
       default: 'pending',
     },
+
+    payment: {
+      status: {
+        type: String,
+        enum: ['not_sent', 'sending', 'success', 'failed', 'reversed'],
+        default: 'not_sent'
+      },
+      reference: { type: String, sparse: true, unique: true }, // thc-<runId last 6>-<entryId last 8>-<attempt number>
+      transferCode: String,
+      failureReason: String,
+      sentAt: Date,
+      completedAt: Date
+    }
   },
   { timestamps: true }
 );

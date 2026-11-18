@@ -43,6 +43,9 @@ function serializeStaffForRequester(staffDoc, requester) {
     result.salary = staffDoc.salary;
     result.bankAccount = staffDoc.bankAccount;
     result.accountNumber = staffDoc.accountNumber;
+    result.bankCode = staffDoc.bankCode;
+    result.paystackRecipientCode = staffDoc.paystackRecipientCode;
+    result.accountName = staffDoc.accountName;
   }
 
   return result;

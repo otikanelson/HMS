@@ -17,6 +17,19 @@ const payrollRunSchema = new mongoose.Schema(
     approvedAt: { type: Date, default: null },
     paidBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     paidAt: { type: Date, default: null },
+
+    paymentStatus: {
+      type: String,
+      enum: ['not_started', 'in_progress', 'finished'],
+      default: 'not_started'
+    },
+    paymentStartedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    paymentStartedAt: { type: Date, default: null },
+    paymentMethod: {
+      type: String,
+      enum: ['paystack', 'manual', null],
+      default: null
+    },
   },
   { timestamps: true }
 );

@@ -18,6 +18,7 @@ const visitRoutes = require('./routes/visits');
 const storageMapRoutes = require('./routes/storageMap');
 const passwordResetsRoutes = require('./routes/passwordResets');
 const inventoryRoutes = require('./routes/inventory');
+const banksRoutes = require('./routes/banks');
 const database = require('./config/database');
 const { authenticateToken, requireAccessLevel } = require('./middleware/auth');
 
@@ -97,6 +98,121 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Paystack webhook endpoint (PUBLIC, no authentication required)
+// Must be before the payroll router and app.post routes with authentication
+app.post('/api/payroll/paystack-webhook', express.json({ type: 'application/json' }), async (req: express.Request, res: express.Response): Promise<void> => {
+  try {
+    const crypto = require('crypto');
+    const signature = req.headers['x-paystack-signature'] as string;
+
+    if (!signature) {
+      res.status(401).json({ error: 'No signature' });
+      return;
+    }
+
+    // Verify signature with raw body
+    const secret = process.env.PAYSTACK_SECRET_KEY;
+    if (!secret) {
+      res.status(401).json({ error: 'Not configured' });
+      return;
+    }
+
+    const hash = crypto
+      .createHmac('sha512', secret)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+
+    if (!crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(signature))) {
+      res.status(401).json({ error: 'Invalid signature' });
+      return;
+    }
+
+    const { event, data } = req.body;
+
+    if (!event || !['transfer.success', 'transfer.failed', 'transfer.reversed'].includes(event)) {
+      res.status(200).json({ received: true });
+      return;
+    }
+
+    const reference = data?.reference;
+    if (!reference) {
+      res.status(200).json({ received: true });
+      return;
+    }
+
+    const PayrollEntry = require('./models/PayrollEntry');
+    const PayrollRun = require('./models/PayrollRun');
+    const ActivityLog = require('./models/ActivityLog');
+
+    const entry = await PayrollEntry.findOne({ 'payment.reference': reference });
+    if (!entry) {
+      res.status(200).json({ received: true });
+      return;
+    }
+
+    // Update entry status
+    if (event === 'transfer.success') {
+      entry.payment.status = 'success';
+    } else if (event === 'transfer.failed') {
+      entry.payment.status = 'failed';
+      entry.payment.failureReason = data.reason || 'Transfer failed';
+    } else if (event === 'transfer.reversed') {
+      entry.payment.status = 'reversed';
+      entry.payment.failureReason = data.reason || 'Transfer reversed';
+    }
+
+    entry.payment.completedAt = new Date();
+    await entry.save();
+
+    // Check if all entries in run are now complete
+    const run = await PayrollRun.findById(entry.run);
+    if (run) {
+      const allEntries = await PayrollEntry.find({ run: run._id });
+      const allComplete = allEntries.every((e: any) => 
+        e.payment.status === 'success' || e.payment.status === 'failed' || e.payment.status === 'reversed'
+      );
+
+      if (allComplete && allEntries.every((e: any) => e.payment.status === 'success')) {
+        // All paid
+        run.status = 'paid';
+        run.paidAt = new Date();
+        run.paidBy = run.paymentStartedBy;
+        run.paymentStatus = 'finished';
+        await run.save();
+
+        // Update all entries to paid
+        await PayrollEntry.updateMany(
+          { run: run._id, 'payment.status': 'success' },
+          { status: 'paid' }
+        );
+
+        // Log activity with webhook user
+        try {
+          await ActivityLog.create({
+            action: 'PAYROLL_RUN_PAID',
+            targetType: 'PayrollRun',
+            targetId: run._id,
+            targetLabel: run.periodLabel,
+            performedBy: run.paymentStartedBy,
+            timestamp: new Date()
+          });
+        } catch (logErr) {
+          console.error('Failed to log webhook activity:', logErr);
+        }
+      } else if (allComplete) {
+        run.paymentStatus = 'finished';
+        await run.save();
+      }
+    }
+
+    res.status(200).json({ received: true });
+  } catch (err) {
+    console.error('Webhook error:', err);
+    // Always return 200 to Paystack
+    res.status(200).json({ received: true });
+  }
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
@@ -111,6 +227,7 @@ app.use('/api/visits', authenticateToken, visitRoutes);
 app.use('/api/storage-map', authenticateToken, storageMapRoutes);
 app.use('/api/password-resets', authenticateToken, requireAccessLevel('ADMINISTRATOR'), passwordResetsRoutes);
 app.use('/api/inventory', authenticateToken, inventoryRoutes);
+app.use('/api/banks', banksRoutes);
 
 // Root endpoint
 app.get('/', (req, res) => {

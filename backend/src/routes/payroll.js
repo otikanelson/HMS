@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const PayrollRun = require('../models/PayrollRun');
 const PayrollEntry = require('../models/PayrollEntry');
 const Staff = require('../models/Staff');
+const User = require('../models/User');
 const { authenticateToken, requireAccessLevel } = require('../middleware/auth');
 const { logActivity } = require('../utils/activityLogger');
 
@@ -10,6 +12,19 @@ const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
+
+// Helper: Convert naira to kobo (naira × 100)
+function toKobo(naira) {
+  return Math.round(naira * 100);
+}
+
+// Helper: Build payment reference
+// Format: thc-<runId last 6>-<entryId last 8>-<attempt number>
+function buildReference(runId, entryId, attemptNumber = 1) {
+  const runIdStr = runId.toString().slice(-6);
+  const entryIdStr = entryId.toString().slice(-8);
+  return `thc-${runIdStr}-${entryIdStr}-${attemptNumber}`;
+}
 
 // Every payroll route is Administrator-only, no exceptions — matches the
 // authorization matrix already established for this module.
@@ -194,7 +209,328 @@ router.put('/runs/:id/approve', async (req, res) => {
   }
 });
 
-// PUT /api/payroll/runs/:id/pay — approved -> paid, cascades to all entries
+// GET /api/payroll/runs/:id/payment-check
+router.get('/runs/:id/payment-check', async (req, res) => {
+  try {
+    const run = await PayrollRun.findById(req.params.id);
+    if (!run) return res.status(404).json({ error: 'Payroll run not found.' });
+
+    if (run.status !== 'approved') {
+      return res.status(400).json({ error: 'Only an approved run can have payments checked.' });
+    }
+
+    const secretKey = process.env.PAYSTACK_SECRET_KEY;
+    if (!secretKey) {
+      return res.json({
+        configured: false
+      });
+    }
+
+    // Get Paystack balance
+    let balance = 0;
+    try {
+      const balanceRes = await fetch('https://api.paystack.co/balance', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${secretKey}`
+        }
+      });
+
+      if (balanceRes.ok) {
+        const data = await balanceRes.json();
+        // Balance is in kobo, convert to naira
+        balance = Math.floor(data.data[0]?.balance || 0) / 100;
+      }
+    } catch (err) {
+      console.error('Failed to fetch balance:', err);
+    }
+
+    // Get entries
+    const entries = await PayrollEntry.find({ run: run._id })
+      .populate('staff', 'fullName bankCode accountNumber accountName salary');
+
+    // Calculate totals and check for problems
+    let total = 0;
+    const problems = [];
+    let count = 0;
+
+    for (const entry of entries) {
+      if (entry.totalAmount <= 0) {
+        problems.push({
+          staffName: entry.staffNameSnapshot,
+          problem: 'Salary is zero or negative'
+        });
+        continue;
+      }
+
+      if (!entry.staff.bankCode || !entry.staff.accountNumber) {
+        problems.push({
+          staffName: entry.staffNameSnapshot,
+          problem: 'No bank chosen'
+        });
+        continue;
+      }
+
+      total += entry.totalAmount;
+      count++;
+    }
+
+    const balanceKobo = toKobo(balance);
+    const totalKobo = toKobo(total);
+    const enough = balanceKobo >= totalKobo;
+
+    res.json({
+      configured: true,
+      balance,
+      total,
+      count,
+      enough,
+      shortBy: enough ? 0 : total - balance,
+      problems
+    });
+  } catch (err) {
+    console.error('Failed to check payment:', err);
+    res.status(500).json({ error: 'Payment check failed.' });
+  }
+});
+
+// POST /api/payroll/runs/:id/pay-with-paystack
+// Rate limit tracking map (in production, use Redis)
+const passwordAttempts = new Map();
+
+router.post('/runs/:id/pay-with-paystack', async (req, res) => {
+  try {
+    const run = await PayrollRun.findById(req.params.id);
+    if (!run) return res.status(404).json({ error: 'Payroll run not found.' });
+
+    if (run.status !== 'approved') {
+      return res.status(400).json({ error: 'Only an approved run can be paid.' });
+    }
+
+    if (run.paymentStatus === 'in_progress') {
+      return res.status(400).json({ error: 'A payment is already in progress for this run.' });
+    }
+
+    // Password verification with rate limiting
+    const userId = req.user._id.toString();
+    const now = Date.now();
+    const fifteenMinutes = 15 * 60 * 1000;
+
+    if (!passwordAttempts.has(userId)) {
+      passwordAttempts.set(userId, []);
+    }
+
+    const attempts = passwordAttempts.get(userId).filter(t => now - t < fifteenMinutes);
+    if (attempts.length >= 5) {
+      return res.status(429).json({ error: 'Too many failed password attempts. Try again later.' });
+    }
+
+    const { password } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!password || !(await user.comparePassword(password))) {
+      attempts.push(now);
+      passwordAttempts.set(userId, attempts);
+      return res.status(400).json({ error: 'Your password is not correct.' });
+    }
+
+    // Re-run payment check
+    const checkRes = await fetch(`${req.protocol}://${req.get('host')}/api/payroll/runs/${run._id}/payment-check`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${req.headers.authorization?.split(' ')[1] || ''}`
+      }
+    });
+
+    if (!checkRes.ok) {
+      return res.status(400).json({ error: 'Payment check failed.' });
+    }
+
+    const check = await checkRes.json();
+
+    if (!check.configured) {
+      return res.status(503).json({ error: 'Paystack is not set up yet.' });
+    }
+
+    if (check.problems && check.problems.length > 0) {
+      return res.json({
+        problems: check.problems,
+        balance: check.balance,
+        total: check.total,
+        count: check.count,
+        enough: check.enough
+      });
+    }
+
+    if (!check.enough) {
+      return res.json({
+        problems: [{ staffName: 'Paystack', problem: `Not enough balance. Short by ₦${check.shortBy}` }],
+        balance: check.balance,
+        total: check.total,
+        count: check.count,
+        enough: false
+      });
+    }
+
+    const secretKey = process.env.PAYSTACK_SECRET_KEY;
+    const entries = await PayrollEntry.find({ run: run._id })
+      .populate('staff', 'fullName bankCode accountNumber accountName');
+
+    // Prepare entries for sending
+    const entriesToSend = [];
+    for (const entry of entries) {
+      if (
+        (entry.payment.status === 'not_sent' || entry.payment.status === 'failed') &&
+        entry.totalAmount > 0 &&
+        entry.staff.bankCode &&
+        entry.staff.accountNumber
+      ) {
+        entriesToSend.push(entry);
+      }
+    }
+
+    if (entriesToSend.length === 0) {
+      return res.json({ problems: [], message: 'No entries to send.' });
+    }
+
+    // Create/verify recipients and build batch
+    const transfers = [];
+    for (const entry of entriesToSend) {
+      // Generate reference
+      const attemptNum = entry.payment.reference
+        ? parseInt(entry.payment.reference.split('-').pop()) + 1
+        : 1;
+      const ref = buildReference(run._id, entry._id, attemptNum);
+
+      // Create recipient if needed
+      if (!entry.staff.paystackRecipientCode) {
+        const recipientRes = await fetch('https://api.paystack.co/transferrecipient', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${secretKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            type: 'nuban',
+            name: entry.staff.accountName || entry.staff.fullName,
+            account_number: entry.staff.accountNumber,
+            bank_code: entry.staff.bankCode,
+            currency: 'NGN'
+          })
+        });
+
+        if (!recipientRes.ok) {
+          console.error('Failed to create recipient:', entry.staff.fullName);
+          continue;
+        }
+
+        const recipientData = await recipientRes.json();
+        if (recipientData.status && recipientData.data?.recipient_code) {
+          entry.staff.paystackRecipientCode = recipientData.data.recipient_code;
+          await entry.staff.save();
+        }
+      }
+
+      entry.payment.status = 'sending';
+      entry.payment.reference = ref;
+      entry.payment.sentAt = new Date();
+      await entry.save();
+
+      transfers.push({
+        amount: toKobo(entry.totalAmount),
+        recipient: entry.staff.paystackRecipientCode,
+        reference: ref
+      });
+    }
+
+    if (transfers.length === 0) {
+      return res.json({ problems: [], message: 'Failed to prepare transfers.' });
+    }
+
+    // Send in batches of 100
+    const batchSize = 100;
+    const transferCodes = [];
+
+    for (let i = 0; i < transfers.length; i += batchSize) {
+      const batch = transfers.slice(i, i + batchSize);
+
+      const batchRes = await fetch('https://api.paystack.co/transfer/bulk', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${secretKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currency: 'NGN',
+          source: 'balance',
+          transfers: batch
+        })
+      });
+
+      if (!batchRes.ok) {
+        // Mark all entries in batch as failed
+        for (const ref of batch.map(t => t.reference)) {
+          const entry = await PayrollEntry.findOne({ 'payment.reference': ref });
+          if (entry) {
+            entry.payment.status = 'failed';
+            entry.payment.failureReason = 'Batch transfer failed';
+            await entry.save();
+          }
+        }
+        continue;
+      }
+
+      const batchData = await batchRes.json();
+      if (batchData.status && batchData.data?.transfers) {
+        for (const transfer of batchData.data.transfers) {
+          const entry = await PayrollEntry.findOne({
+            'payment.reference': transfer.reference
+          });
+          if (entry) {
+            entry.payment.transferCode = transfer.transfer_code;
+            await entry.save();
+          }
+          transferCodes.push(transfer.transfer_code);
+        }
+      }
+    }
+
+    // Update run
+    run.paymentStatus = 'in_progress';
+    run.paymentMethod = 'paystack';
+    run.paymentStartedBy = req.user._id;
+    run.paymentStartedAt = new Date();
+    await run.save();
+
+    await logActivity({
+      req,
+      action: 'PAYROLL_PAYMENT_STARTED',
+      targetType: 'PayrollRun',
+      targetId: run._id,
+      targetLabel: run.periodLabel,
+      details: { count: entriesToSend.length, total }
+    });
+
+    // Return current status
+    const updatedEntries = await PayrollEntry.find({ run: run._id })
+      .populate('staff', 'fullName');
+
+    res.json({
+      message: 'Payment started',
+      entries: updatedEntries.map(e => ({
+        _id: e._id,
+        staffName: e.staffNameSnapshot,
+        amount: e.totalAmount,
+        status: e.payment.status
+      }))
+    });
+  } catch (err) {
+    console.error('Failed to pay with Paystack:', err);
+    res.status(500).json({ error: 'Payment failed.' });
+  }
+});
+
+// PUT /api/payroll/runs/:id/pay — approved -> paid, cascades to all entries (manual bank transfer)
 router.put('/runs/:id/pay', async (req, res) => {
   try {
     const run = await PayrollRun.findById(req.params.id);
@@ -202,6 +538,10 @@ router.put('/runs/:id/pay', async (req, res) => {
 
     if (run.status !== 'approved') {
       return res.status(400).json({ error: 'A run must be approved before it can be marked as paid.' });
+    }
+
+    if (run.paymentStatus === 'in_progress') {
+      return res.status(400).json({ error: 'A Paystack payment is in progress.' });
     }
 
     run.status = 'paid';

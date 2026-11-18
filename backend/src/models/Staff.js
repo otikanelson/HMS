@@ -59,6 +59,18 @@ const staffSchema = new mongoose.Schema({
   accountNumber: {
     type: String,
     trim: true
+  },
+  bankCode: {
+    type: String,
+    trim: true
+  },
+  paystackRecipientCode: {
+    type: String,
+    trim: true
+  },
+  accountName: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true,

@@ -149,6 +149,7 @@ const Guide = ({ user, onClose, onComplete }) => {
   }, []);
 
   // Navigate to route if specified
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const currentStepData = steps[currentStep];
     if (currentStepData?.route && currentStepData.route !== window.location.pathname) {
@@ -157,6 +158,7 @@ const Guide = ({ user, onClose, onComplete }) => {
   }, [currentStep, steps, navigate]);
 
   // Add highlight and animation styles for steps with highlight/animate props
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const currentStepData = steps[currentStep];
     
@@ -195,11 +197,13 @@ const Guide = ({ user, onClose, onComplete }) => {
   }, [currentStep, steps]);
 
   // Update card position when spotlight changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setCardPosition(computeCardPosition());
   }, [spotlightRect, computeCardPosition]);
 
   // Handle Escape key
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
@@ -211,6 +215,7 @@ const Guide = ({ user, onClose, onComplete }) => {
   }, [handleSkip]);
 
   // Update spotlight on step change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     updateSpotlight();
   }, [currentStep, updateSpotlight]);

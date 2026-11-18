@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './AddPatient.css'; // Reuse AddPatient styling
@@ -11,6 +11,10 @@ const AddStaff = () => {
   const [credentials, setCredentials] = useState(null);
   const [createdStaff, setCreatedStaff] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [banks, setBanks] = useState([]);
+  const [loadingBanks, setLoadingBanks] = useState(true);
+  const [verifyingAccount, setVerifyingAccount] = useState(false);
+  const [accountVerified, setAccountVerified] = useState(null);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -22,16 +26,39 @@ const AddStaff = () => {
     email: '',
     shift: 'DAY',
     salary: '',
+    bankCode: '',
     bankAccount: '',
-    accountNumber: ''
+    accountNumber: '',
+    accountName: ''
   });
 
   const [validationState, setValidationState] = useState({});
+
+  // Load banks on mount
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const response = await axios.get('/api/banks');
+        setBanks(response.data);
+        setLoadingBanks(false);
+      } catch (err) {
+        console.error('Failed to load banks:', err);
+        setLoadingBanks(false);
+      }
+    };
+    fetchBanks();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     setError('');
+    
+    // Clear verification if bankCode or accountNumber changes
+    if (name === 'bankCode' || name === 'accountNumber') {
+      setAccountVerified(null);
+      setFormData(prev => ({ ...prev, accountName: '' }));
+    }
     
     // Clear validation state for this field
     if (validationState[name]) {
@@ -87,6 +114,30 @@ const AddStaff = () => {
     setValidationState(prev => ({ ...prev, [name]: validation }));
   };
 
+  const handleVerifyAccount = async () => {
+    if (!formData.accountNumber || !formData.bankCode) {
+      setError('Please enter both account number and select a bank');
+      return;
+    }
+
+    setVerifyingAccount(true);
+    try {
+      const response = await axios.post('/api/banks/verify', {
+        accountNumber: formData.accountNumber,
+        bankCode: formData.bankCode
+      });
+
+      setFormData(prev => ({ ...prev, accountName: response.data.accountName }));
+      setAccountVerified(true);
+      setError('');
+    } catch (err) {
+      setAccountVerified(false);
+      setError(err.response?.data?.error || 'Account verification failed');
+    } finally {
+      setVerifyingAccount(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -130,6 +181,7 @@ const AddStaff = () => {
         email: formData.email.trim() || undefined,
         shift: formData.shift,
         salary: formData.salary ? parseFloat(formData.salary) : undefined,
+        bankCode: formData.bankCode || undefined,
         bankAccount: formData.bankAccount.trim() || undefined,
         accountNumber: formData.accountNumber.trim() || undefined
       };
@@ -185,70 +237,69 @@ const AddStaff = () => {
   };
 
   // Show credentials screen
-  if (showCredentials) {
-    if (credentials?.error) {
-      // Staff created but login failed
-      return (
-        <div className="add-patient">
-          <div className="add-patient-header">
-            <h1>⚠️ Partial Success</h1>
-            <p>Staff record created, but login account setup failed</p>
-          </div>
+  if (showCredentials && credentials?.error) {
+    return (
+      <div className="add-patient">
+        <div className="add-patient-header">
+          <h1>⚠️ Partial Success</h1>
+          <p>Staff record created, but login account setup failed</p>
+        </div>
 
-          <div className="form-container">
-            <div className="patient-form">
-              <div className="form-section">
-                <div className="alert alert-warning" style={{
-                  background: '#fff3cd',
-                  color: '#856404',
-                  padding: '20px',
-                  borderRadius: '8px',
-                  border: '1px solid #ffeeba',
-                  marginBottom: '20px'
-                }}>
-                  <p style={{ fontSize: '16px', marginBottom: '12px' }}>
-                    <strong>{createdStaff?.fullName}'s</strong> staff record was saved successfully, 
-                    but their login account couldn't be created automatically.
-                  </p>
-                  <p style={{ fontSize: '14px', marginBottom: '0' }}>
-                    They won't be able to sign in yet. Please contact technical support 
-                    to set up their account manually.
-                  </p>
-                </div>
-
-                <div style={{ 
-                  background: '#f8f9fa', 
-                  padding: '16px', 
-                  borderRadius: '8px',
-                  marginBottom: '20px'
-                }}>
-                  <p style={{ margin: '0', fontSize: '14px', color: '#495057' }}>
-                    <strong>Staff ID:</strong> {createdStaff?.staffId}
-                  </p>
-                  <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: '#495057' }}>
-                    <strong>Role:</strong> {createdStaff?.roleDisplay}
-                  </p>
-                </div>
+        <div className="form-container">
+          <div className="patient-form">
+            <div className="form-section">
+              <div className="alert alert-warning" style={{
+                background: '#fff3cd',
+                color: '#856404',
+                padding: '20px',
+                borderRadius: '8px',
+                border: '1px solid #ffeeba',
+                marginBottom: '20px'
+              }}>
+                <p style={{ fontSize: '16px', marginBottom: '12px' }}>
+                  <strong>{createdStaff?.fullName}'s</strong> staff record was saved successfully, 
+                  but their login account couldn't be created automatically.
+                </p>
+                <p style={{ fontSize: '14px', marginBottom: '0' }}>
+                  They won't be able to sign in yet. Please contact technical support 
+                  to set up their account manually.
+                </p>
               </div>
 
-              <div className="form-actions">
-                <div className="action-buttons">
-                  <button
-                    type="button"
-                    onClick={handleDone}
-                    className="btn btn-primary"
-                  >
-                    Go to Staff List
-                  </button>
-                </div>
+              <div style={{ 
+                background: '#f8f9fa', 
+                padding: '16px', 
+                borderRadius: '8px',
+                marginBottom: '20px'
+              }}>
+                <p style={{ margin: '0', fontSize: '14px', color: '#495057' }}>
+                  <strong>Staff ID:</strong> {createdStaff?.staffId}
+                </p>
+                <p style={{ margin: '8px 0 0 0', fontSize: '14px', color: '#495057' }}>
+                  <strong>Role:</strong> {createdStaff?.roleDisplay}
+                </p>
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <div className="action-buttons">
+                <button
+                  type="button"
+                  onClick={handleDone}
+                  className="btn btn-primary"
+                >
+                  Go to Staff List
+                </button>
               </div>
             </div>
           </div>
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
-    // Success - show credentials
+  // Success - show credentials
+  if (showCredentials && credentials && !credentials.error) {
     return (
       <div className="add-patient">
         <div className="add-patient-header">
@@ -624,21 +675,32 @@ const AddStaff = () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="bankAccount">Bank Name</label>
-                <input
-                  type="text"
-                  id="bankAccount"
-                  name="bankAccount"
-                  value={formData.bankAccount}
-                  onChange={handleInputChange}
-                  className="form-control"
-                  placeholder="e.g. First Bank of Nigeria"
-                />
+                <label htmlFor="bankCode">
+                  Bank <span style={{ color: '#dc3545' }}>{formData.bankCode ? '' : '(Choose from list)'}</span>
+                </label>
+                {loadingBanks ? (
+                  <div className="form-control" style={{ color: '#6c757d' }}>Loading banks...</div>
+                ) : (
+                  <select
+                    id="bankCode"
+                    name="bankCode"
+                    value={formData.bankCode}
+                    onChange={handleInputChange}
+                    className="form-control"
+                  >
+                    <option value="">Select a bank...</option>
+                    {banks.map((bank) => (
+                      <option key={bank.code} value={bank.code}>
+                        {bank.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
 
             <div className="form-group">
-              <label htmlFor="accountNumber">Account Number</label>
+              <label htmlFor="accountNumber">Account Number (10 digits)</label>
               <input
                 type="text"
                 id="accountNumber"
@@ -659,6 +721,57 @@ const AddStaff = () => {
                 </span>
               )}
             </div>
+
+            {formData.accountNumber && formData.bankCode && (
+              <div className="form-group">
+                <button
+                  type="button"
+                  onClick={handleVerifyAccount}
+                  disabled={verifyingAccount || accountVerified === true}
+                  className="btn btn-secondary"
+                  style={{ width: '100%', marginTop: '8px' }}
+                >
+                  {verifyingAccount ? (
+                    <>
+                      <div className="loading-spinner"></div>
+                      Checking account...
+                    </>
+                  ) : accountVerified === true ? (
+                    <>
+                      ✓ Account verified
+                    </>
+                  ) : (
+                    <>
+                      Check account
+                    </>
+                  )}
+                </button>
+                {accountVerified === true && formData.accountName && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 12px',
+                    background: '#d4edda',
+                    color: '#155724',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}>
+                    Account name: <strong>{formData.accountName}</strong>
+                  </div>
+                )}
+                {accountVerified === false && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 12px',
+                    background: '#f8d7da',
+                    color: '#721c24',
+                    borderRadius: '4px',
+                    fontSize: '14px'
+                  }}>
+                    ⚠️ Could not verify this account. Check the details and try again.
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Form Actions */}

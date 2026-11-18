@@ -388,6 +388,17 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
       });
     }
 
+    // Normalize accountNumber if provided: digits only, exactly 10
+    let normalizedAccountNumber = accountNumber;
+    if (accountNumber) {
+      normalizedAccountNumber = accountNumber.replace(/\D/g, '');
+      if (normalizedAccountNumber.length !== 10) {
+        return res.status(400).json({
+          error: 'Invalid account number'
+        });
+      }
+    }
+
     // Create new staff member
     const newStaff = new Staff({
       firstName: firstName.trim(),
@@ -400,7 +411,8 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
       shift: shift?.toUpperCase() || 'DAY',
       salary: salary ? parseFloat(salary) : undefined,
       bankAccount: bankAccount?.trim(),
-      accountNumber: accountNumber?.trim()
+      accountNumber: normalizedAccountNumber,
+      bankCode: bankCode?.trim()
     });
 
     await newStaff.save();
@@ -525,11 +537,48 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
     const wasOnDuty = staff.onDuty;
     const willBeOffDuty = req.body.onDuty === false;
 
+    // Normalize accountNumber if provided: digits only, exactly 10
+    if (req.body.accountNumber !== undefined) {
+      const normalized = req.body.accountNumber.replace(/\D/g, '');
+      if (normalized.length !== 10) {
+        return res.status(400).json({
+          error: 'Invalid account number'
+        });
+      }
+      req.body.accountNumber = normalized;
+
+      // If accountNumber changed, clear the verification fields
+      if (staff.accountNumber !== req.body.accountNumber) {
+        await Staff.updateOne(
+          { _id: staff._id },
+          {
+            $unset: {
+              paystackRecipientCode: '',
+              accountName: ''
+            }
+          }
+        );
+      }
+    }
+
+    // If bankCode is being changed, clear verification fields
+    if (req.body.bankCode !== undefined && staff.bankCode !== req.body.bankCode) {
+      await Staff.updateOne(
+        { _id: staff._id },
+        {
+          $unset: {
+            paystackRecipientCode: '',
+            accountName: ''
+          }
+        }
+      );
+    }
+
     // Update fields
     const updateFields = [
       'firstName', 'lastName', 'otherNames', 'role', 'phoneNumber', 
       'email', 'schedule', 'onDuty', 'shift',
-      'salary', 'bankAccount', 'accountNumber'
+      'salary', 'bankAccount', 'accountNumber', 'bankCode'
     ];
 
     updateFields.forEach(field => {

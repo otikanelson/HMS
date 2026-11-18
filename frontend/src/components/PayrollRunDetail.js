@@ -12,6 +12,13 @@ function formatCurrency(amount) {
 }
 
 const STATUS_LABELS = { pending: 'Pending', approved: 'Approved', paid: 'Paid' };
+const PAYMENT_STATUS_LABELS = {
+  not_sent: 'Not sent',
+  sending: 'Sending…',
+  success: 'Paid ✓',
+  failed: 'Failed',
+  reversed: 'Reversed'
+};
 
 async function fetchRun(id) {
   const res = await axios.get(`/api/payroll/runs/${id}`);
@@ -33,6 +40,245 @@ async function payRun(id) {
   return res.data;
 }
 
+async function payWithPaystack(id, password) {
+  const res = await axios.post(`/api/payroll/runs/${id}/pay-with-paystack`, { password });
+  return res.data;
+}
+
+async function retryFailedPayments(id, password) {
+  const res = await axios.post(`/api/payroll/runs/${id}/retry-failed`, { password });
+  return res.data;
+}
+
+async function syncPaymentStatus(id) {
+  const res = await axios.post(`/api/payroll/runs/${id}/sync`);
+  return res.data;
+}
+
+async function downloadPaymentFile(id) {
+  const res = await axios.get(`/api/payroll/runs/${id}/payment-file`, {
+    responseType: 'blob'
+  });
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', `payroll-payment.csv`);
+  document.body.appendChild(link);
+  link.click();
+  link.parentNode.removeChild(link);
+}
+
+async function checkPayment(id) {
+  const res = await axios.get(`/api/payroll/runs/${id}/payment-check`);
+  return res.data;
+}
+
+const PayrollPaymentModal = ({ run, onClose, onPaymentStarted }) => {
+  const [step, setStep] = useState('check'); // 'check' | 'confirm' | 'sending'
+  const [paymentCheck, setPaymentCheck] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [retryingFailed, setRetryingFailed] = useState(false);
+
+  useEffect(() => {
+    const loadCheck = async () => {
+      try {
+        const check = await checkPayment(run._id);
+        setPaymentCheck(check);
+        if (!check.configured) {
+          setError('Paystack is not set up yet');
+        }
+      } catch (err) {
+        setError('Failed to check payment status');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCheck();
+  }, [run._id]);
+
+  const handleStartPayment = async () => {
+    if (!password) {
+      setPasswordError('Enter your password to confirm');
+      return;
+    }
+    setPasswordError('');
+    setStep('sending');
+    setError('');
+
+    try {
+      const result = await payWithPaystack(run._id, password);
+      
+      if (result.problems && result.problems.length > 0) {
+        setError(`Cannot start payment: ${result.problems[0].problem}`);
+        setStep('check');
+        setPassword('');
+        return;
+      }
+
+      if (result.entries) {
+        onPaymentStarted(result.entries);
+        onClose();
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Payment failed');
+      setStep('check');
+      setPassword('');
+    }
+  };
+
+  const handleRetryFailed = async () => {
+    if (!password) {
+      setPasswordError('Enter your password to confirm');
+      return;
+    }
+    setPasswordError('');
+    setRetryingFailed(true);
+    setError('');
+
+    try {
+      const result = await retryFailedPayments(run._id, password);
+      if (result.entries) {
+        onPaymentStarted(result.entries);
+        onClose();
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Retry failed');
+    } finally {
+      setRetryingFailed(false);
+      setPassword('');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="payroll-modal-overlay" onClick={onClose}>
+        <div className="payroll-modal-content" onClick={(e) => e.stopPropagation()}>
+          <div style={{ textAlign: 'center', padding: '40px' }}>Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!paymentCheck?.configured) {
+    return (
+      <div className="payroll-modal-overlay" onClick={onClose}>
+        <div className="payroll-modal-content" onClick={(e) => e.stopPropagation()}>
+          <h2>Automatic payment not set up</h2>
+          <p>Paystack integration is not configured. You can still download the payment file for manual processing.</p>
+          <button className="btn btn-secondary" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="payroll-modal-overlay" onClick={onClose}>
+      <div className="payroll-modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="payroll-modal-close" onClick={onClose}>×</button>
+
+        {step === 'check' && (
+          <>
+            <h2>Pay all staff</h2>
+
+            <div className="payroll-payment-check">
+              <div className="payroll-check-row">
+                <span>Number of people:</span>
+                <strong>{paymentCheck.count}</strong>
+              </div>
+              <div className="payroll-check-row">
+                <span>Total amount:</span>
+                <strong>{formatCurrency(paymentCheck.total)}</strong>
+              </div>
+              <div className="payroll-check-row">
+                <span>Paystack balance:</span>
+                <strong>{formatCurrency(paymentCheck.balance)}</strong>
+              </div>
+              <div className={`payroll-check-row ${paymentCheck.enough ? 'payroll-check-ok' : 'payroll-check-error'}`}>
+                <span>Enough money:</span>
+                <strong>{paymentCheck.enough ? 'Yes ✓' : `No — short by ₦${paymentCheck.shortBy}`}</strong>
+              </div>
+            </div>
+
+            {paymentCheck.problems && paymentCheck.problems.length > 0 && (
+              <div className="payroll-problems">
+                <h3>Problems to fix:</h3>
+                <ul>
+                  {paymentCheck.problems.map((p, i) => (
+                    <li key={i}>
+                      <strong>{p.staffName}</strong> — {p.problem}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {error && <div className="payroll-error">{error}</div>}
+
+            <div className="payroll-modal-actions">
+              <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => setStep('confirm')}
+                disabled={!paymentCheck.enough || (paymentCheck.problems && paymentCheck.problems.length > 0)}
+              >
+                Continue
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === 'confirm' && (
+          <>
+            <h2>Confirm payment</h2>
+            <p>This will send ₦{paymentCheck.total.toLocaleString()} to {paymentCheck.count} staff accounts now. It cannot be undone.</p>
+
+            <div className="payroll-modal-password">
+              <label>Type your password to confirm:</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setPasswordError('');
+                }}
+                onKeyPress={(e) => e.key === 'Enter' && handleStartPayment()}
+                placeholder="Your password"
+              />
+              {passwordError && <div className="payroll-error">{passwordError}</div>}
+            </div>
+
+            {error && <div className="payroll-error">{error}</div>}
+
+            <div className="payroll-modal-actions">
+              <button className="btn btn-secondary" onClick={() => { setStep('check'); setPassword(''); setError(''); }}>Back</button>
+              <button 
+                className="btn btn-primary" 
+                onClick={handleStartPayment}
+                disabled={!password}
+              >
+                Send ₦{formatCurrency(paymentCheck.total)} to {paymentCheck.count} people
+              </button>
+            </div>
+          </>
+        )}
+
+        {step === 'sending' && (
+          <>
+            <h2>Processing payment...</h2>
+            <div style={{ textAlign: 'center', padding: '40px' }}>
+              <div style={{ fontSize: '48px', marginBottom: '20px' }}>⏳</div>
+              <p>Payment is being sent. Please wait...</p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const PayrollRunDetail = () => {
   const { id } = useParams();
 
@@ -42,13 +288,16 @@ const PayrollRunDetail = () => {
   const [error, setError] = useState('');
 
   const [editingId, setEditingId] = useState(null);
-  const [adjustmentType, setAdjustmentType] = useState('increase'); // 'increase' or 'deduction'
+  const [adjustmentType, setAdjustmentType] = useState('increase');
   const [editAmount, setEditAmount] = useState('');
   const [editNote, setEditNote] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const [confirmingAction, setConfirmingAction] = useState(null); // 'approve' | 'pay' | null
+  const [confirmingAction, setConfirmingAction] = useState(null);
   const [actionBusy, setActionBusy] = useState(false);
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [syncIntervalId, setSyncIntervalId] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -68,6 +317,39 @@ const PayrollRunDetail = () => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Auto-sync payment status if in progress
+  useEffect(() => {
+    if (run?.paymentStatus === 'in_progress' && !syncIntervalId) {
+      const interval = setInterval(async () => {
+        try {
+          const result = await syncPaymentStatus(id);
+          setEntries(result.entries);
+
+          // Check if all are done
+          const allDone = result.entries.every(e => 
+            e.status === 'success' || e.status === 'failed' || e.status === 'reversed'
+          );
+
+          if (allDone) {
+            clearInterval(interval);
+            setSyncIntervalId(null);
+            // Reload to get updated run status
+            load();
+          }
+        } catch (err) {
+          console.error('Sync error:', err);
+        }
+      }, 10000); // 10 seconds
+
+      setSyncIntervalId(interval);
+    }
+
+    return () => {
+      if (syncIntervalId) clearInterval(syncIntervalId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run?.paymentStatus]);
 
   const startEditing = (entry) => {
     setEditingId(entry._id);
@@ -118,6 +400,19 @@ const PayrollRunDetail = () => {
     }
   };
 
+  const handlePaymentStarted = (paymentEntries) => {
+    setEntries(paymentEntries);
+    load(); // Reload to get updated run status
+  };
+
+  const handleDownloadPaymentFile = async () => {
+    try {
+      await downloadPaymentFile(id);
+    } catch (err) {
+      setError('Failed to download payment file');
+    }
+  };
+
   if (loading) {
     return <div className="payroll-page"><p className="payroll-status-text">Loading...</p></div>;
   }
@@ -128,6 +423,8 @@ const PayrollRunDetail = () => {
   const total = entries.reduce((sum, e) => sum + e.totalAmount, 0);
   const isPending = run.status === 'pending';
   const isApproved = run.status === 'approved';
+  const failedCount = entries.filter(e => e.payment?.status === 'failed' || e.payment?.status === 'reversed').length;
+  const sendingCount = entries.filter(e => e.payment?.status === 'sending').length;
 
   return (
     <div className="payroll-page">
@@ -149,10 +446,30 @@ const PayrollRunDetail = () => {
               Approve Run
             </button>
           )}
-          {isApproved && (
-            <button type="button" className="payroll-btn-primary" onClick={() => setConfirmingAction('pay')}>
-              Mark as Paid
-            </button>
+          {isApproved && run.paymentStatus !== 'in_progress' && (
+            <>
+              <button type="button" className="payroll-btn-primary" onClick={() => setShowPaymentModal(true)}>
+                💳 Pay all staff
+              </button>
+              <button type="button" className="payroll-btn-secondary" onClick={() => setConfirmingAction('pay')}>
+                I paid by bank transfer — mark as paid
+              </button>
+              <button type="button" className="payroll-btn-secondary" onClick={handleDownloadPaymentFile}>
+                Download payment file (CSV)
+              </button>
+            </>
+          )}
+          {isApproved && run.paymentStatus === 'in_progress' && (
+            <>
+              <button type="button" className="payroll-btn-secondary" onClick={() => syncPaymentStatus(id)}>
+                🔄 Refresh payment status
+              </button>
+              {failedCount > 0 && (
+                <button type="button" className="payroll-btn-primary" onClick={() => {/* retry modal */}}>
+                  ⚠️ Retry failed ({failedCount})
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -183,6 +500,14 @@ const PayrollRunDetail = () => {
         </div>
       )}
 
+      {showPaymentModal && run && (
+        <PayrollPaymentModal 
+          run={run} 
+          onClose={() => setShowPaymentModal(false)}
+          onPaymentStarted={handlePaymentStarted}
+        />
+      )}
+
       <div className="payroll-entries-table">
         <div className="payroll-entry-row payroll-entry-header">
           <span>Staff</span>
@@ -191,6 +516,7 @@ const PayrollRunDetail = () => {
           <span>Base Salary</span>
           <span>Adjustment</span>
           <span>Total</span>
+          {run.paymentStatus === 'in_progress' && <span>Payment</span>}
           <span></span>
         </div>
         {entries.map((entry) => (
@@ -200,7 +526,7 @@ const PayrollRunDetail = () => {
               {entry.staff?.role && <span className="payroll-entry-role">{entry.staff.role}</span>}
             </span>
             <span className="payroll-bank-info">{entry.staff?.bankAccount || <span className="payroll-muted">Not set</span>}</span>
-            <span className="payroll-bank-info">{entry.staff?.accountNumber || <span className="payroll-muted">Not set</span>}</span>
+            <span className="payroll-bank-info">{entry.staff?.accountNumber ? `****${entry.staff.accountNumber.slice(-4)}` : <span className="payroll-muted">Not set</span>}</span>
             <span>{formatCurrency(entry.baseSalary)}</span>
             <span>
               {editingId === entry._id ? (
@@ -250,6 +576,9 @@ const PayrollRunDetail = () => {
               )}
             </span>
             <span className="payroll-entry-total">{formatCurrency(entry.totalAmount)}</span>
+            {run.paymentStatus === 'in_progress' && (
+              <span className="payroll-payment-status">{PAYMENT_STATUS_LABELS[entry.payment?.status] || 'Not sent'}</span>
+            )}
             <span>
               {isPending && (
                 editingId === entry._id ? (

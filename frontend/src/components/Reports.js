@@ -32,7 +32,10 @@ const ACTION_LABELS = {
   PASSWORD_RESET_DISMISSED: 'dismissed a password request',
   INVENTORY_ITEM_ADDED: 'Added a drug or supply',
   INVENTORY_ITEM_UPDATED: 'Changed a drug or supply',
-  INVENTORY_ITEM_REMOVED: 'Removed a drug or supply'
+  INVENTORY_ITEM_REMOVED: 'Removed a drug or supply',
+  PAYROLL_PAYMENT_STARTED: 'Started paying staff',
+  PAYROLL_PAYMENT_FILE_EXPORTED: 'Downloaded the payment file',
+  PAYROLL_RUN_PAID: 'Completed staff payment'
 };
 
 const ROLE_LABELS = {

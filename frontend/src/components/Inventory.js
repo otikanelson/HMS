@@ -177,111 +177,135 @@ const Inventory = () => {
   const tabLabel = activeTab === 'drug' ? 'Drugs' : activeTab === 'supply' ? 'Supplies' : 'All';
 
   return (
-    <div className="inventory-page">
+    <div className="inventory-list">
       {/* Header */}
-      <div className="inventory-header">
-        <h1>Drugs & Supplies</h1>
-        <button className="btn btn-filled" onClick={handleAddClick} data-guide="inventory-add-btn">
-          Add item
-        </button>
+      <div className="inventory-list-header">
+        <div>
+          <h1 className="page-title">Drugs & Supplies</h1>
+          <p className="page-subtitle">Manage your pharmacy inventory</p>
+        </div>
+        <div className="list-actions">
+          <button 
+            className="btn btn-primary" 
+            onClick={handleAddClick} 
+            data-guide="inventory-add-btn"
+          >
+            Add item
+          </button>
+        </div>
       </div>
 
-      {/* Search */}
-      <div className="inventory-search-container">
-        <form className="inventory-search-form" onSubmit={(e) => e.preventDefault()}>
+      {/* Filters Section */}
+      <div className="filters-section">
+        <div className="filters-grid">
           <input
             type="text"
             placeholder="Search drugs and supplies"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="inventory-search-input"
+            className="filter-select"
             data-guide="inventory-search"
+            style={{ 
+              padding: '8px 12px', 
+              border: '1px solid #e5e7eb', 
+              borderRadius: '6px',
+              backgroundColor: 'white',
+              color: '#1f2937',
+              fontSize: '0.875rem',
+              fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+            }}
           />
-        </form>
-      </div>
+          
+          <select 
+            value={activeTab}
+            onChange={(e) => setActiveTab(e.target.value)}
+            className="filter-select"
+          >
+            <option value="all">All Items ({counts.total})</option>
+            <option value="drug">Drugs ({counts.drugs})</option>
+            <option value="supply">Supplies ({counts.supplies})</option>
+          </select>
 
-      {/* Toggles */}
-      <div className="inventory-toggles">
-        {counts.missingPrice > 0 && (
-          <label className="inventory-toggle">
-            <input
-              type="checkbox"
-              checked={showMissingPrice}
-              onChange={(e) => setShowMissingPrice(e.target.checked)}
-            />
-            <span>Show only items with no price yet ({counts.missingPrice})</span>
-          </label>
-        )}
-        {counts.missingQuantity > 0 && (
-          <label className="inventory-toggle">
-            <input
-              type="checkbox"
-              checked={showMissingQuantity}
-              onChange={(e) => setShowMissingQuantity(e.target.checked)}
-            />
-            <span>Show only items with no quantity yet ({counts.missingQuantity})</span>
-          </label>
-        )}
-      </div>
-
-      {/* Tabs */}
-      <div className="inventory-tabs">
-        <button
-          className={`inventory-tab ${activeTab === 'all' ? 'inventory-tab-active' : ''}`}
-          onClick={() => setActiveTab('all')}
-        >
-          All <span className="inventory-tab-count">{counts.total}</span>
-        </button>
-        <button
-          className={`inventory-tab ${activeTab === 'drug' ? 'inventory-tab-active' : ''}`}
-          onClick={() => setActiveTab('drug')}
-        >
-          Drugs <span className="inventory-tab-count">{counts.drugs}</span>
-        </button>
-        <button
-          className={`inventory-tab ${activeTab === 'supply' ? 'inventory-tab-active' : ''}`}
-          onClick={() => setActiveTab('supply')}
-        >
-          Supplies <span className="inventory-tab-count">{counts.supplies}</span>
-        </button>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {counts.missingPrice > 0 && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.875rem' }}>
+                <input
+                  type="checkbox"
+                  checked={showMissingPrice}
+                  onChange={(e) => setShowMissingPrice(e.target.checked)}
+                />
+                <span>No price ({counts.missingPrice})</span>
+              </label>
+            )}
+            {counts.missingQuantity > 0 && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.875rem' }}>
+                <input
+                  type="checkbox"
+                  checked={showMissingQuantity}
+                  onChange={(e) => setShowMissingQuantity(e.target.checked)}
+                />
+                <span>No quantity ({counts.missingQuantity})</span>
+              </label>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* List */}
-      <div className="inventory-list">
-        {loading ? (
-          <div className="inventory-loading">Loading...</div>
-        ) : filteredItems.length === 0 ? (
-          <div className="inventory-empty">
+      {loading ? (
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Loading inventory...</p>
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="no-staff">
+          <div className="no-staff-icon">📦</div>
+          <h3>{items.length === 0 ? 'No items yet' : 'No matches'}</h3>
+          <p>
             {items.length === 0
-              ? 'No items yet. Press Add item to start the list.'
-              : `Nothing matches ${searchQuery}.`}
-          </div>
-        ) : (
-          <div className="inventory-items">
-            {filteredItems.map(item => (
-              <div key={item._id} className="inventory-item">
-                <div className="inventory-item-name">{item.name}</div>
-                <div className="inventory-item-type">{item.category === 'drug' ? 'Drug' : 'Supply'}</div>
-                <div className="inventory-item-quantity">
-                  {item.expectedQuantity !== null && item.expectedQuantity !== undefined
-                    ? item.expectedQuantity
-                    : 'Not set yet'}
-                </div>
-                <div className="inventory-item-price">
-                  {formatPrice(item.price)}
-                  {item.unit && <div className="inventory-item-unit">{item.unit}</div>}
-                </div>
-                <button
-                  className="inventory-item-edit"
-                  onClick={() => handleEditClick(item)}
-                >
-                  Edit
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ? 'Press Add item to start building your inventory list.'
+              : `Nothing matches "${searchQuery}".`}
+          </p>
+        </div>
+      ) : (
+        <div className="inventory-table-container">
+          <table className="inventory-table">
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>Type</th>
+                <th>Sold As</th>
+                <th>Expected Quantity</th>
+                <th>Price</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredItems.map(item => (
+                <tr key={item._id}>
+                  <td>{item.name}</td>
+                  <td>{item.category === 'drug' ? 'Drug' : 'Supply'}</td>
+                  <td>{item.unit || '—'}</td>
+                  <td>
+                    {item.expectedQuantity !== null && item.expectedQuantity !== undefined
+                      ? item.expectedQuantity
+                      : '—'}
+                  </td>
+                  <td>{formatPrice(item.price)}</td>
+                  <td>
+                    <button
+                      className="inventory-item-edit"
+                      onClick={() => handleEditClick(item)}
+                    >
+                      Edit
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Add/Edit Modal */}
       {editingId && (
