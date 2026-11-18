@@ -45,11 +45,6 @@ async function payWithPaystack(id, password) {
   return res.data;
 }
 
-async function retryFailedPayments(id, password) {
-  const res = await axios.post(`/api/payroll/runs/${id}/retry-failed`, { password });
-  return res.data;
-}
-
 async function syncPaymentStatus(id) {
   const res = await axios.post(`/api/payroll/runs/${id}/sync`);
   return res.data;
