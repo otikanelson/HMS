@@ -19,37 +19,60 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// TEMPORARY: Fix usernames to lowercase (remove after use)
-// POST /api/auth/fix-usernames
-router.post('/fix-usernames', async (req, res) => {
+// TEMPORARY: Create new admin user with fresh credentials
+// POST /api/auth/create-admin
+router.post('/create-admin', async (req, res) => {
   try {
     const secretKey = req.headers['x-fix-key'];
     
-    // Use a simple secret that should match an admin action
+    // Verify secret key
     if (secretKey !== process.env.ADMIN_FIX_KEY && secretKey !== 'emergency-fix-2026') {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    const users = await User.find({});
-    let updated = 0;
+    const { username, password, fullName } = req.body;
 
-    for (const user of users) {
-      const lowercaseUsername = user.username.toLowerCase().trim();
-      if (user.username !== lowercaseUsername) {
-        user.username = lowercaseUsername;
-        await user.save();
-        updated++;
-      }
+    if (!username || !password || !fullName) {
+      return res.status(400).json({
+        error: 'Username, password, and fullName are required'
+      });
     }
 
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      username: username.toLowerCase().trim()
+    });
+
+    if (existingUser) {
+      return res.status(409).json({
+        error: 'User already exists'
+      });
+    }
+
+    // Create new admin user
+    const newUser = new User({
+      username: username.toLowerCase().trim(),
+      password: password,
+      fullName: fullName.trim(),
+      accessLevel: 'ADMINISTRATOR',
+      isActive: true,
+      mustChangePassword: false
+    });
+
+    await newUser.save();
+
     res.json({
-      message: `✓ Fixed ${updated} usernames to lowercase`,
-      updated
+      message: '✓ New admin user created successfully',
+      user: {
+        username: newUser.username,
+        fullName: newUser.fullName,
+        accessLevel: newUser.accessLevel
+      }
     });
   } catch (error) {
-    console.error('Fix usernames error:', error);
+    console.error('Create admin error:', error);
     res.status(500).json({
-      error: 'Failed to fix usernames'
+      error: 'Failed to create admin user'
     });
   }
 });
