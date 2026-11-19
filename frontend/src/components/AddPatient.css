@@ -23,62 +23,97 @@
   margin: 0;
 }
 
-.form-container {
+.add-patient .form-container {
   display: block;
-  max-width: 900px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
-.patient-form {
+/* Tab buttons */
+.add-patient .tab-buttons {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.add-patient .tab-button {
+  padding: var(--space-3) var(--space-4);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  transition: all 150ms ease;
+}
+
+.add-patient .tab-button:hover {
+  color: var(--gray-900);
+}
+
+.add-patient .tab-button.active {
+  color: var(--primary-600);
+  border-bottom-color: var(--primary-600);
+  margin-bottom: -2px;
+}
+
+/* Form */
+.add-patient .patient-form {
   background: white;
-  padding: var(--space-8);
+  padding: var(--space-6);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
 }
 
-.form-section {
-  margin-bottom: var(--space-8);
-  padding-bottom: var(--space-6);
+.add-patient .form-section {
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
   border-bottom: 1px solid var(--gray-200);
 }
 
-.form-section:last-of-type {
+.add-patient .form-section:last-of-type {
   border-bottom: none;
-  margin-bottom: var(--space-6);
-}
-
-.form-section h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--gray-900);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-4) 0;
-}
-
-.section-icon {
-  color: var(--stage-amber);
-  font-size: 1.25rem;
-}
-
-.location-description {
-  font-size: 0.875rem;
-  color: var(--gray-600);
   margin-bottom: var(--space-4);
 }
 
-.form-row {
+.add-patient .form-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.add-patient .form-section h4 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--gray-900);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.add-patient .antenatal-notice {
+  font-size: 0.875rem;
+  color: var(--gray-700);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  background: var(--primary-50);
+  border-left: 2px solid var(--primary-300);
+  border-radius: var(--radius-sm);
+}
+
+.add-patient .form-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
-.form-group {
-  margin-bottom: var(--space-1);
+.add-patient .form-group {
+  margin-bottom: 0;
 }
 
-.form-group label {
+.add-patient .form-group label {
   display: block;
   margin-bottom: var(--space-2);
   font-weight: 600;
@@ -86,7 +121,9 @@
   color: var(--gray-900);
 }
 
-.form-control {
+.add-patient input[type="text"],
+.add-patient input[type="tel"],
+.add-patient textarea {
   width: 100%;
   padding: var(--space-3) var(--space-4);
   font-size: 0.9375rem;
@@ -98,88 +135,132 @@
   font-family: inherit;
 }
 
-/* Remove number input spinners */
-.form-control[type="number"]::-webkit-outer-spin-button,
-.form-control[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-.form-control[type="number"] {
-  -moz-appearance: textfield;
-}
-
-.form-control[inputMode="numeric"] {
-  -webkit-appearance: none;
-  -moz-appearance: textfield;
-}
-
-.form-control:focus {
+.add-patient input[type="text"]:focus,
+.add-patient input[type="tel"]:focus,
+.add-patient textarea:focus {
   outline: none;
-  border-color: var(--stage-indigo);
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-  background: white;
+  border-color: var(--primary-600);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.form-control.valid {
-  border-color: var(--stage-green);
+.add-patient input[type="text"]::placeholder,
+.add-patient input[type="tel"]::placeholder,
+.add-patient textarea::placeholder {
+  color: var(--gray-500);
 }
 
-.form-control.valid:focus {
-  border-color: var(--stage-green);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-}
-
-.form-control.invalid {
-  border-color: var(--error-600);
-}
-
-.form-control.invalid:focus {
-  border-color: var(--error-600);
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-}
-
-.form-help {
+.add-patient small {
   display: block;
   margin-top: var(--space-1);
   font-size: 0.75rem;
   color: var(--gray-600);
 }
 
-.location-preview {
-  background: var(--stage-amber-50);
-  padding: var(--space-4);
-  border-radius: var(--radius-md);
-  margin-top: var(--space-4);
-  border-left: 4px solid var(--stage-amber);
+.add-patient .disabled-text {
+  color: var(--gray-500);
+  font-style: italic;
 }
 
-.location-preview strong {
-  display: block;
+/* Add field button */
+.add-patient .btn-add-field {
+  background: none;
+  border: none;
+  color: var(--primary-600);
+  cursor: pointer;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--gray-900);
-  margin-bottom: var(--space-2);
+  padding: var(--space-2);
+  transition: color 150ms ease;
 }
 
-.preview-location {
-  color: var(--stage-amber-700);
+.add-patient .btn-add-field:hover:not(:disabled) {
+  color: var(--primary-700);
+}
+
+.add-patient .btn-add-field:disabled {
+  color: var(--gray-400);
+  cursor: not-allowed;
+}
+
+/* Custom fields section */
+.add-patient .custom-fields-section {
+  margin-bottom: var(--space-6);
+  padding: var(--space-4);
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+}
+
+.add-patient .custom-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  align-items: flex-start;
+}
+
+.add-patient .field-name-input {
+  grid-column: 1;
+}
+
+.add-patient .field-value-input {
+  grid-column: 2;
+}
+
+.add-patient .btn-remove-field {
+  background: none;
+  border: none;
+  color: var(--error-600);
+  cursor: pointer;
+  font-size: 0.8125rem;
   font-weight: 600;
-  font-size: 0.9375rem;
-  padding: var(--space-3);
-  background: white;
-  border-radius: var(--radius-sm);
-  text-align: center;
-  border: 1px solid var(--stage-amber-200);
+  padding: var(--space-3) var(--space-2);
+  transition: color 150ms ease;
+  white-space: nowrap;
 }
 
-.form-actions {
-  margin-top: var(--space-8);
-  padding-top: var(--space-6);
+.add-patient .btn-remove-field:hover {
+  color: var(--error-700);
+}
+
+/* Checkbox */
+.add-patient .checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  padding: var(--space-3);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: var(--gray-50);
+  transition: all 150ms ease;
+}
+
+.add-patient .checkbox-label:hover {
+  border-color: var(--primary-600);
+  background: var(--primary-50);
+}
+
+.add-patient .checkbox-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: var(--primary-600);
+  flex-shrink: 0;
+}
+
+.add-patient .checkbox-label span {
+  font-weight: 600;
+  color: var(--gray-900);
+}
+
+/* Form actions */
+.add-patient .form-actions {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
   border-top: 1px solid var(--gray-200);
 }
 
-.form-actions .error {
+.add-patient .form-actions .error {
   background: var(--error-50);
   color: var(--error-900);
   padding: var(--space-4);
@@ -190,190 +271,113 @@
   font-weight: 500;
 }
 
-.form-actions .success {
-  background: var(--stage-green-50);
-  color: var(--stage-green-900);
+.add-patient .form-actions .success {
+  background: var(--success-50);
+  color: var(--success-900);
   padding: var(--space-4);
   border-radius: var(--radius-md);
-  border: 1px solid var(--stage-green-200);
+  border: 1px solid var(--success-200);
   margin-bottom: var(--space-4);
   font-size: 0.875rem;
   font-weight: 500;
 }
 
-.action-buttons {
+.add-patient .action-buttons {
   display: flex;
   gap: var(--space-3);
   justify-content: flex-end;
 }
 
-.btn {
+.add-patient .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-5);
   min-height: 44px;
-  min-width: 44px;
   border: none;
   border-radius: var(--radius-md);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 150ms ease;
-  text-decoration: none;
   font-family: inherit;
 }
 
-.btn:focus-visible {
-  outline: 2px solid var(--stage-indigo);
-  outline-offset: 2px;
-}
-
-.btn:disabled {
+.add-patient .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.btn-primary {
-  background: var(--stage-indigo);
+.add-patient .btn-primary {
+  background: var(--primary-600);
   color: white;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background: var(--stage-indigo-700);
+.add-patient .btn-primary:hover:not(:disabled) {
+  background: var(--primary-700);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
 }
 
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.btn-secondary {
+.add-patient .btn-secondary {
   background: var(--gray-600);
   color: white;
 }
 
-.btn-secondary:hover:not(:disabled) {
+.add-patient .btn-secondary:hover:not(:disabled) {
   background: var(--gray-700);
 }
 
-.btn-secondary:active:not(:disabled) {
-  background: var(--gray-800);
-}
-
-.loading-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Checkbox Styling */
-.checkbox-label {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  cursor: pointer;
-  padding: var(--space-4);
-  border: 2px solid var(--gray-200);
-  border-radius: var(--radius-md);
-  transition: all 150ms ease;
-  background: var(--gray-50);
-}
-
-.checkbox-label:hover {
-  border-color: var(--stage-indigo);
-  background: var(--stage-indigo-50);
-}
-
-.checkbox-input {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  flex-shrink: 0;
-  margin-top: 2px;
-  accent-color: var(--stage-indigo);
-}
-
-.checkbox-text {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  flex: 1;
-}
-
-.checkbox-text strong {
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--gray-900);
-}
-
-.checkbox-text small {
-  font-size: 0.8125rem;
-  color: var(--gray-600);
-  font-weight: 400;
-}
-
-.checkbox-label:has(input:checked) {
-  border-color: var(--stage-indigo);
-  background: var(--stage-indigo-50);
-}
-
-.checkbox-label:has(input:checked) .checkbox-text strong {
-  color: var(--stage-indigo);
-}
-
-/* Mobile Responsive */
+/* Mobile responsive */
 @media (max-width: 768px) {
   .add-patient {
     padding: var(--space-4);
   }
 
-  .add-patient-header {
+  .add-patient .patient-form {
     padding: var(--space-4);
   }
 
-  .patient-form {
-    padding: var(--space-6);
-  }
-
-  .form-row {
+  .add-patient .form-row {
     grid-template-columns: 1fr;
   }
 
-  .action-buttons {
+  .add-patient .tab-buttons {
+    gap: 0;
+    margin-bottom: var(--space-4);
+  }
+
+  .add-patient .tab-button {
+    flex: 1;
+    text-align: center;
+  }
+
+  .add-patient .custom-field-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .add-patient .field-name-input {
+    grid-column: 1;
+  }
+
+  .add-patient .field-value-input {
+    grid-column: 1;
+  }
+
+  .add-patient .btn-remove-field {
+    grid-column: 1;
+    padding: var(--space-2);
+    width: 100%;
+    text-align: left;
+  }
+
+  .add-patient .action-buttons {
     flex-direction: column;
   }
 
-  .btn {
+  .add-patient .btn {
     width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .add-patient-header h1 {
-    font-size: 1.5rem;
-  }
-
-  .form-section h3 {
-    font-size: 1rem;
-  }
-
-  .patient-form {
-    padding: var(--space-4);
-  }
-
-  .form-control {
-    padding: var(--space-2) var(--space-3);
-    font-size: 1rem;
   }
 }

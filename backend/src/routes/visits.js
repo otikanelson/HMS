@@ -94,14 +94,20 @@ router.post('/start', requireAccessLevel(...ALL_ROLES), async (req, res) => {
       });
     }
 
-    // Get location from storage map
-    const locationStr = await getLocationText(normalized);
+    // Get location from storage map (or antenatal text)
+    let locationStr;
+    if (patient.patientType === 'antenatal') {
+      locationStr = 'Antenatal — no paper file location';
+    } else {
+      locationStr = await getLocationText(normalized);
+    }
 
     // Create new visit
     const visit = new Visit({
       patient: patient._id,
       patientId: patient.patientId,
       patientName: patient.fullName,
+      patientType: patient.patientType,
       fileLocation: locationStr,
       startedBy: req.user.userId,
       startedAt: new Date()
@@ -114,7 +120,7 @@ router.post('/start', requireAccessLevel(...ALL_ROLES), async (req, res) => {
       if (saveError.code === 11000) {
         const conflictVisit = await Visit.findOne({ patient: patient._id, isOpen: true })
           .populate('startedBy', 'fullName');
-        
+
         if (conflictVisit) {
           const stageLabels = {
             waiting_for_file: 'Finding file',
@@ -216,8 +222,8 @@ router.put('/:id/vitals', requireAccessLevel(...ALL_ROLES), async (req, res) => 
     } else {
       // Validate vitals
       if (systolic === undefined || systolic === null || systolic === '' ||
-          diastolic === undefined || diastolic === null || diastolic === '' ||
-          heartRate === undefined || heartRate === null || heartRate === '') {
+        diastolic === undefined || diastolic === null || diastolic === '' ||
+        heartRate === undefined || heartRate === null || heartRate === '') {
         return res.status(400).json({
           error: 'Validation error',
           message: 'Please enter all three: top BP, bottom BP, and heart rate. Or tick "Couldn\'t be taken".'
@@ -466,7 +472,7 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
     }
 
     // ALL fields now optional - validate only if provided
-    
+
     // Chief complaint: optional, max 2000 characters
     const trimmedChiefComplaint = chiefComplaint && chiefComplaint.trim() ? chiefComplaint.trim() : '';
     if (trimmedChiefComplaint && trimmedChiefComplaint.length > 2000) {
@@ -768,7 +774,7 @@ router.put('/:id/correct', requireAccessLevel(...CAN_CORRECT), async (req, res) 
         visit.vitalsNotTakenReason = reason.trim();
       } else if (vitals) {
         const { systolic, diastolic, heartRate } = vitals;
-        
+
         if (systolic === undefined || diastolic === undefined || heartRate === undefined) {
           return res.status(400).json({
             error: 'Validation error',
@@ -1029,7 +1035,7 @@ router.put('/:id/correct', requireAccessLevel(...CAN_CORRECT), async (req, res) 
     };
 
     // Check if anything actually changed
-    const actualChanges = Object.keys(after).some(key => 
+    const actualChanges = Object.keys(after).some(key =>
       JSON.stringify(before[key]) !== JSON.stringify(after[key])
     );
 
@@ -1185,7 +1191,7 @@ router.get('/:id', requireAccessLevel(...ALL_ROLES), async (req, res) => {
     }
 
     const ranges = await loadRanges();
-    res.json({ 
+    res.json({
       visit: {
         ...visit,
         currentLocation: locationText(visit.patient.patientId, ranges)

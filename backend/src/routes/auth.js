@@ -92,20 +92,19 @@ const forgotPasswordLimiter = rateLimit({
 // GET /api/auth/staff-list - Get staff list for login selection (public, no auth)
 router.get('/staff-list', async (req, res) => {
   try {
-    // Get all active staff with user accounts
+    // Get all active users for login selection
     const users = await User.find({ isActive: true })
-      .select('staffId username accessLevel')
-      .populate('staffId', 'firstName lastName role');
+      .select('username fullName accessLevel')
+      .sort('fullName');
     
-    const staff = users
-      .filter(user => user.staffId) // Only include users with linked staff records
-      .map(user => ({
-        _id: user.staffId._id,
-        fullName: `${user.staffId.firstName} ${user.staffId.lastName}`,
-        roleDisplay: user.staffId.role.charAt(0) + user.staffId.role.slice(1).toLowerCase().replace(/_/g, ' '),
-        username: user.username
-      }))
-      .sort((a, b) => a.fullName.localeCompare(b.fullName));
+    const staff = users.map(user => ({
+      _id: user._id,
+      fullName: user.fullName,
+      roleDisplay: user.accessLevel === 'ADMINISTRATOR' ? 'Administrator' : 
+                   user.accessLevel === 'RECORDS_OPERATOR' ? 'Records Operator' : 
+                   'Clinical Staff',
+      username: user.username
+    }));
 
     res.json({ staff });
   } catch (error) {

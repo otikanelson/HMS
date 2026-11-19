@@ -31,18 +31,18 @@ const PatientList = () => {
         setLoadingMore(true);
       }
       setError('');
-      
+
       const searchQuery = searchParams.get('search');
       const archivedParam = includeArchived ? '&includeArchived=true' : '';
       let url = `/api/patients?page=${page}&limit=20${archivedParam}`;
-      
+
       if (searchQuery) {
         // For search queries, load all results at once (no pagination)
         url = `/api/patients/search?q=${encodeURIComponent(searchQuery)}${archivedParam}`;
       }
-      
+
       const response = await axios.get(url);
-      
+
       if (searchQuery) {
         // Search results - no pagination, show all results
         setPatients(response.data.patients || []);
@@ -53,13 +53,13 @@ const PatientList = () => {
         // Regular pagination with lazy loading
         const newPatients = response.data.patients || [];
         const pagination = response.data.pagination || {};
-        
+
         if (reset || page === 1) {
           setPatients(newPatients);
         } else {
           setPatients(prev => [...prev, ...newPatients]);
         }
-        
+
         setTotalRecords(pagination.totalRecords || 0);
         setHasMore(pagination.current < pagination.total);
         setCurrentPage(pagination.current);
@@ -90,14 +90,14 @@ const PatientList = () => {
 
   const handleLocationUpdate = (patientId, field, value) => {
     // Update the patient in the state immediately
-    setPatients(prevPatients => 
-      prevPatients.map(patient => 
-        patient.patientId === patientId 
+    setPatients(prevPatients =>
+      prevPatients.map(patient =>
+        patient.patientId === patientId
           ? { ...patient, [field]: value }
           : patient
       )
     );
-    
+
     // Track edited patients for saving
     setEditedPatients(prev => ({
       ...prev,
@@ -124,18 +124,18 @@ const PatientList = () => {
 
     try {
       await axios.put(`/api/patients/${patientId}/location`, edits);
-      
+
       // Clear the edit tracking for this patient
       setEditedPatients(prev => {
         const newEdited = { ...prev };
         delete newEdited[patientId];
         return newEdited;
       });
-      
+
     } catch (error) {
       setError('Failed to update location');
       console.error('Update location error:', error);
-      
+
       // Revert the changes in UI
       fetchPatients(1, true);
     }
@@ -159,7 +159,7 @@ const PatientList = () => {
   };
 
   const handlePatientStatusChanged = (patientId, updatedPatient) => {
-    setPatients(prev => 
+    setPatients(prev =>
       prev.map(p => p.patientId === patientId ? { ...p, ...updatedPatient } : p)
     );
   };
@@ -207,45 +207,45 @@ const PatientList = () => {
             {isSearching ? 'Search Results' : 'All Patients'}
           </h1>
           <p className="page-subtitle">
-            {isSearching 
+            {isSearching
               ? `Found ${totalRecords} results for "${searchQuery}"`
               : `Showing ${patients.length} of ${totalRecords} patients`
             }
           </p>
         </div>
-        
+
         <div className="list-actions">
           {isSearching && (
-            <button 
+            <button
               onClick={() => navigate('/patients')}
               className="btn btn-secondary"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
               </svg>
               Clear Search
             </button>
           )}
-          
-          <button 
+
+          <button
             onClick={toggleEditMode}
             className={`btn ${isEditMode ? 'btn-primary' : 'btn-secondary'}`}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M15.502 1.94a.5.5 0 010 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 01.707 0l1.293 1.293zm-1.75 2.456l-2-2L4.939 9.21a.5.5 0 00-.121.196l-.805 2.414a.25.25 0 00.316.316l2.414-.805a.5.5 0 00.196-.12l6.813-6.814z"/>
-              <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 002.5 15h11a1.5 1.5 0 001.5-1.5v-6a.5.5 0 00-1 0v6a.5.5 0 01-.5.5h-11a.5.5 0 01-.5-.5v-11a.5.5 0 01.5-.5H9a.5.5 0 000-1H2.5A1.5 1.5 0 001 2.5v11z"/>
+              <path d="M15.502 1.94a.5.5 0 010 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 01.707 0l1.293 1.293zm-1.75 2.456l-2-2L4.939 9.21a.5.5 0 00-.121.196l-.805 2.414a.25.25 0 00.316.316l2.414-.805a.5.5 0 00.196-.12l6.813-6.814z" />
+              <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 002.5 15h11a1.5 1.5 0 001.5-1.5v-6a.5.5 0 00-1 0v6a.5.5 0 01-.5.5h-11a.5.5 0 01-.5-.5v-11a.5.5 0 01.5-.5H9a.5.5 0 000-1H2.5A1.5 1.5 0 001 2.5v11z" />
             </svg>
             {isEditMode ? 'Done Editing' : 'Edit Locations'}
           </button>
-          
-          <button 
+
+          <button
             onClick={handleRefresh}
             className="btn btn-secondary"
             disabled={loading}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M11.534 7h3.932a.25.25 0 01.192.41l-1.966 2.36a.25.25 0 01-.384 0l-1.966-2.36a.25.25 0 01.192-.41zm-11 2h3.932a.25.25 0 00.192-.41L2.692 6.23a.25.25 0 00-.384 0L.342 8.59A.25.25 0 00.534 9z"/>
-              <path fillRule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 11-.771-.636A6.002 6.002 0 0113.917 7H12.9A5.002 5.002 0 008 3zM3.1 9a5.002 5.002 0 008.757 2.182.5.5 0 11.771.636A6.002 6.002 0 012.083 9H3.1z"/>
+              <path d="M11.534 7h3.932a.25.25 0 01.192.41l-1.966 2.36a.25.25 0 01-.384 0l-1.966-2.36a.25.25 0 01.192-.41zm-11 2h3.932a.25.25 0 00.192-.41L2.692 6.23a.25.25 0 00-.384 0L.342 8.59A.25.25 0 00.534 9z" />
+              <path fillRule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 11-.771-.636A6.002 6.002 0 0113.917 7H12.9A5.002 5.002 0 008 3zM3.1 9a5.002 5.002 0 008.757 2.182.5.5 0 11.771.636A6.002 6.002 0 012.083 9H3.1z" />
             </svg>
             Refresh
           </button>
@@ -254,7 +254,7 @@ const PatientList = () => {
 
       {/* Patient Status Filter */}
       <div style={{ marginBottom: 'var(--space-4)' }}>
-        <PatientStatusFilter 
+        <PatientStatusFilter
           includeArchived={includeArchived}
           onChange={setIncludeArchived}
         />
@@ -270,8 +270,8 @@ const PatientList = () => {
         <div className="no-patients">
           <div className="no-patients-icon">
             <svg width="64" height="64" viewBox="0 0 64 64" fill="currentColor">
-              <path d="M32 4C16.536 4 4 16.536 4 32s12.536 28 28 28 28-12.536 28-28S47.464 4 32 4zm0 8a20 20 0 110 40 20 20 0 010-40z" opacity="0.3"/>
-              <path d="M32 20a12 12 0 100 24 12 12 0 000-24zm0 4a8 8 0 110 16 8 8 0 010-16z"/>
+              <path d="M32 4C16.536 4 4 16.536 4 32s12.536 28 28 28 28-12.536 28-28S47.464 4 32 4zm0 8a20 20 0 110 40 20 20 0 010-40z" opacity="0.3" />
+              <path d="M32 20a12 12 0 100 24 12 12 0 000-24zm0 4a8 8 0 110 16 8 8 0 010-16z" />
             </svg>
           </div>
           <h3>No Patients Found</h3>
@@ -304,18 +304,19 @@ const PatientList = () => {
                 const isExpanded = expandedRows.has(patient.patientId);
                 const canAdmitDischarge = ['ADMINISTRATOR', 'RECORDS_OPERATOR', 'CLINICAL_STAFF'].includes(user?.accessLevel);
                 const canArchive = ['ADMINISTRATOR', 'RECORDS_OPERATOR'].includes(user?.accessLevel);
-                
+
                 return (
                   <React.Fragment key={patient._id || patient.id}>
-                    <tr 
+                    <tr
                       className={isExpanded ? 'row-expanded' : ''}
                       onClick={() => navigate(`/patients/${patient.patientId}/history`)}
                       style={{ cursor: 'pointer' }}
                     >
-                      <td>{patient.patientId}</td>
+                      <td>{patient.displayNumber || patient.patientId}</td>
                       <td>
                         <Link to={`/patients/${patient.patientId}/history`} style={{ color: '#0369a1', textDecoration: 'underline' }}>
                           {patient.fullName}
+                          {patient.patientType === 'antenatal' && <span style={{ marginLeft: '8px', fontSize: '0.75rem', fontWeight: '600', background: 'var(--primary-100)', color: 'var(--primary-700)', padding: '2px 6px', borderRadius: '3px', display: 'inline-block' }}>Antenatal</span>}
                         </Link>
                       </td>
                       <td>{patient.phoneNumber}</td>
@@ -342,7 +343,7 @@ const PatientList = () => {
                                 {canArchive && <option value="archived">Archive File</option>}
                               </>
                             )}
-                            
+
                             {/* Admitted can discharge */}
                             {patient.status === 'admitted' && (
                               <>
@@ -350,7 +351,7 @@ const PatientList = () => {
                                 {canAdmitDischarge && <option value="discharged">↗ Discharge Patient</option>}
                               </>
                             )}
-                            
+
                             {/* Archived can reactivate to discharged */}
                             {patient.status === 'archived' && (
                               <>
@@ -362,63 +363,63 @@ const PatientList = () => {
                         </div>
                       </td>
                       <td onClick={(e) => e.stopPropagation()}>
-                    {isEditMode ? (
-                      <input
-                        type="number"
-                        min="1"
-                        max="50"
-                        value={patient.cabinetNumber}
-                        onChange={(e) => handleLocationUpdate(patient.patientId, 'cabinetNumber', parseInt(e.target.value) || '')}
-                        onBlur={() => saveLocationIfChanged(patient.patientId)}
-                      />
-                    ) : (
-                      patient.cabinetNumber
+                        {isEditMode ? (
+                          <input
+                            type="number"
+                            min="1"
+                            max="50"
+                            value={patient.cabinetNumber}
+                            onChange={(e) => handleLocationUpdate(patient.patientId, 'cabinetNumber', parseInt(e.target.value) || '')}
+                            onBlur={() => saveLocationIfChanged(patient.patientId)}
+                          />
+                        ) : (
+                          patient.cabinetNumber
+                        )}
+                      </td>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        {isEditMode ? (
+                          <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            value={patient.shelfNumber}
+                            onChange={(e) => handleLocationUpdate(patient.patientId, 'shelfNumber', parseInt(e.target.value) || '')}
+                            onBlur={() => saveLocationIfChanged(patient.patientId)}
+                          />
+                        ) : (
+                          patient.shelfNumber
+                        )}
+                      </td>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        {isEditMode ? (
+                          <input
+                            type="number"
+                            min="1"
+                            max="100"
+                            value={patient.folderNumber}
+                            onChange={(e) => handleLocationUpdate(patient.patientId, 'folderNumber', parseInt(e.target.value) || '')}
+                            onBlur={() => saveLocationIfChanged(patient.patientId)}
+                          />
+                        ) : (
+                          patient.folderNumber
+                        )}
+                      </td>
+                      <td>{formatDate(patient.createdAt)}</td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="expanded-row">
+                        <td colSpan="9">
+                          <div className="expanded-content">
+                            <PatientStatusControl
+                              patient={patient}
+                              onChanged={(updated) => handlePatientStatusChanged(patient.patientId, updated)}
+                              onDeleted={() => handlePatientDeleted(patient.patientId)}
+                            />
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                  <td onClick={(e) => e.stopPropagation()}>
-                    {isEditMode ? (
-                      <input
-                        type="number"
-                        min="1"
-                        max="20"
-                        value={patient.shelfNumber}
-                        onChange={(e) => handleLocationUpdate(patient.patientId, 'shelfNumber', parseInt(e.target.value) || '')}
-                        onBlur={() => saveLocationIfChanged(patient.patientId)}
-                      />
-                    ) : (
-                      patient.shelfNumber
-                    )}
-                  </td>
-                  <td onClick={(e) => e.stopPropagation()}>
-                    {isEditMode ? (
-                      <input
-                        type="number"
-                        min="1"
-                        max="100"
-                        value={patient.folderNumber}
-                        onChange={(e) => handleLocationUpdate(patient.patientId, 'folderNumber', parseInt(e.target.value) || '')}
-                        onBlur={() => saveLocationIfChanged(patient.patientId)}
-                      />
-                    ) : (
-                      patient.folderNumber
-                    )}
-                  </td>
-                  <td>{formatDate(patient.createdAt)}</td>
-                </tr>
-                {isExpanded && (
-                  <tr className="expanded-row">
-                    <td colSpan="9">
-                      <div className="expanded-content">
-                        <PatientStatusControl
-                          patient={patient}
-                          onChanged={(updated) => handlePatientStatusChanged(patient.patientId, updated)}
-                          onDeleted={() => handlePatientDeleted(patient.patientId)}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
+                  </React.Fragment>
                 );
               })}
             </tbody>
@@ -429,7 +430,7 @@ const PatientList = () => {
       {/* Load More Button */}
       {!isSearching && hasMore && patients.length > 0 && (
         <div className="load-more-section">
-          <button 
+          <button
             onClick={loadMorePatients}
             disabled={loadingMore}
             className="btn btn-primary load-more-btn"

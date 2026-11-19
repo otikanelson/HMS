@@ -7,21 +7,21 @@ export const guideSteps = {
   },
   startVisit: {
     title: 'Start a visit',
-    content: 'Open **File Desk**. Type the patient\'s file number and press Enter, then press Enter again to start the visit. If the number is new, type the name and press **Add and start visit**.',
-    route: '/file-desk',
+    content: 'Open **Visit**. Type the patient\'s file number and press Enter, then press Enter again to start the visit. If the number is new, type the name and press **Add and start visit**.',
+    route: '/visit',
     target: 'desk-number'
   },
   finding: {
     title: 'Finding the file',
     content: 'New visits wait here while someone finds the paper file. The shelf location shows on the card. Enter **BP and heart rate**, and when the file is in your hand and the name matches, press **Send to doctor**.',
-    route: '/file-desk',
+    route: '/visit',
     target: 'desk-finding',
     snapshot: 3
   },
   withDoctor: {
     title: 'With the doctor',
     content: 'The doctor writes on the paper file as usual. Nothing needs typing here. When the file comes back, press **File is back**.',
-    route: '/file-desk',
+    route: '/visit',
     target: 'desk-doctor',
     snapshot: 4
   },
@@ -29,7 +29,7 @@ export const guideSteps = {
     title: 'Put back',
     content: 'Files that are back wait here in shelf order, with where each one goes. Put it on its shelf and press **Put away**. At the end of the shift you can press **Everything is back on the shelves**. Press **Hide** to tuck this panel away.',
     target: 'put-back-dropdown',
-    route: '/file-desk',
+    route: '/visit',
     highlight: true,
     animate: true,
     openMenu: true
@@ -37,12 +37,12 @@ export const guideSteps = {
   mistake: {
     title: 'Made a mistake?',
     content: 'Press **Undo** on a card to cancel a visit started by mistake or to go back one step. Nothing recorded is lost.',
-    route: '/file-desk',
+    route: '/visit',
     target: 'desk-columns'
   },
   notes: {
     title: 'Notes are optional',
-    content: 'The paper file is the main record. If you want to keep the diagnosis or medicines in the system too, open the visit and press **Add notes**. Nobody has to.'
+    content: 'The paper file is the main record. If you want to keep the diagnosis or medicines in the system too, open the visit and press **Add notes**. Nobody has to. Use Add field for any extra detail. Use the Antenatal tab for antenatal patients.'
   },
   findPatient: {
     title: 'Find a patient',

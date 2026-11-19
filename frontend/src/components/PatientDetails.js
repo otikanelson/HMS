@@ -12,14 +12,14 @@ const PatientDetails = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const printRef = useRef();
-  
+
   const [patient, setPatient] = useState(null);
   const [visit, setVisit] = useState(null);
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  
+
   // Edit mode state
   const [editMode, setEditMode] = useState(false);
   const [editValues, setEditValues] = useState({});
@@ -29,7 +29,7 @@ const PatientDetails = () => {
   const isAdmin = user?.accessLevel === 'ADMINISTRATOR';
   const isFiled = visit?.stage === 'filed';
   const editParam = searchParams.get('edit');
-  
+
   useEffect(() => {
     // Check if edit param is set and we're an admin on a filed visit
     if (editParam === '1' && isAdmin && isFiled) {
@@ -111,7 +111,7 @@ const PatientDetails = () => {
     // Validate changes
     setEditErrors({});
     clearNotice();
-    
+
     // Treatment plan: optional, max 2000
     if (editValues.treatmentPlan?.trim().length > 2000) {
       setEditErrors(prev => ({ ...prev, treatmentPlan: 'Treatment plan cannot exceed 2000 characters.' }));
@@ -132,7 +132,7 @@ const PatientDetails = () => {
 
     // Build payload with only changed fields
     const payload = {};
-    
+
     // Text fields: compare with (visit.field || '')
     if ((visit.chiefComplaint || '') !== (editValues.chiefComplaint || '').trim()) {
       payload.chiefComplaint = (editValues.chiefComplaint || '').trim();
@@ -177,10 +177,10 @@ const PatientDetails = () => {
     } else if (!editValues.vitalsNotTaken && visit.vitalsNotTaken) {
       payload.vitals = editValues.vitals;
       payload.notTaken = false;
-    } else if (!editValues.vitalsNotTaken && editValues.vitals && 
-               (editValues.vitals.systolic !== visit.vitals?.systolic ||
-                editValues.vitals.diastolic !== visit.vitals?.diastolic ||
-                editValues.vitals.heartRate !== visit.vitals?.heartRate)) {
+    } else if (!editValues.vitalsNotTaken && editValues.vitals &&
+      (editValues.vitals.systolic !== visit.vitals?.systolic ||
+        editValues.vitals.diastolic !== visit.vitals?.diastolic ||
+        editValues.vitals.heartRate !== visit.vitals?.heartRate)) {
       payload.vitals = editValues.vitals;
     }
 
@@ -332,7 +332,7 @@ const PatientDetails = () => {
         <header className="report-header">
           <img src="/Icon.png" alt="Tender Care" className="report-logo" />
           <div className="report-header-text">
-            <div className="clinic-name">Tender Care Clinic</div>
+            <div className="clinic-name">Tender Care Hospital</div>
           </div>
         </header>
         <h1 className="report-title">Medical Examination Report</h1>
@@ -340,11 +340,31 @@ const PatientDetails = () => {
         <section className="report-section">
           <h2 className="section-heading">Patient details</h2>
           <dl className="detail-grid">
-            <div className="detail-row"><dt>Patient name</dt><dd>{patient?.fullName || '—'}</dd></div>
-            <div className="detail-row"><dt>File number</dt><dd>{patient?.patientId || '—'}</dd></div>
+            <div className="detail-row">
+              <dt>Patient name</dt>
+              <dd>
+                {patient?.fullName || '—'}
+                {patient?.patientType === 'antenatal' && <span className="antenatal-label">Antenatal</span>}
+              </dd>
+            </div>
+            <div className="detail-row"><dt>File number</dt><dd>{patient?.displayNumber || patient?.patientId || '—'}</dd></div>
             <div className="detail-row"><dt>Phone</dt><dd>{patient?.phoneNumber || '—'}</dd></div>
+            {patient?.address && <div className="detail-row"><dt>Address</dt><dd>{patient.address}</dd></div>}
             <div className="detail-row"><dt>Visit date</dt><dd>{visit?.startedAt ? new Date(visit.startedAt).toLocaleDateString('en-NG') : '—'}</dd></div>
           </dl>
+          {patient?.customFields && patient.customFields.length > 0 && (
+            <div style={{ marginTop: 'var(--space-4)' }}>
+              <h3 style={{ fontSize: '0.9375rem', marginBottom: 'var(--space-2)' }}>Extra details</h3>
+              <dl className="detail-grid">
+                {patient.customFields.map((field, idx) => (
+                  <div key={idx} className="detail-row">
+                    <dt>{field.fieldName}</dt>
+                    <dd>{field.fieldValue || '—'}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
         </section>
 
         {/* CHECK-IN SECTION */}
@@ -354,28 +374,28 @@ const PatientDetails = () => {
             <div>
               <div className="check-row">
                 <input type="checkbox" checked={editValues.vitalsNotTaken} onChange={(e) => {
-                  setEditValues(prev => ({...prev, vitalsNotTaken: e.target.checked, vitals: e.target.checked ? undefined : prev.vitals}));
+                  setEditValues(prev => ({ ...prev, vitalsNotTaken: e.target.checked, vitals: e.target.checked ? undefined : prev.vitals }));
                 }} />
                 <label>Not taken</label>
               </div>
               {editValues.vitalsNotTaken ? (
                 <div className="edit-field">
                   <label className="edit-field-label">Reason</label>
-                  <input type="text" value={editValues.vitalsNotTakenReason} onChange={(e) => setEditValues(prev => ({...prev, vitalsNotTakenReason: e.target.value}))} maxLength={200} />
+                  <input type="text" value={editValues.vitalsNotTakenReason} onChange={(e) => setEditValues(prev => ({ ...prev, vitalsNotTakenReason: e.target.value }))} maxLength={200} />
                 </div>
               ) : (
                 <div className="vitals-edit">
                   <div className="edit-field">
                     <label className="edit-field-label">Top (mmHg)</label>
-                    <input type="number" value={editValues.vitals?.systolic || ''} onChange={(e) => setEditValues(prev => ({...prev, vitals: {...prev.vitals, systolic: parseInt(e.target.value)}}))} />
+                    <input type="number" value={editValues.vitals?.systolic || ''} onChange={(e) => setEditValues(prev => ({ ...prev, vitals: { ...prev.vitals, systolic: parseInt(e.target.value) } }))} />
                   </div>
                   <div className="edit-field">
                     <label className="edit-field-label">Bottom (mmHg)</label>
-                    <input type="number" value={editValues.vitals?.diastolic || ''} onChange={(e) => setEditValues(prev => ({...prev, vitals: {...prev.vitals, diastolic: parseInt(e.target.value)}}))} />
+                    <input type="number" value={editValues.vitals?.diastolic || ''} onChange={(e) => setEditValues(prev => ({ ...prev, vitals: { ...prev.vitals, diastolic: parseInt(e.target.value) } }))} />
                   </div>
                   <div className="edit-field">
                     <label className="edit-field-label">Heart rate (bpm)</label>
-                    <input type="number" value={editValues.vitals?.heartRate || ''} onChange={(e) => setEditValues(prev => ({...prev, vitals: {...prev.vitals, heartRate: parseInt(e.target.value)}}))} />
+                    <input type="number" value={editValues.vitals?.heartRate || ''} onChange={(e) => setEditValues(prev => ({ ...prev, vitals: { ...prev.vitals, heartRate: parseInt(e.target.value) } }))} />
                   </div>
                 </div>
               )}
@@ -401,7 +421,7 @@ const PatientDetails = () => {
           <h2 className="section-heading">Chief complaint</h2>
           {editMode ? (
             <div className="edit-field">
-              <textarea value={editValues.chiefComplaint} onChange={(e) => setEditValues(prev => ({...prev, chiefComplaint: e.target.value}))} maxLength={2000} />
+              <textarea value={editValues.chiefComplaint} onChange={(e) => setEditValues(prev => ({ ...prev, chiefComplaint: e.target.value }))} maxLength={2000} />
               {editErrors.chiefComplaint && <p className="edit-error">{editErrors.chiefComplaint}</p>}
             </div>
           ) : (
@@ -414,7 +434,7 @@ const PatientDetails = () => {
           <h2 className="section-heading">Diagnosis</h2>
           {editMode ? (
             <div className="edit-field">
-              <textarea value={editValues.diagnosis} onChange={(e) => setEditValues(prev => ({...prev, diagnosis: e.target.value}))} maxLength={2000} />
+              <textarea value={editValues.diagnosis} onChange={(e) => setEditValues(prev => ({ ...prev, diagnosis: e.target.value }))} maxLength={2000} />
               {editErrors.diagnosis && <p className="edit-error">{editErrors.diagnosis}</p>}
             </div>
           ) : (
@@ -430,13 +450,13 @@ const PatientDetails = () => {
               <div>
                 {editValues.tests.map((test, i) => (
                   <div key={i} className="edit-row">
-                    <input type="text" value={test} onChange={(e) => {const newTests = [...editValues.tests]; newTests[i] = e.target.value; setEditValues(prev => ({...prev, tests: newTests}));}} maxLength={200} />
-                    {editValues.tests.length > 1 && <button type="button" onClick={() => setEditValues(prev => ({...prev, tests: prev.tests.filter((_, idx) => idx !== i)}))} className="btn btn-link">Remove</button>}
+                    <input type="text" value={test} onChange={(e) => { const newTests = [...editValues.tests]; newTests[i] = e.target.value; setEditValues(prev => ({ ...prev, tests: newTests })); }} maxLength={200} />
+                    {editValues.tests.length > 1 && <button type="button" onClick={() => setEditValues(prev => ({ ...prev, tests: prev.tests.filter((_, idx) => idx !== i) }))} className="btn btn-link">Remove</button>}
                   </div>
                 ))}
-                <button type="button" onClick={() => setEditValues(prev => ({...prev, tests: [...prev.tests, '']}))} className="btn btn-link">Add a test</button>
+                <button type="button" onClick={() => setEditValues(prev => ({ ...prev, tests: [...prev.tests, ''] }))} className="btn btn-link">Add a test</button>
                 <div className="check-row">
-                  <input type="checkbox" checked={editValues.testsNone} onChange={(e) => setEditValues(prev => ({...prev, testsNone: e.target.checked}))} />
+                  <input type="checkbox" checked={editValues.testsNone} onChange={(e) => setEditValues(prev => ({ ...prev, testsNone: e.target.checked }))} />
                   <label>No tests</label>
                 </div>
               </div>
@@ -457,13 +477,13 @@ const PatientDetails = () => {
               <div>
                 {editValues.medications.map((med, i) => (
                   <div key={i} className="edit-row">
-                    <input type="text" value={med} onChange={(e) => {const newMeds = [...editValues.medications]; newMeds[i] = e.target.value; setEditValues(prev => ({...prev, medications: newMeds}));}} maxLength={200} />
-                    {editValues.medications.length > 1 && <button type="button" onClick={() => setEditValues(prev => ({...prev, medications: prev.medications.filter((_, idx) => idx !== i)}))} className="btn btn-link">Remove</button>}
+                    <input type="text" value={med} onChange={(e) => { const newMeds = [...editValues.medications]; newMeds[i] = e.target.value; setEditValues(prev => ({ ...prev, medications: newMeds })); }} maxLength={200} />
+                    {editValues.medications.length > 1 && <button type="button" onClick={() => setEditValues(prev => ({ ...prev, medications: prev.medications.filter((_, idx) => idx !== i) }))} className="btn btn-link">Remove</button>}
                   </div>
                 ))}
-                <button type="button" onClick={() => setEditValues(prev => ({...prev, medications: [...prev.medications, '']}))} className="btn btn-link">Add a medicine</button>
+                <button type="button" onClick={() => setEditValues(prev => ({ ...prev, medications: [...prev.medications, ''] }))} className="btn btn-link">Add a medicine</button>
                 <div className="check-row">
-                  <input type="checkbox" checked={editValues.medicationsNone} onChange={(e) => setEditValues(prev => ({...prev, medicationsNone: e.target.checked}))} />
+                  <input type="checkbox" checked={editValues.medicationsNone} onChange={(e) => setEditValues(prev => ({ ...prev, medicationsNone: e.target.checked }))} />
                   <label>No medicines</label>
                 </div>
               </div>
@@ -484,7 +504,7 @@ const PatientDetails = () => {
           <h2 className="section-heading">Treatment plan</h2>
           {editMode ? (
             <div className="edit-field">
-              <textarea value={editValues.treatmentPlan} onChange={(e) => setEditValues(prev => ({...prev, treatmentPlan: e.target.value}))} maxLength={2000} />
+              <textarea value={editValues.treatmentPlan} onChange={(e) => setEditValues(prev => ({ ...prev, treatmentPlan: e.target.value }))} maxLength={2000} />
               {editErrors.treatmentPlan && <p className="edit-error">{editErrors.treatmentPlan}</p>}
             </div>
           ) : (
@@ -497,7 +517,7 @@ const PatientDetails = () => {
           <h2 className="section-heading">Notes</h2>
           {editMode ? (
             <div className="edit-field">
-              <textarea value={editValues.notes} onChange={(e) => setEditValues(prev => ({...prev, notes: e.target.value}))} maxLength={1000} />
+              <textarea value={editValues.notes} onChange={(e) => setEditValues(prev => ({ ...prev, notes: e.target.value }))} maxLength={1000} />
             </div>
           ) : (
             <p className="section-value">{toPlainText(visit.notes) || <span className="not-recorded">Not recorded</span>}</p>
@@ -510,7 +530,7 @@ const PatientDetails = () => {
             <span className="footer-label">Recorded by</span>
             <span className="footer-value">
               {editMode ? (
-                <input type="text" value={editValues.recordedBy} onChange={(e) => setEditValues(prev => ({...prev, recordedBy: e.target.value}))} maxLength={200} />
+                <input type="text" value={editValues.recordedBy} onChange={(e) => setEditValues(prev => ({ ...prev, recordedBy: e.target.value }))} maxLength={200} />
               ) : (
                 visit.recordedBy || '—'
               )}
@@ -525,7 +545,7 @@ const PatientDetails = () => {
               <span className="footer-label">Payment</span>
               <span className="footer-value">
                 {editMode ? (
-                  <input type="text" value={editValues.payment} onChange={(e) => setEditValues(prev => ({...prev, payment: e.target.value}))} maxLength={20} />
+                  <input type="text" value={editValues.payment} onChange={(e) => setEditValues(prev => ({ ...prev, payment: e.target.value }))} maxLength={20} />
                 ) : (
                   formatPayment(visit.payment) || '—'
                 )}

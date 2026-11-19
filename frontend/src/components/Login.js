@@ -27,23 +27,23 @@ const Login = () => {
   // Modal and view state
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [useUsernameLogin, setUseUsernameLogin] = useState(false);
-  
+
   // Staff selection state
   const [staffList, setStaffList] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [staffLoading, setStaffLoading] = useState(false);
-  
+
   // Form state
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
-  
+
   // Forgot password state
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false);
-  
+
   // Notices state
   const [notices, setNotices] = useState([]);
 
@@ -95,7 +95,7 @@ const Login = () => {
     }
     return Math.abs(hash);
   };
-  
+
   const getAvatarColor = (name) => {
     const colors = [
       '#be185d', // magenta
@@ -134,7 +134,7 @@ const Login = () => {
   const handlePointerDown = (e) => {
     // Ignore if clicking inside interactive elements or notices
     if (e.target.closest('button, a, input, .lock-notices')) return;
-    
+
     const dy = e.clientY;
     setDragState({
       isDragging: true,
@@ -339,15 +339,15 @@ const Login = () => {
 
   const handleStaffPasswordSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!password) {
       setErrors({ password: 'Password is required' });
       return;
     }
 
-    const result = await login({ 
-      username: selectedStaff.username, 
-      password 
+    const result = await login({
+      username: selectedStaff.username,
+      password
     });
 
     if (result.success) {
@@ -364,11 +364,11 @@ const Login = () => {
 
   const handleUsernameSubmit = async (e) => {
     e.preventDefault();
-    
+
     const newErrors = {};
     if (!username) newErrors.username = 'Username is required';
     if (!password) newErrors.password = 'Password is required';
-    
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -396,50 +396,50 @@ const Login = () => {
       .toUpperCase()
       .slice(0, 2);
   };
-  
+
   // Group staff by role
   const groupedStaff = () => {
     if (staffList.length <= 6) {
       // Flat list with roles shown
       return { flat: staffList.sort((a, b) => a.fullName.localeCompare(b.fullName)) };
     }
-    
+
     // Group by role
     const roleOrder = ['Doctor', 'Nurse', 'Trainee Nurse', 'Midwife', 'Maintenance'];
     const groups = {};
-    
+
     staffList.forEach(staff => {
       const role = staff.roleDisplay || 'Other';
       if (!groups[role]) groups[role] = [];
       groups[role].push(staff);
     });
-    
+
     // Sort each group alphabetically
     Object.keys(groups).forEach(role => {
       groups[role].sort((a, b) => a.fullName.localeCompare(b.fullName));
     });
-    
+
     // Order groups
     const orderedGroups = {};
     roleOrder.forEach(role => {
       if (groups[role]) orderedGroups[role] = groups[role];
     });
-    
+
     // Add remaining roles
     Object.keys(groups).forEach(role => {
       if (!roleOrder.includes(role)) {
         orderedGroups[role] = groups[role];
       }
     });
-    
+
     return orderedGroups;
   };
-  
+
   // Filter staff by name
   const filteredStaff = () => {
     if (!nameFilter) return staffList;
     const lower = nameFilter.toLowerCase();
-    return staffList.filter(staff => 
+    return staffList.filter(staff =>
       staff.fullName.toLowerCase().includes(lower)
     );
   };
@@ -470,7 +470,7 @@ const Login = () => {
         {/* Brand bar */}
         <div className="lock-brandbar">
           <img src="/Icon.png" alt="" />
-          <span>Tender Care Clinic</span>
+          <span>Tender Care Hospital</span>
         </div>
 
         {/* Center: time, date, button */}
@@ -519,10 +519,10 @@ const Login = () => {
           <div className="lock-card">
             <div className="lock-brand">
               <div className="lock-brand-icon">
-                <img src="/Icon.png" alt="Tender Care Clinic" />
+                <img src="/Icon.png" alt="Tender Care Hospital" />
               </div>
               <div className="lock-brand-text">
-                <div className="lock-brand-title">Tender Care Clinic</div>
+                <div className="lock-brand-title">Tender Care Hospital</div>
                 <div className="lock-brand-subtitle">Staff sign-in</div>
               </div>
             </div>
@@ -540,25 +540,26 @@ const Login = () => {
 
                 <p className="lock-footnote">
                   Pick your name, then type your password.
-                  <br />
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotPassword(true)}
-                    className="link-button-secondary"
-                    style={{ display: 'block', marginTop: '0.75rem', width: 'auto', marginLeft: 0 }}
-                  >
-                    Forgot password?
-                  </button>
-                </p>
+                  <div className="footnote">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="link-button-secondary"
+                      style={{ display: 'block', marginTop: '0.75rem', width: 'auto', marginLeft: 0 }}
+                    >
+                      Forgot password?
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => setStage('lock')}
-                  className="link-button-secondary"
-                  style={{ display: 'block', marginTop: '0.5rem', width: 'auto', marginLeft: 0 }}
-                >
-                  Back to lock screen
-                </button>
+                    <button
+                      type="button"
+                      onClick={() => setStage('lock')}
+                      className="link-button-secondary"
+                      style={{ display: 'block', marginTop: '0.5rem', width: 'auto', marginLeft: 0 }}
+                    >
+                      Back to lock screen
+                    </button>
+                  </div>
+                </p>
               </>
             ) : (
               <>
@@ -672,21 +673,21 @@ const Login = () => {
 
       {/* Staff Selection Modal */}
       {showStaffModal && (
-        <div 
-          className="modal-overlay" 
+        <div
+          className="modal-overlay"
           onClick={handleCloseModal}
           onKeyDown={(e) => {
             if (e.key === 'Escape') handleCloseModal();
           }}
         >
-          <div 
+          <div
             className={`modal-content ${selectedStaff ? 'modal-content-narrow' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
             <button className="modal-close" onClick={handleCloseModal} aria-label="Close">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
               </svg>
             </button>
 
@@ -724,13 +725,13 @@ const Login = () => {
                       <div className="staff-picker-scroll">
                         {(() => {
                           const filtered = filteredStaff();
-                          
+
                           if (filtered.length === 0) {
                             return <div className="staff-no-results">No one found. Check the spelling.</div>;
                           }
-                          
+
                           const groups = groupedStaff();
-                          
+
                           if (groups.flat) {
                             // Flat list (6 or fewer staff)
                             return (
@@ -741,7 +742,7 @@ const Login = () => {
                                     className="staff-button"
                                     onClick={() => handleStaffSelect(staff)}
                                   >
-                                    <div 
+                                    <div
                                       className="staff-avatar-circle"
                                       style={{ backgroundColor: getAvatarColor(staff.fullName) }}
                                     >
@@ -764,8 +765,8 @@ const Login = () => {
                                     <div className="staff-group-title">{role}s</div>
                                     <div className="staff-group-list">
                                       {members
-                                        .filter(staff => 
-                                          !nameFilter || 
+                                        .filter(staff =>
+                                          !nameFilter ||
                                           staff.fullName.toLowerCase().includes(nameFilter.toLowerCase())
                                         )
                                         .map((staff) => (
@@ -774,7 +775,7 @@ const Login = () => {
                                             className="staff-button"
                                             onClick={() => handleStaffSelect(staff)}
                                           >
-                                            <div 
+                                            <div
                                               className="staff-avatar-circle"
                                               style={{ backgroundColor: getAvatarColor(staff.fullName) }}
                                             >
@@ -810,7 +811,7 @@ const Login = () => {
                 // Password entry for selected staff
                 <>
                   <div className="password-step-header">
-                    <div 
+                    <div
                       className="staff-avatar-large"
                       style={{ backgroundColor: getAvatarColor(selectedStaff.fullName) }}
                     >
@@ -849,13 +850,13 @@ const Login = () => {
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             {showPassword ? (
                               <>
-                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                                <line x1="1" y1="1" x2="23" y2="23"/>
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                <line x1="1" y1="1" x2="23" y2="23" />
                               </>
                             ) : (
                               <>
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
                               </>
                             )}
                           </svg>
@@ -942,13 +943,13 @@ const Login = () => {
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           {showPassword ? (
                             <>
-                              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                              <line x1="1" y1="1" x2="23" y2="23"/>
+                              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                              <line x1="1" y1="1" x2="23" y2="23" />
                             </>
                           ) : (
                             <>
-                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                              <circle cx="12" cy="12" r="3"/>
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
                             </>
                           )}
                         </svg>

@@ -9,7 +9,7 @@ const router = express.Router();
 router.get('/search', authenticateToken, async (req, res) => {
   try {
     const { q, includeArchived } = req.query;
-    
+
     if (!q || q.trim().length < 1) {
       return res.json({
         patients: [],
@@ -20,18 +20,18 @@ router.get('/search', authenticateToken, async (req, res) => {
 
     const startTime = Date.now();
     const ranges = await loadRanges();
-    
+
     // Check if query is all digits - prioritize exact patient number match
     const normalized = normalizePatientNumber(q.trim());
     let patients = [];
-    
+
     if (normalized) {
       // Try exact patient number match first
       const exactMatch = await PatientFile.findOne({ patientId: normalized });
       if (exactMatch && (includeArchived === 'true' || exactMatch.status !== 'archived')) {
         patients.push(exactMatch);
       }
-      
+
       // Then add other matches
       const otherMatches = await PatientFile.searchFiles(q.trim());
       const otherFiltered = otherMatches
@@ -44,7 +44,7 @@ router.get('/search', authenticateToken, async (req, res) => {
         patients = patients.filter(p => p.status !== 'archived');
       }
     }
-    
+
     const searchTime = Date.now() - startTime;
 
     // Attach location display
@@ -119,7 +119,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 
     const patient = await PatientFile.findOne({ patientId: normalized });
-    
+
     if (!patient) {
       return res.status(404).json({
         error: 'Patient not found',
@@ -144,35 +144,75 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // POST /api/patients - Add new patient file (all roles - determines on first visit)
 router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS_OPERATOR', 'CLINICAL_STAFF'), async (req, res) => {
   try {
-    const { patientId, fullName, phoneNumber } = req.body;
+    const { patientId, patientType = 'general', fullName, phoneNumber, address, customFields } = req.body;
+    const Counter = require('../models/Counter');
 
-    // Basic required field validation
-    if (!patientId || !fullName) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: 'Patient number and full name are required'
-      });
-    }
-
-    // Normalize and validate patient ID
-    const normalized = normalizePatientNumber(patientId);
-    if (!normalized) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        message: 'Patient number must be 1 to 8 digits'
-      });
-    }
-
-    // Validate full name
-    const trimmedFullName = fullName.trim();
-    if (trimmedFullName.length < 2 || trimmedFullName.length > 100) {
+    // Validate fullName (required for both types)
+    const trimmedFullName = fullName ? fullName.trim() : '';
+    if (!trimmedFullName || trimmedFullName.length < 2 || trimmedFullName.length > 100) {
       return res.status(400).json({
         error: 'Validation failed',
         message: 'Full name must be 2-100 characters long'
       });
     }
 
-    // Validate phone number if provided (optional)
+    let normalizedPatientId;
+
+    if (patientType === 'antenatal') {
+      // Antenatal patient: generate number from counter
+      try {
+        const counter = await Counter.findOneAndUpdate(
+          { _id: 'antenatal' },
+          { $inc: { seq: 1 } },
+          { new: true, upsert: true }
+        );
+        normalizedPatientId = String(90000000 + counter.seq);
+      } catch (err) {
+        console.error('Counter error:', err);
+        return res.status(500).json({
+          error: 'Failed to generate number',
+          message: 'Internal server error'
+        });
+      }
+
+      // Validate address (required for antenatal)
+      const trimmedAddress = address ? address.trim() : '';
+      if (!trimmedAddress || trimmedAddress.length < 2 || trimmedAddress.length > 200) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          message: 'Address is required for antenatal patients.'
+        });
+      }
+    } else {
+      // General patient: patientId required
+      if (!patientId || !patientId.trim()) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          message: 'Patient number is required'
+        });
+      }
+
+      // Normalize and validate patient ID
+      const { normalizePatientNumber } = require('../utils/storageMap');
+      normalizedPatientId = normalizePatientNumber(patientId);
+      if (!normalizedPatientId) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          message: 'Patient number must be 1 to 8 digits'
+        });
+      }
+
+      // Check if patient ID already exists
+      const existingPatient = await PatientFile.findOne({ patientId: normalizedPatientId });
+      if (existingPatient) {
+        return res.status(409).json({
+          error: 'Patient ID already exists',
+          message: `A patient with ID ${normalizedPatientId} already exists`
+        });
+      }
+    }
+
+    // Validate phone number if provided (optional for both)
     let trimmedPhoneNumber = '';
     if (phoneNumber && phoneNumber.trim()) {
       trimmedPhoneNumber = phoneNumber.trim();
@@ -184,25 +224,77 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS
       }
     }
 
-    // Check if patient ID already exists
-    const existingPatient = await PatientFile.findOne({ patientId: normalized });
-    if (existingPatient) {
-      return res.status(409).json({
-        error: 'Patient ID already exists',
-        message: `A patient with ID ${normalized} already exists`
-      });
+    // Validate custom fields
+    let processedCustomFields = [];
+    if (customFields && Array.isArray(customFields)) {
+      if (customFields.length > 20) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          message: 'You can add up to 20 fields'
+        });
+      }
+
+      // Track field names to check for duplicates
+      const fieldNames = new Set();
+
+      for (const field of customFields) {
+        // Skip empty fields
+        if (!field.fieldName || !field.fieldName.trim()) {
+          continue;
+        }
+
+        const fieldName = field.fieldName.trim();
+        const fieldValue = field.fieldValue ? field.fieldValue.trim() : '';
+
+        // Validate field name
+        if (fieldName.length < 1 || fieldName.length > 60) {
+          return res.status(400).json({
+            error: 'Validation failed',
+            message: 'Field name must be 1-60 characters'
+          });
+        }
+
+        // Validate field value
+        if (fieldValue.length > 200) {
+          return res.status(400).json({
+            error: 'Validation failed',
+            message: 'Field value must be up to 200 characters'
+          });
+        }
+
+        // Check for duplicate names (case-insensitive)
+        const lowerName = fieldName.toLowerCase();
+        if (fieldNames.has(lowerName)) {
+          return res.status(400).json({
+            error: 'Validation failed',
+            message: 'Two fields cannot share the same name'
+          });
+        }
+        fieldNames.add(lowerName);
+
+        processedCustomFields.push({
+          fieldName,
+          fieldValue,
+          addedBy: req.user.fullName,
+          addedAt: new Date()
+        });
+      }
     }
 
     // Create new patient file
     const newPatient = new PatientFile({
-      patientId: normalized,
+      patientId: normalizedPatientId,
+      patientType,
       fullName: trimmedFullName,
-      phoneNumber: trimmedPhoneNumber
+      phoneNumber: trimmedPhoneNumber,
+      address: patientType === 'antenatal' ? address.trim() : '',
+      customFields: processedCustomFields
     });
 
     await newPatient.save();
 
-    // Load ranges and attach location
+    // Load ranges and attach location and displayNumber
+    const { loadRanges, attachLocation } = require('../utils/storageMap');
     const ranges = await loadRanges();
     const patientWithLocation = attachLocation(newPatient, ranges);
 
@@ -213,7 +305,7 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS
       targetType: 'PatientFile',
       targetId: newPatient._id,
       targetLabel: newPatient.fullName,
-      details: { patientId: normalized }
+      details: { patientId: normalizedPatientId, patientType }
     });
 
     res.status(201).json({
@@ -223,7 +315,7 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS
 
   } catch (error) {
     console.error('Create patient error:', error);
-    
+
     if (error.code === 11000) {
       return res.status(409).json({
         error: 'Patient ID already exists',
@@ -330,7 +422,7 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
         'discharged->admitted': 'admit patients',
         'admitted->discharged': 'discharge patients'
       };
-      
+
       return res.status(403).json({
         error: 'Permission denied',
         message: `You don't have permission to ${actionMessages[transitionKey] || 'perform this action'}.`
@@ -387,10 +479,10 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
       });
     }
 
-    const { fullName, phoneNumber, customFields } = req.body;
-    
+    const { fullName, phoneNumber, address, customFields } = req.body;
+
     const patient = await PatientFile.findOne({ patientId: normalized });
-    
+
     if (!patient) {
       return res.status(404).json({
         error: 'Patient not found',
@@ -426,6 +518,21 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
       if (patient.phoneNumber !== trimmed) {
         patient.phoneNumber = trimmed;
         changedFields.push('phoneNumber');
+      }
+    }
+
+    // Validate and update address
+    if (address !== undefined) {
+      const trimmed = address.trim();
+      if (trimmed && (trimmed.length < 2 || trimmed.length > 200)) {
+        return res.status(400).json({
+          error: 'Invalid value',
+          message: 'Address must be 2-200 characters'
+        });
+      }
+      if (patient.address !== trimmed) {
+        patient.address = trimmed;
+        changedFields.push('address');
       }
     }
 
@@ -501,7 +608,7 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
     }
 
     const patient = await PatientFile.findOne({ patientId: normalized });
-    
+
     if (!patient) {
       return res.status(404).json({
         error: 'Patient not found',

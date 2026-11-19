@@ -208,7 +208,7 @@ const VisitDetails = () => {
       await axios.post(`/api/visits/${id}/cancel`);
       setSaveSuccess('Visit cancelled.');
       setTimeout(() => {
-        window.location.href = '/file-desk';
+        window.location.href = '/visit';
       }, 1500);
     } catch (err) {
       console.error('Cancel visit error:', err);
@@ -272,7 +272,7 @@ const VisitDetails = () => {
     return (
       <div className="visit-details">
         <div className="alert alert-error">{error}</div>
-        <Link to="/file-desk" className="btn btn-outline">Back to File Desk</Link>
+        <Link to="/visit" className="btn btn-outline">Back to Visit</Link>
       </div>
     );
   }
@@ -290,8 +290,8 @@ const VisitDetails = () => {
           <p className="visit-date">Started {formatDate(visit.startedAt)}</p>
         </div>
         {visit.stage !== 'with_doctor' && (
-          <Link to="/file-desk" className="btn btn-outline">
-            Back to File Desk
+          <Link to="/visit" className="btn btn-outline">
+            Back to Visit
           </Link>
         )}
       </div>
@@ -326,8 +326,8 @@ const VisitDetails = () => {
               >
                 View report
               </button>
-              <Link to="/file-desk" className="btn btn-outline btn-small">
-                Back to File Desk
+              <Link to="/visit" className="btn btn-outline btn-small">
+                Back to Visit
               </Link>
             </div>
           )}
@@ -547,8 +547,8 @@ const VisitDetails = () => {
                 >
                   {steppingBack ? 'Going back...' : 'Go back'}
                 </button>
-                <Link to="/file-desk" className="btn btn-outline">
-                  Back to File Desk
+                <Link to="/visit" className="btn btn-outline">
+                  Back to Visit
                 </Link>
               </div>
             </div>
@@ -839,8 +839,8 @@ const VisitDetails = () => {
                     View report
                   </Link>
                 )}
-                <Link to="/file-desk" className="btn btn-outline">
-                  Back to file desk
+                <Link to="/visit" className="btn btn-outline">
+                  Back to Visit
                 </Link>
               </div>
             </div>

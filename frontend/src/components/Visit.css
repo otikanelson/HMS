@@ -1,29 +1,29 @@
-.file-desk {
+.visit {
   max-width: 1400px;
   padding: 0;
 }
 
-.file-desk-header {
+.visit-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: var(--space-8);
 }
 
-.file-desk-title {
+.visit-title {
   font-size: 1.5625rem;
   font-weight: 700;
   color: var(--gray-900);
   margin: 0;
 }
 
-.file-desk-subtitle {
+.visit-subtitle {
   font-size: 1.0625rem;
   color: var(--gray-600);
   margin: var(--space-1) 0 0 0;
 }
 
-.file-desk-search-card {
+.visit-search-card {
   background: white;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
@@ -123,19 +123,19 @@
   transition: background 150ms;
 }
 
-.file-desk-lists {
+.visit-lists {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
 }
 
-.file-desk-columns {
+.visit-columns {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: var(--space-6);
 }
 
-.file-column {
+.visit-column {
   background: white;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg);
@@ -146,7 +146,7 @@
   gap: var(--space-3);
 }
 
-.file-column-header {
+.visit-column-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -154,14 +154,14 @@
   border-bottom: 1px solid var(--gray-200);
 }
 
-.file-column-header h3 {
+.visit-column-header h3 {
   font-size: 1rem;
   font-weight: 600;
   color: var(--gray-900);
   margin: 0;
 }
 
-.file-column-count {
+.visit-column-count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -174,7 +174,7 @@
   font-weight: 600;
 }
 
-.file-items {
+.visit-items {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -206,28 +206,7 @@
   border: 1px solid var(--primary-200);
 }
 
-.file-list-section {
-  background: white;
-  border: 1px solid var(--gray-200);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
-  box-shadow: var(--shadow-sm);
-}
-
-.file-list-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--gray-900);
-  margin: 0 0 var(--space-4) 0;
-}
-
-.file-items {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.file-item {
+.visit-item {
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
   padding: var(--space-3);
@@ -237,7 +216,7 @@
   background: white;
 }
 
-.file-item.carried-over {
+.visit-item.carried-over {
   border-color: var(--error-300);
   background: var(--error-50);
 }
@@ -254,13 +233,13 @@
   grid-column: 1 / -1;
 }
 
-.file-item-main {
+.visit-item-main {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.file-item-header {
+.visit-item-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -268,24 +247,24 @@
   margin-bottom: var(--space-1);
 }
 
-.file-item-header > div {
+.visit-item-header > div {
   flex: 1;
 }
 
-.file-item-name {
+.visit-item-name {
   font-size: 1rem;
   font-weight: 600;
   color: var(--gray-900);
   margin: 0 0 var(--space-1) 0;
 }
 
-.file-item-number {
+.visit-item-number {
   font-size: 0.875rem;
   color: var(--gray-600);
   margin: 0;
 }
 
-.file-item-location {
+.visit-item-location {
   font-size: 0.875rem;
   font-family: var(--font-family-mono);
   color: var(--primary-600);
@@ -293,13 +272,7 @@
   margin: var(--space-1) 0 0 0;
 }
 
-.file-item-hint {
-  font-size: 0.875rem;
-  color: var(--gray-700);
-  margin: 0;
-}
-
-.file-item-meta {
+.visit-item-meta {
   font-size: 0.75rem;
   color: var(--gray-500);
   margin: 0;
@@ -335,7 +308,7 @@
   color: var(--stage-done-dark);
 }
 
-.file-item-action {
+.visit-item-action {
   display: flex;
   justify-content: flex-start;
   margin-top: var(--space-2);
@@ -366,7 +339,7 @@
 }
 
 @media (max-width: 768px) {
-  .file-desk-header {
+  .visit-header {
     flex-direction: column;
     gap: var(--space-3);
   }
@@ -375,17 +348,17 @@
     flex-direction: column;
   }
 
-  .file-item-main {
+  .visit-item-main {
     flex-direction: column;
     gap: var(--space-2);
   }
 
-  .file-item-meta {
+  .visit-item-meta {
     align-items: flex-start;
     text-align: left;
   }
 
-  .file-item-actions {
+  .visit-item-actions {
     flex-direction: column;
   }
 
@@ -393,7 +366,7 @@
     width: 100%;
   }
 
-  .file-desk-columns {
+  .visit-columns {
     grid-template-columns: 1fr;
   }
 }

@@ -120,7 +120,7 @@ const PatientHistory = () => {
 
       {visits.length === 0 ? (
         <div className="empty-state">
-          <p>No visits yet. <Link to={`/file-desk?patientId=${patientId}`} className="link">Start one from File Desk.</Link></p>
+          <p>No visits yet. <Link to={`/visit?patientId=${patientId}`} className="link">Start one from Visit.</Link></p>
         </div>
       ) : (
         <div className="history-card">

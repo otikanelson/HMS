@@ -442,6 +442,10 @@
   margin: 0;
 }
 
+.lock-footnote .footnote {
+  display: flex;
+}
+
 /* Login Page Notices */
 .login-notices {
   flex: 1 1 auto;

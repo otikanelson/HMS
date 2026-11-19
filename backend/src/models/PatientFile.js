@@ -19,7 +19,7 @@ const patientFileSchema = new mongoose.Schema({
     maxlength: [100, 'Full name cannot exceed 100 characters'],
     validate: [
       {
-        validator: function(v) {
+        validator: function (v) {
           // Allow letters in any language, accents, spaces, apostrophes, hyphens, periods and commas
           return /^[\p{L}\p{M}\s''.,-]+$/u.test(v);
         },
@@ -33,7 +33,7 @@ const patientFileSchema = new mongoose.Schema({
     index: true,
     validate: [
       {
-        validator: function(v) {
+        validator: function (v) {
           // Optional, but if present must match format
           if (!v || v === '') return true;
           return /^\+234\d{10}$/.test(v);
@@ -41,6 +41,18 @@ const patientFileSchema = new mongoose.Schema({
         message: 'Phone number must be in format +234XXXXXXXXXX or left empty'
       }
     ],
+    default: ''
+  },
+  patientType: {
+    type: String,
+    enum: ['general', 'antenatal'],
+    default: 'general',
+    index: true
+  },
+  address: {
+    type: String,
+    trim: true,
+    maxlength: [200, 'Address cannot exceed 200 characters'],
     default: ''
   },
   cabinetNumber: {
@@ -112,34 +124,36 @@ const patientFileSchema = new mongoose.Schema({
 });
 
 // Compound index for location (cabinet -> shelf -> folder)
-patientFileSchema.index({ 
-  cabinetNumber: 1, 
-  shelfNumber: 1, 
-  folderNumber: 1 
+patientFileSchema.index({
+  cabinetNumber: 1,
+  shelfNumber: 1,
+  folderNumber: 1
 });
 
 // Text index for search functionality
-patientFileSchema.index({ 
-  fullName: 'text', 
+patientFileSchema.index({
+  fullName: 'text',
   patientId: 'text',
-  phoneNumber: 'text'
+  phoneNumber: 'text',
+  address: 'text'
 });
 
 // Pre-save middleware to update updatedAt
-patientFileSchema.pre('save', function() {
+patientFileSchema.pre('save', function () {
   this.updatedAt = Date.now();
 });
 
 // Static method for search with improved partial matching
-patientFileSchema.statics.searchFiles = function(query) {
+patientFileSchema.statics.searchFiles = function (query) {
   // Escape special regex characters to prevent regex injection
   const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  
+
   return this.find({
     $or: [
       { patientId: { $regex: escapedQuery, $options: 'i' } },
       { fullName: { $regex: escapedQuery, $options: 'i' } },
-      { phoneNumber: { $regex: escapedQuery, $options: 'i' } }
+      { phoneNumber: { $regex: escapedQuery, $options: 'i' } },
+      { address: { $regex: escapedQuery, $options: 'i' } }
     ]
   }).sort({ updatedAt: -1 });
 };

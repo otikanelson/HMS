@@ -17,6 +17,11 @@ const visitSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  patientType: {
+    type: String,
+    enum: ['general', 'antenatal'],
+    default: 'general'
+  },
   fileLocation: {
     type: String,
     required: true
@@ -191,7 +196,7 @@ visitSchema.index({ isOpen: 1 });
 // Using explicit name to avoid clashes with old index
 visitSchema.index(
   { patient: 1 },
-  { 
+  {
     unique: true,
     partialFilterExpression: { isOpen: true },
     name: 'one_open_visit_per_patient'

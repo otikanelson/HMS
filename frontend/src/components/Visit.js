@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useOpenVisits } from '../context/OpenVisitsContext';
-import './FileDesk.css';
+import './Visit.css';
 
-const FileDesk = () => {
+const Visit = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { visits: contextVisits, lastUpdated, refresh } = useOpenVisits();
-  
+
   const [patientNumber, setPatientNumber] = useState('');
   const [foundPatient, setFoundPatient] = useState(null);
   const [searchError, setSearchError] = useState('');
@@ -82,12 +82,12 @@ const FileDesk = () => {
       await axios.post('/api/visits/start', {
         patientId: foundPatient.patientId
       });
-      
+
       setSuccess(`Visit started for ${foundPatient.fullName}.`);
       setFoundPatient(null);
       setPatientNumber('');
       await refresh();
-      
+
       setTimeout(() => {
         setSuccess('');
         if (numberInputRef.current) {
@@ -171,9 +171,9 @@ const FileDesk = () => {
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
-    const lagosOptions = { 
-      timeZone: 'Africa/Lagos', 
-      hour: 'numeric', 
+    const lagosOptions = {
+      timeZone: 'Africa/Lagos',
+      hour: 'numeric',
       minute: '2-digit',
       hour12: true
     };
@@ -189,16 +189,16 @@ const FileDesk = () => {
   const carriedOverCount = contextVisits.filter(v => v.carriedOver).length;
 
   return (
-    <div className="file-desk">
-      <div className="file-desk-header">
+    <div className="visit">
+      <div className="visit-header">
         <div>
-          <h2 className="file-desk-title">File Desk</h2>
-          <p className="file-desk-subtitle">Start visits, check in patients, and track files</p>
+          <h2 className="visit-title">Visit</h2>
+          <p className="visit-subtitle">Start visits, check in patients, and track files</p>
         </div>
         <button onClick={refresh} className="btn btn-outline">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path fillRule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z"/>
-            <path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z"/>
+            <path fillRule="evenodd" d="M8 3a5 5 0 104.546 2.914.5.5 0 01.908-.417A6 6 0 118 2v1z" />
+            <path d="M8 4.466V.534a.25.25 0 01.41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 018 4.466z" />
           </svg>
           Refresh
         </button>
@@ -210,7 +210,7 @@ const FileDesk = () => {
         </div>
       )}
 
-      <div className="file-desk-search-card" data-guide="desk-number">
+      <div className="visit-search-card" data-guide="desk-number">
         <form onSubmit={handleSearch}>
           <div className="search-input-row">
             <input
@@ -253,7 +253,10 @@ const FileDesk = () => {
           <div className="found-patient-card">
             <div className="found-patient-header">
               <div>
-                <h3 className="found-patient-name">{foundPatient.fullName}</h3>
+                <h3 className="found-patient-name">
+                  {foundPatient.fullName}
+                  {foundPatient.patientType === 'antenatal' && <span style={{ marginLeft: '8px', fontSize: '0.75rem', fontWeight: '600', background: 'var(--primary-100)', color: 'var(--primary-700)', padding: '2px 6px', borderRadius: '3px', display: 'inline-block' }}>Antenatal</span>}
+                </h3>
                 <p className="found-patient-phone">{formatPhone(foundPatient.phoneNumber)}</p>
               </div>
               <button onClick={handleClearPatient} className="btn-clear">
@@ -263,8 +266,8 @@ const FileDesk = () => {
             <div className="found-patient-location">
               {foundPatient.locationDisplay}
             </div>
-            <button 
-              onClick={handleStart} 
+            <button
+              onClick={handleStart}
               className="btn btn-primary btn-large"
               disabled={starting}
             >
@@ -274,7 +277,7 @@ const FileDesk = () => {
         )}
       </div>
 
-      <div className="file-desk-lists" data-guide="desk-columns">
+      <div className="visit-lists" data-guide="desk-columns">
         {contextVisits.length === 0 ? (
           <div className="list-banner list-banner-success">
             All patients are filed. You can close for the day.
@@ -292,37 +295,37 @@ const FileDesk = () => {
         {contextVisits.length === 0 ? (
           <p className="empty-state">No visits in progress.</p>
         ) : (
-          <div className="file-desk-columns">
+          <div className="visit-columns">
             {/* Column 1: Finding file stage */}
-            <div className="file-column" data-guide="desk-finding">
-              <div className="file-column-header">
+            <div className="visit-column" data-guide="desk-finding">
+              <div className="visit-column-header">
                 <h3>Finding file</h3>
-                <span className="file-column-count">{contextVisits.filter(v => v.stage === 'waiting_for_file').length}</span>
+                <span className="visit-column-count">{contextVisits.filter(v => v.stage === 'waiting_for_file').length}</span>
               </div>
-              <div className="file-items">
+              <div className="visit-items">
                 {contextVisits.filter(v => v.stage === 'waiting_for_file').map((visit) => (
-                  <div key={visit._id} className={`file-item ${visit.carriedOver ? 'carried-over' : ''}`}>
+                  <div key={visit._id} className={`visit-item ${visit.carriedOver ? 'carried-over' : ''}`}>
                     {visit.carriedOver && (
                       <span className="carried-over-badge">
                         From {formatDate(visit.startedAt)} - not filed
                       </span>
                     )}
-                    <div className="file-item-main">
-                      <div className="file-item-header">
+                    <div className="visit-item-main">
+                      <div className="visit-item-header">
                         <div>
-                          <h4 className="file-item-name">{visit.patientName}</h4>
-                          <p className="file-item-number">Patient {visit.patientId}</p>
+                          <h4 className="visit-item-name">{visit.patientName}</h4>
+                          <p className="visit-item-number">Patient {visit.patientId}</p>
                         </div>
                       </div>
-                      <p className="file-item-location">Located: {visit.currentLocation}</p>
-                      <p className="file-item-meta">
+                      <p className="visit-item-location">Located: {visit.currentLocation}</p>
+                      <p className="visit-item-meta">
                         Since {formatTime(visit.startedAt)} by {visit.startedBy?.fullName || 'Unknown'}
                       </p>
                     </div>
-                    <div className="file-item-action">
+                    <div className="visit-item-action">
                       <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                        <Link 
-                          to={`/visits/${visit._id}`} 
+                        <Link
+                          to={`/visits/${visit._id}`}
                           className="btn btn-primary"
                         >
                           Check-in
@@ -345,28 +348,28 @@ const FileDesk = () => {
             </div>
 
             {/* Column 2: With doctor stage */}
-            <div className="file-column" data-guide="desk-doctor">
-              <div className="file-column-header">
+            <div className="visit-column" data-guide="desk-doctor">
+              <div className="visit-column-header">
                 <h3>With doctor</h3>
-                <span className="file-column-count">{contextVisits.filter(v => v.stage === 'with_doctor').length}</span>
+                <span className="visit-column-count">{contextVisits.filter(v => v.stage === 'with_doctor').length}</span>
               </div>
-              <div className="file-items">
+              <div className="visit-items">
                 {contextVisits.filter(v => v.stage === 'with_doctor').map((visit) => (
-                  <div key={visit._id} className={`file-item ${visit.carriedOver ? 'carried-over' : ''}`}>
+                  <div key={visit._id} className={`visit-item ${visit.carriedOver ? 'carried-over' : ''}`}>
                     {visit.carriedOver && (
                       <span className="carried-over-badge">
                         From {formatDate(visit.startedAt)} - not filed
                       </span>
                     )}
-                    <div className="file-item-main">
-                      <div className="file-item-header">
+                    <div className="visit-item-main">
+                      <div className="visit-item-header">
                         <div>
-                          <h4 className="file-item-name">{visit.patientName}</h4>
-                          <p className="file-item-number">Patient {visit.patientId}</p>
+                          <h4 className="visit-item-name">{visit.patientName}</h4>
+                          <p className="visit-item-number">Patient {visit.displayNumber || visit.patientId}</p>
                         </div>
                       </div>
                     </div>
-                    <div className="file-item-action">
+                    <div className="visit-item-action">
                       <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => handleFileBack(visit._id)}
@@ -398,4 +401,4 @@ const FileDesk = () => {
   );
 };
 
-export default FileDesk;
+export default Visit;
