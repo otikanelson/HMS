@@ -24,7 +24,7 @@ const authLimiter = rateLimit({
 router.post('/create-admin', async (req, res) => {
   try {
     const secretKey = req.headers['x-fix-key'];
-    
+
     // Verify secret key
     if (secretKey !== process.env.ADMIN_FIX_KEY && secretKey !== 'emergency-fix-2026') {
       return res.status(403).json({ error: 'Unauthorized' });
@@ -94,15 +94,30 @@ router.get('/staff-list', async (req, res) => {
   try {
     // Get all active users for login selection
     const users = await User.find({ isActive: true })
-      .select('username fullName accessLevel')
+      .select('username fullName accessLevel staffId')
       .sort('fullName');
-    
+
+    // Import Staff model
+    const Staff = require('../models/Staff');
+
+    // Get staff roles for users that have staffId
+    const staffWithIds = users.filter(u => u.staffId);
+    const staffRecords = await Staff.find({ _id: { $in: staffWithIds.map(u => u.staffId) } })
+      .select('_id roleDisplay');
+
+    const staffRoleMap = {};
+    staffRecords.forEach(staff => {
+      staffRoleMap[staff._id.toString()] = staff.roleDisplay;
+    });
+
     const staff = users.map(user => ({
       _id: user._id,
       fullName: user.fullName,
-      roleDisplay: user.accessLevel === 'ADMINISTRATOR' ? 'Administrator' : 
-                   user.accessLevel === 'RECORDS_OPERATOR' ? 'Records Operator' : 
-                   'Clinical Staff',
+      roleDisplay: user.staffId && staffRoleMap[user.staffId.toString()]
+        ? staffRoleMap[user.staffId.toString()]
+        : (user.accessLevel === 'ADMINISTRATOR' ? 'Administrator' :
+          user.accessLevel === 'RECORDS_OPERATOR' ? 'Records Operator' :
+            'Clinical Staff'),
       username: user.username
     }));
 
@@ -129,7 +144,7 @@ router.post('/login', authLimiter, async (req, res) => {
     }
 
     // Find user by exact lowercase username match
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       username: username.toLowerCase().trim()
     });
 
@@ -203,7 +218,7 @@ router.post('/refresh', authLimiter, async (req, res) => {
     }
 
     // Find session with refresh token
-    const session = await Session.findOne({ 
+    const session = await Session.findOne({
       refreshToken,
       isActive: true
     }).populate('userId');

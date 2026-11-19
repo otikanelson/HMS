@@ -783,6 +783,7 @@ const Login = () => {
                                             </div>
                                             <div className="staff-button-text">
                                               <div className="staff-button-name">{staff.fullName}</div>
+                                              <div className="staff-button-role">{staff.roleDisplay}</div>
                                             </div>
                                           </button>
                                         ))}
