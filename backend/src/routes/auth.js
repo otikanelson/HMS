@@ -1,6 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const User = require('../models/User');
+const Staff = require('../models/Staff');
 const Session = require('../models/Session');
 const PasswordResetRequest = require('../models/PasswordResetRequest');
 const { authenticateToken, generateTokens } = require('../middleware/auth');
@@ -92,24 +93,29 @@ const forgotPasswordLimiter = rateLimit({
 // GET /api/auth/staff-list - Get staff list for login selection (public, no auth)
 router.get('/staff-list', async (req, res) => {
   try {
-    // Get all active users for login selection
+    // Get all active users
     const users = await User.find({ isActive: true })
       .select('username fullName accessLevel staffId')
       .sort('fullName');
 
-    // Import Staff model
-    const Staff = require('../models/Staff');
-
-    // Get staff roles for users that have staffId
-    const staffWithIds = users.filter(u => u.staffId);
-    const staffRecords = await Staff.find({ _id: { $in: staffWithIds.map(u => u.staffId) } })
-      .select('_id roleDisplay');
+    // Get Staff records with staffId lookup
+    const staffIds = users.filter(u => u.staffId).map(u => u.staffId);
+    const staffRecords = await Staff.find({ _id: { $in: staffIds } })
+      .select('_id role');
 
     const staffRoleMap = {};
     staffRecords.forEach(staff => {
-      staffRoleMap[staff._id.toString()] = staff.roleDisplay;
+      const roleMap = {
+        'DOCTOR': 'Doctor',
+        'NURSE': 'Nurse',
+        'TRAINEE_NURSE': 'Trainee Nurse',
+        'MIDWIFE': 'Midwife',
+        'MAINTENANCE': 'Maintenance'
+      };
+      staffRoleMap[staff._id.toString()] = roleMap[staff.role] || staff.role;
     });
 
+    // Map users to staff response
     const staff = users.map(user => ({
       _id: user._id,
       fullName: user.fullName,
