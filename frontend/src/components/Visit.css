@@ -338,35 +338,264 @@
   color: var(--primary-700);
 }
 
+@media (max-width: 1024px) {
+  .visit {
+    max-width: 100%;
+  }
+
+  .visit-columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (max-width: 768px) {
+  .visit {
+    max-width: 100%;
+    padding: var(--space-4);
+  }
+
   .visit-header {
     flex-direction: column;
     gap: var(--space-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .visit-title {
+    font-size: 1.25rem;
+  }
+
+  .visit-subtitle {
+    font-size: 0.9375rem;
+  }
+
+  .visit-search-card {
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
   }
 
   .search-input-row {
     flex-direction: column;
-  }
-
-  .visit-item-main {
-    flex-direction: column;
     gap: var(--space-2);
   }
 
-  .visit-item-meta {
-    align-items: flex-start;
-    text-align: left;
+  .search-input {
+    padding: var(--space-3);
+    font-size: 0.95rem;
   }
 
-  .visit-item-actions {
-    flex-direction: column;
+  .visit-lists {
+    gap: var(--space-4);
+  }
+
+  .visit-columns {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .visit-column {
+    padding: var(--space-4);
+    gap: var(--space-2);
+  }
+
+  .visit-column-header h3 {
+    font-size: 0.95rem;
+  }
+
+  .visit-item {
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .visit-item-header {
+    gap: var(--space-2);
+  }
+
+  .visit-item-name {
+    font-size: 0.95rem;
+  }
+
+  .visit-item-number {
+    font-size: 0.8125rem;
+  }
+
+  .stage-chip {
+    font-size: 0.7rem;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .btn-large {
+    padding: var(--space-3) var(--space-4);
+    font-size: 0.95rem;
+  }
+
+  .found-patient-card {
+    border-radius: var(--radius-md);
+  }
+
+  .found-patient-name {
+    font-size: 1rem;
   }
 
   .btn {
     width: 100%;
   }
+}
+
+/* Mobile (480px and below) */
+@media (max-width: 480px) {
+  .visit {
+    max-width: 100%;
+    padding: var(--space-3);
+  }
+
+  .visit-header {
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .visit-title {
+    font-size: 1.1rem;
+  }
+
+  .visit-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .visit-search-card {
+    padding: var(--space-3);
+    margin-bottom: var(--space-3);
+    border-radius: var(--radius-md);
+  }
+
+  .search-input-row {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .search-input {
+    padding: var(--space-2);
+    font-size: 0.875rem;
+    min-height: 36px;
+  }
+
+  .found-patient-header {
+    flex-direction: column;
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .found-patient-name {
+    font-size: 0.95rem;
+  }
+
+  .found-patient-phone {
+    font-size: 0.8125rem;
+  }
+
+  .btn-clear {
+    font-size: 0.8rem;
+  }
+
+  .found-patient-location {
+    font-size: 0.8125rem;
+    padding: var(--space-3);
+  }
+
+  .btn-large {
+    padding: var(--space-3);
+    font-size: 0.9rem;
+    min-height: 40px;
+  }
+
+  .visit-lists {
+    gap: var(--space-3);
+  }
 
   .visit-columns {
     grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .visit-column {
+    padding: var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .visit-column-header {
+    padding-bottom: var(--space-2);
+  }
+
+  .visit-column-header h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .visit-column-count {
+    width: 28px;
+    height: 28px;
+    font-size: 0.8rem;
+  }
+
+  .visit-item {
+    padding: var(--space-2);
+    gap: var(--space-1);
+    border-radius: var(--radius-sm);
+  }
+
+  .visit-item-main {
+    gap: var(--space-1);
+  }
+
+  .visit-item-header {
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-bottom: 0;
+  }
+
+  .visit-item-header > div {
+    flex: 1;
+  }
+
+  .visit-item-name {
+    font-size: 0.9rem;
+    margin-bottom: var(--space-1);
+  }
+
+  .visit-item-number {
+    font-size: 0.75rem;
+  }
+
+  .visit-item-location {
+    font-size: 0.8rem;
+  }
+
+  .visit-item-meta {
+    font-size: 0.7rem;
+  }
+
+  .stage-chip {
+    font-size: 0.65rem;
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .visit-item-action {
+    margin-top: var(--space-1);
+  }
+
+  .list-banner {
+    padding: var(--space-3);
+    font-size: 0.8125rem;
+  }
+
+  .loading-state,
+  .empty-state {
+    padding: var(--space-4);
+    font-size: 0.8125rem;
+  }
+
+  .carried-over-badge {
+    font-size: 0.7rem;
+    margin-bottom: var(--space-1);
   }
 }

@@ -329,10 +329,19 @@
   background: var(--gray-700);
 }
 
-/* Mobile responsive */
+/* Mobile responsive - Tablet (768px and below) */
 @media (max-width: 768px) {
   .add-patient {
     padding: var(--space-4);
+    max-width: 100%;
+  }
+
+  .add-patient-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .add-patient-header p {
+    font-size: 0.9375rem;
   }
 
   .add-patient .patient-form {
@@ -351,6 +360,8 @@
   .add-patient .tab-button {
     flex: 1;
     text-align: center;
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.875rem;
   }
 
   .add-patient .custom-field-row {
@@ -379,5 +390,210 @@
 
   .add-patient .btn {
     width: 100%;
+    font-size: 0.8125rem;
+  }
+
+  .add-patient input[type="text"],
+  .add-patient input[type="tel"],
+  .add-patient textarea {
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.9rem;
+  }
+
+  .add-patient .form-section {
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+  }
+
+  .add-patient .form-section h3 {
+    font-size: 0.95rem;
+  }
+
+  .add-patient .form-section h4 {
+    font-size: 0.875rem;
+  }
+}
+
+/* Mobile - 480px and below */
+@media (max-width: 480px) {
+  .add-patient {
+    padding: var(--space-3);
+    max-width: 100%;
+  }
+
+  .add-patient-header {
+    gap: var(--space-1);
+    margin-bottom: var(--space-4);
+  }
+
+  .add-patient-header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .add-patient-header p {
+    font-size: 0.875rem;
+  }
+
+  .add-patient .form-container {
+    max-width: 100%;
+  }
+
+  .add-patient .tab-buttons {
+    gap: 0;
+    margin-bottom: var(--space-3);
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .add-patient .tab-button {
+    flex: 1;
+    text-align: center;
+    padding: var(--space-2) var(--space-1);
+    font-size: 0.8rem;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    margin: 0;
+    color: var(--gray-600);
+    transition: all 150ms ease;
+  }
+
+  .add-patient .tab-button.active {
+    color: var(--primary-600);
+    border-bottom-color: var(--primary-600);
+    margin-bottom: -1px;
+    background: var(--primary-50);
+  }
+
+  .add-patient .patient-form {
+    padding: var(--space-3);
+    border-radius: var(--radius-md);
+  }
+
+  .add-patient .form-section {
+    margin-bottom: var(--space-3);
+    padding-bottom: var(--space-2);
+  }
+
+  .add-patient .form-section:last-of-type {
+    margin-bottom: var(--space-2);
+  }
+
+  .add-patient .form-section h3 {
+    font-size: 0.9rem;
+    margin-bottom: var(--space-3);
+  }
+
+  .add-patient .form-section h4 {
+    font-size: 0.8125rem;
+    margin-bottom: var(--space-2);
+  }
+
+  .add-patient .form-group label {
+    font-size: 0.8125rem;
+    margin-bottom: var(--space-1);
+  }
+
+  .add-patient input[type="text"],
+  .add-patient input[type="tel"],
+  .add-patient textarea {
+    padding: var(--space-2);
+    font-size: 0.875rem;
+    border-width: 1px;
+    min-height: 36px;
+  }
+
+  .add-patient textarea {
+    min-height: 80px;
+  }
+
+  .add-patient small {
+    font-size: 0.7rem;
+    margin-top: var(--space-1);
+  }
+
+  .add-patient .antenatal-notice {
+    font-size: 0.8125rem;
+    padding: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .add-patient .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+
+  .add-patient .custom-fields-section {
+    margin-bottom: var(--space-4);
+    padding: var(--space-3);
+  }
+
+  .add-patient .custom-field-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+  }
+
+  .add-patient .btn-add-field {
+    font-size: 0.8125rem;
+    padding: var(--space-1);
+  }
+
+  .add-patient .btn-remove-field {
+    font-size: 0.75rem;
+    padding: var(--space-2);
+  }
+
+  .add-patient .checkbox-label {
+    padding: var(--space-2);
+    font-size: 0.875rem;
+    gap: var(--space-1);
+  }
+
+  .add-patient .checkbox-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+  }
+
+  .add-patient .checkbox-label span {
+    font-size: 0.875rem;
+  }
+
+  .add-patient .form-actions {
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+  }
+
+  .add-patient .form-actions .error,
+  .add-patient .form-actions .success {
+    padding: var(--space-3);
+    margin-bottom: var(--space-3);
+    font-size: 0.8125rem;
+  }
+
+  .add-patient .action-buttons {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .add-patient .btn {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    font-size: 0.8125rem;
+    min-height: 40px;
+    gap: var(--space-1);
+  }
+
+  .add-patient .btn-primary {
+    background: var(--primary-600);
+  }
+
+  .add-patient .btn-primary:hover:not(:disabled) {
+    background: var(--primary-700);
+    transform: translateY(-1px);
+  }
+
+  .add-patient .btn-secondary {
+    background: var(--gray-600);
   }
 }
