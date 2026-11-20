@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "lib": ["ES2020"],
-    "module": "CommonJS",
+    "module": "commonjs",
     "moduleResolution": "node",
     "outDir": "./dist",
     "rootDir": "./src",
@@ -37,10 +37,7 @@
       "@/utils/*": ["src/utils/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "scripts/**/*"
-  ],
+  "include": ["src/**/*", "scripts/**/*"],
   "exclude": [
     "node_modules",
     "dist",
@@ -53,7 +50,7 @@
     "experimentalSpecifierResolution": "node",
     "transpileOnly": true,
     "compilerOptions": {
-      "module": "CommonJS"
+      "module": "commonjs"
     }
   }
 }

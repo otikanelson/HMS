@@ -3,11 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Payroll.css';
 
-// TODO(Kiro): swap to the shared API client if raw axios isn't the
-// established pattern elsewhere — same note as every other recent file.
-
-// TODO: confirm actual currency — defaulting to Naira given context, easy
-// to change to whatever's correct.
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-NG', {
     style: 'currency',

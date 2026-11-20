@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const ActivityLog = require('../models/ActivityLog'); // TODO(verify path): match wherever other models are required from in this codebase
+const ActivityLog = require('../models/ActivityLog');
 const { authenticateToken, requireAccessLevel } = require('../middleware/auth');
 
 // GET /api/activity-log
@@ -52,7 +52,7 @@ router.put('/:id/flag', authenticateToken, requireAccessLevel('ADMINISTRATOR'), 
         return res.status(400).json({ error: 'A reason is required to flag an activity.' });
       }
       entry.flagged = true;
-      entry.flaggedBy = req.user.userId; // TODO(verify field name): match whatever req.user actually uses elsewhere (confirmed by Kiro in an earlier task — use that exact name)
+      entry.flaggedBy = req.user._id;
       entry.flagReason = reason.trim();
       entry.flaggedAt = new Date();
     } else {

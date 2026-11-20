@@ -103,12 +103,12 @@ router.post('/runs', async (req, res) => {
       }))
     );
 
-    await logActivity({ 
-      req, 
-      action: 'PAYROLL_RUN_CREATED', 
-      targetType: 'PayrollRun', 
-      targetId: run._id, 
-      targetLabel: periodLabel 
+    await logActivity({
+      req,
+      action: 'PAYROLL_RUN_CREATED',
+      targetType: 'PayrollRun',
+      targetId: run._id,
+      targetLabel: periodLabel
     });
 
     res.status(201).json({ run, entries });
@@ -161,13 +161,13 @@ router.put('/entries/:id', async (req, res) => {
     entry.totalAmount = entry.baseSalary + amount;
     await entry.save();
 
-    await logActivity({ 
-      req, 
-      action: 'PAYROLL_ENTRY_ADJUSTED', 
-      targetType: 'PayrollEntry', 
-      targetId: entry._id, 
-      targetLabel: entry.staffNameSnapshot, 
-      details: { adjustmentAmount: amount, adjustmentNote } 
+    await logActivity({
+      req,
+      action: 'PAYROLL_ENTRY_ADJUSTED',
+      targetType: 'PayrollEntry',
+      targetId: entry._id,
+      targetLabel: entry.staffNameSnapshot,
+      details: { adjustmentAmount: amount, adjustmentNote }
     });
 
     res.json(entry);
@@ -194,12 +194,12 @@ router.put('/runs/:id/approve', async (req, res) => {
 
     await PayrollEntry.updateMany({ run: run._id }, { status: 'approved' });
 
-    await logActivity({ 
-      req, 
-      action: 'PAYROLL_RUN_APPROVED', 
-      targetType: 'PayrollRun', 
-      targetId: run._id, 
-      targetLabel: run.periodLabel 
+    await logActivity({
+      req,
+      action: 'PAYROLL_RUN_APPROVED',
+      targetType: 'PayrollRun',
+      targetId: run._id,
+      targetLabel: run.periodLabel
     });
 
     res.json(run);
@@ -551,18 +551,65 @@ router.put('/runs/:id/pay', async (req, res) => {
 
     await PayrollEntry.updateMany({ run: run._id }, { status: 'paid' });
 
-    await logActivity({ 
-      req, 
-      action: 'PAYROLL_RUN_PAID', 
-      targetType: 'PayrollRun', 
-      targetId: run._id, 
-      targetLabel: run.periodLabel 
+    await logActivity({
+      req,
+      action: 'PAYROLL_RUN_PAID',
+      targetType: 'PayrollRun',
+      targetId: run._id,
+      targetLabel: run.periodLabel
     });
 
     res.json(run);
   } catch (err) {
     console.error('Failed to mark payroll run as paid:', err);
     res.status(500).json({ error: "This run couldn't be marked as paid. Please try again." });
+  }
+});
+
+// GET /api/payroll/runs/:id/payment-file — download payment data as CSV
+router.get('/runs/:id/payment-file', async (req, res) => {
+  try {
+    const run = await PayrollRun.findById(req.params.id);
+    if (!run) return res.status(404).json({ error: 'Payroll run not found.' });
+
+    if (run.status !== 'approved') {
+      return res.status(400).json({ error: 'Only an approved run can be exported for payment.' });
+    }
+
+    const entries = await PayrollEntry.find({ run: run._id })
+      .populate('staff', 'bankCode accountNumber accountName')
+      .sort({ staffNameSnapshot: 1 });
+
+    // Build CSV: Name, Bank Code, Account Number, Account Name, Amount
+    const rows = [
+      ['Staff Name', 'Bank Code', 'Account Number', 'Account Name', 'Amount (₦)'],
+      ...entries
+        .filter(e => e.totalAmount > 0 && e.staff?.bankCode && e.staff?.accountNumber)
+        .map(e => [
+          e.staffNameSnapshot,
+          e.staff.bankCode,
+          e.staff.accountNumber,
+          e.staff.accountName || '',
+          e.totalAmount.toString()
+        ])
+    ];
+
+    const csv = rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="payroll-${run.periodMonth}-${run.periodYear}.csv"`);
+    res.send(csv);
+
+    await logActivity({
+      req,
+      action: 'PAYROLL_PAYMENT_FILE_EXPORTED',
+      targetType: 'PayrollRun',
+      targetId: run._id,
+      targetLabel: run.periodLabel
+    });
+  } catch (err) {
+    console.error('Failed to export payment file:', err);
+    res.status(500).json({ error: 'Failed to download payment file. Please try again.' });
   }
 });
 

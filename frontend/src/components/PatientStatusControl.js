@@ -3,9 +3,6 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import './PatientStatusControl.css';
 
-// TODO(Kiro): swap to whatever shared API client this codebase already
-// uses elsewhere (same note as in WeeklySchedule.js) if it's not raw axios.
-
 const STATUS_LABELS = {
   admitted: 'Admitted',
   discharged: 'Discharged',
@@ -58,7 +55,7 @@ const PatientStatusControl = ({ patient, onChanged, onDeleted }) => {
       setError(
         err.response?.data?.message ||
         err.response?.data?.error ||
-          "That change didn't go through. Please try again."
+        "That change didn't go through. Please try again."
       );
     } finally {
       setLoading(false);
@@ -76,7 +73,7 @@ const PatientStatusControl = ({ patient, onChanged, onDeleted }) => {
       setError(
         err.response?.data?.message ||
         err.response?.data?.error ||
-          "This file couldn't be deleted. Please try again."
+        "This file couldn't be deleted. Please try again."
       );
       setLoading(false);
       setConfirmingAction(null);
