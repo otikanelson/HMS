@@ -16,7 +16,7 @@ const REFRESH_TOKEN_EXPIRE = '7d'; // Longer-lived refresh tokens
 const generateTokens = (userId, accessLevel, staffId, mustChangePassword) => {
   const accessToken = jwt.sign({ userId, accessLevel, staffId, mustChangePassword }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
   const refreshToken = jwt.sign({ userId, accessLevel, staffId, mustChangePassword, type: 'refresh' }, JWT_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRE });
-  
+
   return { accessToken, refreshToken };
 };
 
@@ -27,7 +27,7 @@ const authenticateToken = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Access token required',
         code: 'NO_TOKEN'
       });
@@ -35,16 +35,16 @@ const authenticateToken = async (req, res, next) => {
 
     // Verify the JWT token
     const decoded = jwt.verify(token, JWT_SECRET);
-    
+
     // Check if session exists and is active
-    const session = await Session.findOne({ 
+    const session = await Session.findOne({
       token,
       userId: decoded.userId,
       isActive: true
     });
 
     if (!session) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Invalid or expired session',
         code: 'INVALID_SESSION'
       });
@@ -53,7 +53,7 @@ const authenticateToken = async (req, res, next) => {
     // Check if session is expired
     if (session.isExpired()) {
       await session.deleteOne();
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Session expired',
         code: 'SESSION_EXPIRED'
       });
@@ -62,7 +62,7 @@ const authenticateToken = async (req, res, next) => {
     // Get user data
     const user = await User.findById(decoded.userId);
     if (!user || !user.isActive) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'User not found or inactive',
         code: 'USER_INACTIVE'
       });
@@ -74,7 +74,7 @@ const authenticateToken = async (req, res, next) => {
     // Extend session if it's close to expiring (less than 1 hour left)
     const timeUntilExpiry = session.expiresAt.getTime() - Date.now();
     const oneHour = 60 * 60 * 1000;
-    
+
     if (timeUntilExpiry < oneHour) {
       await session.extendSession(4); // Extend by 4 hours
     }
@@ -88,7 +88,7 @@ const authenticateToken = async (req, res, next) => {
       mustChangePassword: decoded.mustChangePassword !== undefined ? decoded.mustChangePassword : user.mustChangePassword
     };
     req.session = session;
-    
+
     // Enforce password change requirement
     // Block all requests except password change, profile view, validation, and logout
     if (req.user.mustChangePassword) {
@@ -99,14 +99,14 @@ const authenticateToken = async (req, res, next) => {
         { method: 'POST', path: '/api/auth/logout' },
         { method: 'POST', path: '/api/auth/logout-all' }
       ];
-      
+
       // Use originalUrl or baseUrl + path to get the full path
       const fullPath = req.originalUrl.split('?')[0]; // Remove query params
-      
-      const isExempt = exemptPaths.some(exempt => 
+
+      const isExempt = exemptPaths.some(exempt =>
         req.method === exempt.method && fullPath === exempt.path
       );
-      
+
       if (!isExempt) {
         return res.status(403).json({
           error: 'You must change your password before continuing.',
@@ -114,25 +114,25 @@ const authenticateToken = async (req, res, next) => {
         });
       }
     }
-    
+
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Invalid token',
         code: 'INVALID_TOKEN'
       });
     }
-    
+
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ 
+      return res.status(401).json({
         error: 'Token expired',
         code: 'TOKEN_EXPIRED'
       });
     }
 
     console.error('Authentication error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Authentication failed',
       code: 'AUTH_ERROR'
     });
@@ -142,7 +142,7 @@ const authenticateToken = async (req, res, next) => {
 // Admin role check (updated for accessLevel)
 const requireAdmin = (req, res, next) => {
   if (req.user.accessLevel !== 'ADMINISTRATOR') {
-    return res.status(403).json({ 
+    return res.status(403).json({
       error: 'Admin access required',
       code: 'INSUFFICIENT_PERMISSIONS'
     });
@@ -153,7 +153,7 @@ const requireAdmin = (req, res, next) => {
 // Optional authentication (doesn't fail if no token)
 const optionalAuth = async (req, res, next) => {
   try {
-    await authenticateToken(req, res, () => {});
+    await authenticateToken(req, res, () => { });
   } catch (error) {
     // Ignore auth errors for optional auth
   }
@@ -178,6 +178,5 @@ module.exports = {
   requireAdmin,
   optionalAuth,
   generateTokens,
-  requireAccessLevel,
-  JWT_SECRET
+  requireAccessLevel
 };

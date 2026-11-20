@@ -11,7 +11,7 @@ const router = express.Router();
 // Rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // 50 attempts per window (increased for development)
+  max: 5, // FIXED: Reduced from 50 to 5 (OWASP standard)
   message: {
     error: 'Too many authentication attempts. Please try again later.',
     code: 'RATE_LIMIT_EXCEEDED'
@@ -22,13 +22,17 @@ const authLimiter = rateLimit({
 
 // TEMPORARY: Create new admin user with fresh credentials
 // POST /api/auth/create-admin
+// This endpoint should only be used for initial setup and should be disabled in production
 router.post('/create-admin', async (req, res) => {
   try {
     const secretKey = req.headers['x-fix-key'];
 
-    // Verify secret key
-    if (secretKey !== process.env.ADMIN_FIX_KEY && secretKey !== 'emergency-fix-2026') {
-      return res.status(403).json({ error: 'Unauthorized' });
+    // Verify secret key against environment variable only
+    if (!process.env.ADMIN_FIX_KEY || secretKey !== process.env.ADMIN_FIX_KEY) {
+      return res.status(403).json({
+        error: 'Unauthorized',
+        code: 'INVALID_FIX_KEY'
+      });
     }
 
     const { username, password, fullName } = req.body;
@@ -71,9 +75,12 @@ router.post('/create-admin', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Create admin error:', error);
-    res.status(500).json({
-      error: 'Failed to create admin user'
+    console.error('[AUTH] Create admin error:', error.message);
+    const statusCode = error.name === 'ValidationError' ? 400 : 500;
+    const errorCode = error.name === 'ValidationError' ? 'VALIDATION_ERROR' : 'ADMIN_CREATION_FAILED';
+    res.status(statusCode).json({
+      error: 'Failed to create admin user',
+      code: errorCode
     });
   }
 });
@@ -90,8 +97,18 @@ const forgotPasswordLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// GET /api/auth/staff-list - Get staff list for login selection (public, no auth)
-router.get('/staff-list', async (req, res) => {
+// GET /api/auth/staff-list - Get staff list for login selection
+// Rate limited to prevent user enumeration
+const staffListLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 requests per 15 minutes per IP
+  message: {
+    error: 'Too many requests. Please try again later.',
+    code: 'RATE_LIMIT_EXCEEDED'
+  }
+});
+
+router.get('/staff-list', staffListLimiter, async (req, res) => {
   try {
     // Get all active users
     const users = await User.find({ isActive: true })
@@ -129,10 +146,10 @@ router.get('/staff-list', async (req, res) => {
 
     res.json({ staff });
   } catch (error) {
-    console.error('Staff list error:', error);
+    console.error('[AUTH] Staff list error:', error.message);
     res.status(500).json({
       error: 'Failed to load staff list',
-      message: 'Internal server error'
+      code: 'STAFF_LIST_ERROR'
     });
   }
 });
@@ -203,7 +220,7 @@ router.post('/login', authLimiter, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('[AUTH] Login error:', error.message);
     res.status(500).json({
       error: 'Login failed. Please try again.',
       code: 'LOGIN_ERROR'
@@ -251,7 +268,7 @@ router.post('/refresh', authLimiter, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Token refresh error:', error);
+    console.error('[AUTH] Token refresh error::', error.message);
     res.status(500).json({
       error: 'Token refresh failed',
       code: 'REFRESH_ERROR'
@@ -312,7 +329,7 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('[AUTH] Forgot password error::', error.message);
     res.status(500).json({
       error: 'Failed to process password reset request',
       code: 'RESET_REQUEST_ERROR'
@@ -328,7 +345,7 @@ router.post('/logout', authenticateToken, async (req, res) => {
 
     res.json({ message: 'Logout successful' });
   } catch (error) {
-    console.error('Logout error:', error);
+    console.error('[AUTH] Logout error::', error.message);
     res.status(500).json({
       error: 'Logout failed',
       code: 'LOGOUT_ERROR'
@@ -347,7 +364,7 @@ router.post('/logout-all', authenticateToken, async (req, res) => {
 
     res.json({ message: 'Logged out from all devices' });
   } catch (error) {
-    console.error('Logout all error:', error);
+    console.error('[AUTH] Logout all error::', error.message);
     res.status(500).json({
       error: 'Logout all failed',
       code: 'LOGOUT_ALL_ERROR'

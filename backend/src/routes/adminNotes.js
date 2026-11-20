@@ -15,10 +15,10 @@ router.get('/', async (req, res) => {
 
     res.json(notes);
   } catch (error) {
-    console.error('Error fetching admin notes:', error);
-    res.status(500).json({ 
+    console.error('[ADMIN_NOTES] Error fetching notes:', error.message);
+    res.status(500).json({
       error: 'Failed to fetch notes',
-      message: error.message 
+      code: 'FETCH_ERROR'
     });
   }
 });
@@ -29,14 +29,14 @@ router.post('/', async (req, res) => {
     const { body } = req.body;
 
     if (!body || !body.trim()) {
-      return res.status(400).json({ 
-        error: 'Note body is required' 
+      return res.status(400).json({
+        error: 'Note body is required'
       });
     }
 
     if (body.length > 1000) {
-      return res.status(400).json({ 
-        error: 'Note body cannot exceed 1000 characters' 
+      return res.status(400).json({
+        error: 'Note body cannot exceed 1000 characters'
       });
     }
 
@@ -50,9 +50,9 @@ router.post('/', async (req, res) => {
     res.status(201).json(note);
   } catch (error) {
     console.error('Error creating admin note:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to create note',
-      message: error.message 
+      code: 'CREATION_FAILED'
     });
   }
 });
@@ -63,14 +63,14 @@ router.put('/:id', async (req, res) => {
     const { body } = req.body;
 
     if (!body || !body.trim()) {
-      return res.status(400).json({ 
-        error: 'Note body is required' 
+      return res.status(400).json({
+        error: 'Note body is required'
       });
     }
 
     if (body.length > 1000) {
-      return res.status(400).json({ 
-        error: 'Note body cannot exceed 1000 characters' 
+      return res.status(400).json({
+        error: 'Note body cannot exceed 1000 characters'
       });
     }
 
@@ -84,17 +84,17 @@ router.put('/:id', async (req, res) => {
     if (!note) {
       // Return 404 regardless of whether note doesn't exist or belongs to someone else
       // This prevents information leakage about other admins' notes
-      return res.status(404).json({ 
-        error: 'Note not found' 
+      return res.status(404).json({
+        error: 'Note not found'
       });
     }
 
     res.json(note);
   } catch (error) {
     console.error('Error updating admin note:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to update note',
-      message: error.message 
+      code: 'UPDATE_FAILED'
     });
   }
 });
@@ -110,20 +110,20 @@ router.delete('/:id', async (req, res) => {
 
     if (!note) {
       // Return 404 regardless of whether note doesn't exist or belongs to someone else
-      return res.status(404).json({ 
-        error: 'Note not found' 
+      return res.status(404).json({
+        error: 'Note not found'
       });
     }
 
-    res.json({ 
+    res.json({
       message: 'Note deleted successfully',
-      noteId: note._id 
+      noteId: note._id
     });
   } catch (error) {
     console.error('Error deleting admin note:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to delete note',
-      message: error.message 
+      message: error.message
     });
   }
 });

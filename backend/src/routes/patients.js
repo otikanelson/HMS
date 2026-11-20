@@ -58,7 +58,7 @@ router.get('/search', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Patient search error:', error);
+    console.error('[PATIENTS] Patient search error::', error.message);
     res.status(500).json({
       error: 'Search failed',
       message: 'Internal server error'
@@ -99,7 +99,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get patients error:', error);
+    console.error('[PATIENTS] Get patients error::', error.message);
     res.status(500).json({
       error: 'Failed to retrieve patients',
       message: 'Internal server error'
@@ -133,7 +133,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     res.json(patientWithLocation);
 
   } catch (error) {
-    console.error('Get patient error:', error);
+    console.error('[PATIENTS] Get patient error::', error.message);
     res.status(500).json({
       error: 'Failed to retrieve patient',
       message: 'Internal server error'
@@ -314,7 +314,7 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR', 'RECORDS
     });
 
   } catch (error) {
-    console.error('Create patient error:', error);
+    console.error('[PATIENTS] Create patient error::', error.message);
 
     if (error.code === 11000) {
       return res.status(409).json({
@@ -460,7 +460,7 @@ router.put('/:id/status', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Update status error:', error);
+    console.error('[PATIENTS] Update status error::', error.message);
     res.status(500).json({
       error: 'Failed to update status',
       message: 'Internal server error'
@@ -588,7 +588,7 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
     });
 
   } catch (error) {
-    console.error('Update patient error:', error);
+    console.error('[PATIENTS] Update patient error::', error.message);
     res.status(500).json({
       error: 'Failed to update patient',
       message: 'Internal server error'
@@ -650,7 +650,7 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
     });
 
   } catch (error) {
-    console.error('Delete patient error:', error);
+    console.error('[PATIENTS] Delete patient error::', error.message);
     res.status(500).json({
       error: 'Failed to delete patient file',
       message: 'Internal server error'

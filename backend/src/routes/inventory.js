@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Inventory fetch error:', error);
+    console.error('[INVENTORY] Inventory fetch error::', error.message);
     res.status(500).json({
       error: 'Failed to fetch inventory',
       message: 'Internal server error'
@@ -167,7 +167,7 @@ router.post('/', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Inventory creation error:', error);
+    console.error('[INVENTORY] Inventory creation error::', error.message);
     res.status(500).json({
       error: 'Failed to add item',
       message: 'Internal server error'
@@ -303,7 +303,7 @@ router.put('/:id', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Inventory update error:', error);
+    console.error('[INVENTORY] Inventory update error::', error.message);
     res.status(500).json({
       error: 'Failed to update item',
       message: 'Internal server error'
@@ -347,7 +347,7 @@ router.delete('/:id', requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
     res.json({ message: 'Item removed from list' });
     
   } catch (error) {
-    console.error('Inventory delete error:', error);
+    console.error('[INVENTORY] Inventory delete error::', error.message);
     res.status(500).json({
       error: 'Failed to remove item',
       message: 'Internal server error'
@@ -356,3 +356,4 @@ router.delete('/:id', requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
 });
 
 module.exports = router;
+

@@ -19,7 +19,7 @@ router.get('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Notice fetch error:', error);
+    console.error('[NOTICES] Notice fetch error::', error.message);
     res.status(500).json({
       error: 'Failed to fetch notices',
       message: 'Internal server error'
@@ -92,7 +92,7 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
     });
 
   } catch (error) {
-    console.error('Notice creation error:', error);
+    console.error('[NOTICES] Notice creation error::', error.message);
     
     if (error.name === 'ValidationError') {
       return res.status(400).json({
@@ -153,7 +153,7 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
     });
 
   } catch (error) {
-    console.error('Notice deletion error:', error);
+    console.error('[NOTICES] Notice deletion error::', error.message);
     res.status(500).json({
       error: 'Failed to remove notice',
       message: 'Internal server error'
@@ -162,3 +162,4 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
 });
 
 module.exports = router;
+

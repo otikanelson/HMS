@@ -163,7 +163,7 @@ router.post('/start', requireAccessLevel(...ALL_ROLES), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Start visit error:', error);
+    console.error('[VISITS] Start visit error::', error.message);
     res.status(500).json({
       error: 'Failed to start visit',
       message: 'Internal server error'
@@ -279,7 +279,7 @@ router.put('/:id/vitals', requireAccessLevel(...ALL_ROLES), async (req, res) => 
     });
 
   } catch (error) {
-    console.error('Vitals error:', error);
+    console.error('[VISITS] Vitals error::', error.message);
     res.status(500).json({
       error: 'Failed to save vitals',
       message: 'Internal server error'
@@ -366,7 +366,7 @@ router.post('/:id/send-to-doctor', requireAccessLevel(...ALL_ROLES), async (req,
     });
 
   } catch (error) {
-    console.error('Send to doctor error:', error);
+    console.error('[VISITS] Send to doctor error::', error.message);
     res.status(500).json({
       error: 'Failed to update visit',
       message: 'Internal server error'
@@ -419,7 +419,7 @@ router.post('/:id/file-back', requireAccessLevel(...ALL_ROLES), async (req, res)
     });
 
   } catch (error) {
-    console.error('File back error:', error);
+    console.error('[VISITS] File back error::', error.message);
     res.status(500).json({
       error: 'Failed to update visit',
       message: 'Internal server error'
@@ -633,7 +633,7 @@ router.put('/:id/record', requireAccessLevel(...ALL_ROLES), async (req, res) => 
     });
 
   } catch (error) {
-    console.error('Record error:', error);
+    console.error('[VISITS] Record error::', error.message);
     res.status(500).json({
       error: 'Failed to file visit',
       message: 'Internal server error'
@@ -699,7 +699,7 @@ router.post('/put-away', requireAccessLevel(...ALL_ROLES), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Put-away error:', error);
+    console.error('[VISITS] Put-away error::', error.message);
     res.status(500).json({
       error: 'Failed to put away files',
       message: 'Internal server error'
@@ -1062,7 +1062,7 @@ router.put('/:id/correct', requireAccessLevel(...CAN_CORRECT), async (req, res) 
     });
 
   } catch (error) {
-    console.error('Correct error:', error);
+    console.error('[VISITS] Correct error::', error.message);
     res.status(500).json({
       error: 'Failed to correct visit',
       message: 'Internal server error'
@@ -1103,7 +1103,7 @@ router.get('/open', requireAccessLevel(...ALL_ROLES), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get open visits error:', error);
+    console.error('[VISITS] Get open visits error::', error.message);
     res.status(500).json({
       error: 'Failed to retrieve open visits',
       message: 'Internal server error'
@@ -1153,7 +1153,7 @@ router.get('/patient/:patientId', requireAccessLevel(...ALL_ROLES), async (req, 
     });
 
   } catch (error) {
-    console.error('Get patient history error:', error);
+    console.error('[VISITS] Get patient history error::', error.message);
     res.status(500).json({
       error: 'Failed to retrieve history',
       message: 'Internal server error'
@@ -1199,7 +1199,7 @@ router.get('/:id', requireAccessLevel(...ALL_ROLES), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get visit error:', error);
+    console.error('[VISITS] Get visit error::', error.message);
     res.status(500).json({
       error: 'Failed to retrieve visit',
       message: 'Internal server error'
@@ -1268,7 +1268,7 @@ router.post('/:id/cancel', requireAccessLevel(...ALL_ROLES), async (req, res) =>
     });
 
   } catch (error) {
-    console.error('Cancel visit error:', error);
+    console.error('[VISITS] Cancel visit error::', error.message);
     res.status(500).json({
       error: 'Failed to cancel visit',
       message: 'Internal server error'
@@ -1348,7 +1348,7 @@ router.post('/:id/step-back', requireAccessLevel(...ALL_ROLES), async (req, res)
     });
 
   } catch (error) {
-    console.error('Step back error:', error);
+    console.error('[VISITS] Step back error::', error.message);
     res.status(500).json({
       error: 'Failed to move visit back',
       message: 'Internal server error'
@@ -1357,3 +1357,4 @@ router.post('/:id/step-back', requireAccessLevel(...ALL_ROLES), async (req, res)
 });
 
 module.exports = router;
+

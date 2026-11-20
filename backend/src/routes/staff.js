@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/search', authenticateToken, async (req, res) => {
   try {
     const { q } = req.query;
-    
+
     if (!q || q.trim().length < 1) {
       return res.json({
         staff: [],
@@ -27,7 +27,7 @@ router.get('/search', authenticateToken, async (req, res) => {
     // Lookup User accounts for each staff member
     const staffIds = staff.map(s => s._id);
     const users = await User.find({ staffId: { $in: staffIds } }).select('staffId username accessLevel isActive mustChangePassword');
-    
+
     // Create a map for quick lookup
     const userMap = new Map();
     users.forEach(user => {
@@ -43,7 +43,7 @@ router.get('/search', authenticateToken, async (req, res) => {
     const staffWithVirtuals = staff.map(member => {
       const userData = userMap.get(member._id.toString());
       const serialized = serializeStaffForRequester(member, req.user);
-      
+
       return {
         ...serialized,
         // Login account information (Admin/Records Operator only)
@@ -69,10 +69,10 @@ router.get('/search', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Staff search error:', error);
+    console.error('[STAFF] Staff search error:', error.message);
     res.status(500).json({
       error: 'Search failed',
-      message: 'Internal server error'
+      code: 'SEARCH_FAILED'
     });
   }
 });
@@ -88,10 +88,10 @@ router.get('/', authenticateToken, async (req, res) => {
     // Build filter object
     const filter = {};
     if (role) filter.role = role.toUpperCase();
-    
+
     // For on-duty/off-duty filtering, we'll filter after fetching based on today's schedule
     const needsScheduleFilter = status === 'on-duty' || status === 'off-duty';
-    
+
     if (shift) filter.shift = shift.toUpperCase();
 
     let staff = await Staff.find(filter)
@@ -105,26 +105,26 @@ router.get('/', authenticateToken, async (req, res) => {
       const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
       const today = days[now.getDay()];
       const currentHour = now.getHours();
-      
+
       // Determine current shift: day (7 AM - 4 PM) or night (4 PM - 7 AM)
       const currentShift = (currentHour >= 7 && currentHour < 16) ? 'day' : 'night';
-      
+
       staff = staff.filter(member => {
         const todayShift = member.WeeklySchedule?.[today] || 'off';
         const isOnDuty = todayShift === currentShift;
         return status === 'on-duty' ? isOnDuty : !isOnDuty;
       });
-      
+
       total = staff.length;
     }
-    
+
     // Apply pagination
     staff = staff.slice(skip, skip + limit);
 
     // Lookup User accounts for each staff member
     const staffIds = staff.map(s => s._id);
     const users = await User.find({ staffId: { $in: staffIds } }).select('staffId username accessLevel isActive mustChangePassword');
-    
+
     // Create a map for quick lookup
     const userMap = new Map();
     users.forEach(user => {
@@ -140,7 +140,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const staffWithVirtuals = staff.map(member => {
       const userData = userMap.get(member._id.toString());
       const serialized = serializeStaffForRequester(member, req.user);
-      
+
       return {
         ...serialized,
         // Login account information (Admin/Records Operator only)
@@ -170,7 +170,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get staff error:', error);
+    console.error('[STAFF] Get staff error::', error.message);
     res.status(500).json({
       error: 'Failed to retrieve staff',
       message: 'Internal server error'
@@ -184,7 +184,7 @@ router.get('/roles', authenticateToken, async (req, res) => {
     const roles = await Staff.distinct('role', { onDuty: true });
     res.json({ roles: roles.sort() });
   } catch (error) {
-    console.error('Get roles error:', error);
+    console.error('[STAFF] Get roles error::', error.message);
     res.status(500).json({
       error: 'Failed to retrieve roles',
       message: 'Internal server error'
@@ -221,7 +221,7 @@ router.get('/schedule', authenticateToken, async (req, res) => {
 
     res.json(scheduleData);
   } catch (error) {
-    console.error('Error fetching staff schedule:', error);
+    console.error('[STAFF] Error fetching staff schedule::', error.message);
     res.status(500).json({
       error: 'Failed to fetch staff schedule',
       message: error.message
@@ -265,7 +265,7 @@ router.put('/:id/schedule', authenticateToken, requireAccessLevel('ADMINISTRATOR
     // Find staff member
     let staff;
     const id = req.params.id;
-    
+
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
       staff = await Staff.findById(id);
     } else {
@@ -301,7 +301,7 @@ router.put('/:id/schedule', authenticateToken, requireAccessLevel('ADMINISTRATOR
       }
     });
   } catch (error) {
-    console.error('Error updating staff schedule:', error);
+    console.error('[STAFF] Error updating staff schedule::', error.message);
     res.status(500).json({
       error: 'Failed to update schedule',
       message: error.message
@@ -314,7 +314,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
   try {
     let staff;
     const id = req.params.id;
-    
+
     // Check if it's a MongoDB ObjectId or staffId
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
       // It's a MongoDB ObjectId
@@ -323,7 +323,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       // It's a staffId
       staff = await Staff.findOne({ staffId: id });
     }
-    
+
     if (!staff) {
       return res.status(404).json({
         error: 'Staff member not found',
@@ -354,7 +354,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get staff member error:', error);
+    console.error('[STAFF] Get staff member error::', error.message);
     res.status(500).json({
       error: 'Failed to retrieve staff member',
       message: 'Internal server error'
@@ -365,11 +365,11 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // POST /api/staff - Add new staff member (ADMINISTRATOR only)
 router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
   try {
-    const { 
-      firstName, 
-      lastName, 
+    const {
+      firstName,
+      lastName,
       otherNames,
-      role, 
+      role,
       phoneNumber,
       email,
       schedule,
@@ -432,26 +432,26 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
     try {
       // Use staffId as username (it's unique and can be given verbally)
       const username = newStaff.staffId;
-      
+
       // Generate random temporary password (12 characters, alphanumeric)
       const tempPassword = Array.from({ length: 12 }, () => {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
         return chars.charAt(crypto.randomInt(0, chars.length));
       }).join('');
-      
+
       // Determine access level (default to CLINICAL_STAFF if not provided)
       const userAccessLevel = accessLevel || 'CLINICAL_STAFF';
-      
+
       // Validate access level
       if (!['ADMINISTRATOR', 'RECORDS_OPERATOR', 'CLINICAL_STAFF'].includes(userAccessLevel)) {
         throw new Error('Invalid access level');
       }
-      
+
       // Create User document (let the model's pre-save hook hash the password)
       const fullName = [newStaff.firstName, newStaff.otherNames, newStaff.lastName]
         .filter(name => name && name.trim())
         .join(' ');
-      
+
       const newUser = new User({
         username: username,
         password: tempPassword, // Store plaintext - the pre-save hook will hash it
@@ -461,16 +461,16 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
         mustChangePassword: true,
         isActive: true
       });
-      
+
       await newUser.save();
-      
+
       // Store credentials to return (ONLY TIME we return the plaintext password)
       userCredentials = {
         username: username,
         temporaryPassword: tempPassword,
         accessLevel: userAccessLevel
       };
-      
+
     } catch (userError) {
       console.error('Failed to create user account for staff:', userError);
       console.error('Error details:', {
@@ -499,14 +499,14 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
     });
 
   } catch (error) {
-    console.error('Create staff member error:', error);
+    console.error('[STAFF] Create staff member error::', error.message);
     console.error('Error details:', {
       message: error.message,
       stack: error.stack,
       name: error.name,
       code: error.code
     });
-    
+
     if (error.code === 11000) {
       return res.status(409).json({
         error: 'Staff ID already exists',
@@ -525,7 +525,7 @@ router.post('/', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (
 router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async (req, res) => {
   try {
     const staff = await Staff.findOne({ staffId: req.params.id });
-    
+
     if (!staff) {
       return res.status(404).json({
         error: 'Staff member not found',
@@ -576,7 +576,7 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
 
     // Update fields
     const updateFields = [
-      'firstName', 'lastName', 'otherNames', 'role', 'phoneNumber', 
+      'firstName', 'lastName', 'otherNames', 'role', 'phoneNumber',
       'email', 'schedule', 'onDuty', 'shift',
       'salary', 'bankAccount', 'accountNumber', 'bankCode'
     ];
@@ -597,19 +597,19 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
     if (wasOnDuty && willBeOffDuty) {
       try {
         const Session = require('../models/Session');
-        
+
         // Find and deactivate the linked user account
         const user = await User.findOne({ staffId: staff._id });
         if (user) {
           user.isActive = false;
           await user.save();
-          
+
           // Revoke all active sessions for this user
           await Session.updateMany(
             { userId: user._id, isActive: true },
             { isActive: false }
           );
-          
+
           console.log(`Deactivated user account and sessions for staff: ${staff.staffId}`);
         }
 
@@ -640,7 +640,7 @@ router.put('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), async
     });
 
   } catch (error) {
-    console.error('Update staff member error:', error);
+    console.error('[STAFF] Update staff member error::', error.message);
     res.status(500).json({
       error: 'Failed to update staff member',
       message: 'Internal server error'
@@ -653,14 +653,14 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
   try {
     let staff;
     const id = req.params.id;
-    
+
     // Check if it's a MongoDB ObjectId or staffId
     if (id.match(/^[0-9a-fA-F]{24}$/)) {
       staff = await Staff.findById(id);
     } else {
       staff = await Staff.findOne({ staffId: id });
     }
-    
+
     if (!staff) {
       return res.status(404).json({
         error: 'Staff member not found',
@@ -675,18 +675,18 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
     // Deactivate the linked user account and revoke all sessions
     try {
       const Session = require('../models/Session');
-      
+
       const user = await User.findOne({ staffId: staff._id });
       if (user) {
         user.isActive = false;
         await user.save();
-        
+
         // Revoke all active sessions for this user
         await Session.updateMany(
           { userId: user._id, isActive: true },
           { isActive: false }
         );
-        
+
         console.log(`Deactivated user account and sessions for staff: ${staff.staffId}`);
       }
     } catch (deactivationError) {
@@ -704,7 +704,7 @@ router.delete('/:id', authenticateToken, requireAccessLevel('ADMINISTRATOR'), as
     });
 
   } catch (error) {
-    console.error('Set staff member off duty error:', error);
+    console.error('[STAFF] Set staff member off duty error::', error.message);
     res.status(500).json({
       error: 'Failed to set staff member off duty',
       message: 'Internal server error'
